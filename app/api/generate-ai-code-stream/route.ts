@@ -572,6 +572,11 @@ ${conversationContext}
    - Simple style/text change = 1 file ONLY
    - New component = 2 files MAX (component + parent)
    - If >3 files, YOU'RE DOING TOO MUCH
+6. **DO NOT CREATE SVGs FROM SCRATCH**:
+   - NEVER generate custom SVG code unless explicitly asked
+   - Use existing icon libraries (lucide-react, heroicons, etc.)
+   - Or use placeholder elements/text if icons are not critical
+   - Only create custom SVGs when user specifically requests "create an SVG" or "draw an SVG"
 
 COMPONENT RELATIONSHIPS (CHECK THESE FIRST):
 - Navigation usually lives INSIDE Header.jsx, not separate Nav.jsx
