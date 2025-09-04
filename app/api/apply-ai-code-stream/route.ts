@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Sandbox } from '@vercel/sandbox';
+import { Sandbox } from '@e2b/code-interpreter';
 import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
 
 declare global {
   var conversationState: ConversationState | null;
-  var activeSandbox: any;
+  var activeSandboxProvider: any;
   var existingFiles: Set<string>;
   var sandboxState: SandboxState;
 }
@@ -294,73 +294,86 @@ export async function POST(request: NextRequest) {
       global.existingFiles = new Set<string>();
     }
     
-    // First, always check the global state for active sandbox
-    let sandbox = global.activeSandbox;
+    // First, always check the global state for active provider
+    let provider = global.activeSandboxProvider;
+
+    // If we don't have a provider in this instance but we have a sandboxId,
+    // try to use the existing sandbox data or create a new one
+    if (!provider && sandboxId) {
+      console.log(`[apply-ai-code-stream] Provider not in this instance for sandbox ${sandboxId}, checking existing data...`);
+
+      // If we have sandbox data but no provider, we'll create a new provider
+      // E2B doesn't support reconnection like Vercel does
+      if (global.sandboxData && global.sandboxData.sandboxId === sandboxId) {
+        console.log(`[apply-ai-code-stream] Creating new provider for existing sandbox ${sandboxId}`);
+
+        // Create a new provider instance (this will create a new sandbox since E2B doesn't support reconnection)
+        try {
+          const { SandboxFactory } = await import('@/lib/sandbox/factory');
+          provider = SandboxFactory.create();
+          await provider.createSandbox();
+
+          // Update the global state
+          global.activeSandboxProvider = provider;
+          console.log(`[apply-ai-code-stream] Created new provider for sandbox ${sandboxId}`);
+        } catch (providerError) {
+          console.error(`[apply-ai-code-stream] Failed to create provider for sandbox ${sandboxId}:`, providerError);
+          return NextResponse.json({
+            success: false,
+            error: `Failed to create sandbox provider for ${sandboxId}. The sandbox may have expired.`,
+            results: {
+              filesCreated: [],
+              packagesInstalled: [],
+              commandsExecuted: [],
+              errors: [`Sandbox provider creation failed: ${(providerError as Error).message}`]
+            },
+            explanation: parsed.explanation,
+            structure: parsed.structure,
+            parsedFiles: parsed.files,
+            message: `Parsed ${parsed.files.length} files but couldn't apply them - sandbox reconnection failed.`
+          }, { status: 500 });
+        }
+      }
+    }
     
-    // If we don't have a sandbox in this instance but we have a sandboxId,
-    // reconnect to the existing sandbox
-    if (!sandbox && sandboxId) {
-      console.log(`[apply-ai-code-stream] Sandbox ${sandboxId} not in this instance, attempting reconnect...`);
-      
+    // If we still don't have a provider, create a new one
+    if (!provider) {
+      console.log(`[apply-ai-code-stream] No active provider found, creating new sandbox...`);
       try {
-        // Reconnect to the existing sandbox using E2B's connect method
-        sandbox = await Sandbox.connect(sandboxId, { apiKey: process.env.E2B_API_KEY });
-        console.log(`[apply-ai-code-stream] Successfully reconnected to sandbox ${sandboxId}`);
-        
-        // Store the reconnected sandbox globally for this instance
-        global.activeSandbox = sandbox;
-        
-        // Update sandbox data if needed
-        if (!global.sandboxData) {
-          const host = (sandbox as any).getHost(5173);
+        const { SandboxFactory } = await import('@/lib/sandbox/factory');
+        provider = SandboxFactory.create();
+        await provider.createSandbox();
+
+        // Store the provider globally
+        global.activeSandboxProvider = provider;
+
+        // Update sandbox data
+        const sandboxInfo = provider.getSandboxInfo();
+        if (sandboxInfo) {
           global.sandboxData = {
-            sandboxId,
-            url: `https://${host}`
+            sandboxId: sandboxInfo.sandboxId,
+            url: sandboxInfo.url
           };
         }
-        
-        // Initialize existingFiles if not already
-        if (!global.existingFiles) {
-          global.existingFiles = new Set<string>();
-        }
-      } catch (reconnectError) {
-        console.error(`[apply-ai-code-stream] Failed to reconnect to sandbox ${sandboxId}:`, reconnectError);
-        
-        // If reconnection fails, we'll still try to return a meaningful response
+
+        console.log(`[apply-ai-code-stream] Created new sandbox successfully`);
+      } catch (createError) {
+        console.error(`[apply-ai-code-stream] Failed to create new sandbox:`, createError);
         return NextResponse.json({
           success: false,
-          error: `Failed to reconnect to sandbox ${sandboxId}. The sandbox may have expired or been terminated.`,
+          error: `Failed to create new sandbox: ${createError instanceof Error ? createError.message : 'Unknown error'}`,
           results: {
             filesCreated: [],
             packagesInstalled: [],
             commandsExecuted: [],
-            errors: [`Sandbox reconnection failed: ${(reconnectError as Error).message}`]
+            errors: [`Sandbox creation failed: ${createError instanceof Error ? createError.message : 'Unknown error'}`]
           },
           explanation: parsed.explanation,
           structure: parsed.structure,
           parsedFiles: parsed.files,
-          message: `Parsed ${parsed.files.length} files but couldn't apply them - sandbox reconnection failed.`
-        });
+          message: `Parsed ${parsed.files.length} files but couldn't apply them - sandbox creation failed.`
+        }, { status: 500 });
       }
-    }
-    
-    // If no sandbox at all and no sandboxId provided, return an error
-    if (!sandbox && !sandboxId) {
-      console.log('[apply-ai-code-stream] No sandbox available and no sandboxId provided');
-      return NextResponse.json({
-        success: false,
-        error: 'No active sandbox found. Please create a sandbox first.',
-        results: {
-          filesCreated: [],
-          packagesInstalled: [],
-          commandsExecuted: [],
-          errors: ['No sandbox available']
-        },
-        explanation: parsed.explanation,
-        structure: parsed.structure,
-        parsedFiles: parsed.files,
-        message: `Parsed ${parsed.files.length} files but no sandbox available to apply them.`
-      });
     }
     
     // Create a response stream for real-time updates
@@ -374,8 +387,8 @@ export async function POST(request: NextRequest) {
       await writer.write(encoder.encode(message));
     };
     
-    // Start processing in background (pass sandbox and request to the async function)
-    (async (sandboxInstance, req) => {
+    // Start processing in background (pass provider and request to the async function)
+    (async (providerInstance, req) => {
       const results = {
         filesCreated: [] as string[],
         filesUpdated: [] as string[],
@@ -432,7 +445,7 @@ export async function POST(request: NextRequest) {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
                 packages: uniquePackages,
-                sandboxId: sandboxId || (sandboxInstance as any).sandboxId
+                sandboxId: sandboxId || providerInstance.getSandboxInfo()?.sandboxId
               })
             });
             
@@ -536,17 +549,11 @@ export async function POST(request: NextRequest) {
             // Create directory if needed
             const dirPath = normalizedPath.includes('/') ? normalizedPath.substring(0, normalizedPath.lastIndexOf('/')) : '';
             if (dirPath) {
-              await sandboxInstance.runCommand({
-                cmd: 'mkdir',
-                args: ['-p', dirPath]
-              });
+              await providerInstance.runCommand(`mkdir -p ${dirPath}`);
             }
-            
-            // Write the file using Vercel Sandbox writeFiles
-            await sandboxInstance.writeFiles([{
-              path: normalizedPath,
-              content: Buffer.from(fileContent)
-            }]);
+
+            // Write the file using provider
+            await providerInstance.writeFile(normalizedPath, fileContent);
             
             // Update file cache
             if (global.sandboxState?.fileCache) {
@@ -599,20 +606,12 @@ export async function POST(request: NextRequest) {
                 action: 'executing'
               });
               
-              // Parse command and arguments for Vercel Sandbox
-              const commandParts = cmd.trim().split(/\s+/);
-              const cmdName = commandParts[0];
-              const args = commandParts.slice(1);
-              
-              // Use Vercel Sandbox runCommand
-              const result = await sandboxInstance.runCommand({
-                cmd: cmdName,
-                args
-              });
-              
-              // Get command output
-              const stdout = await result.stdout();
-              const stderr = await result.stderr();
+              // Use provider runCommand
+              const result = await providerInstance.runCommand(cmd);
+
+              // Get command output from provider result
+              const stdout = result.stdout;
+              const stderr = result.stderr;
               
               if (stdout) {
                 await sendProgress({
@@ -697,7 +696,7 @@ export async function POST(request: NextRequest) {
       } finally {
         await writer.close();
       }
-    })(sandbox, request);
+    })(provider, request);
     
     // Return the stream
     return new Response(stream.readable, {
@@ -707,7 +706,7 @@ export async function POST(request: NextRequest) {
         'Connection': 'keep-alive',
       },
     });
-    
+
   } catch (error) {
     console.error('Apply AI code stream error:', error);
     return NextResponse.json(

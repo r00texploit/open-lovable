@@ -14,21 +14,28 @@ import { appConfig } from '@/config/app.config';
 // Force dynamic route to enable streaming
 export const dynamic = 'force-dynamic';
 
+// Check if we're using Vercel AI Gateway
+const isUsingAIGateway = !!process.env.AI_GATEWAY_API_KEY;
+const aiGatewayBaseURL = 'https://ai-gateway.vercel.sh/v1';
+
 const groq = createGroq({
-  apiKey: process.env.GROQ_API_KEY,
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.GROQ_API_KEY,
+  baseURL: isUsingAIGateway ? aiGatewayBaseURL : undefined,
 });
 
 const anthropic = createAnthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  baseURL: process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1',
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.ANTHROPIC_API_KEY,
+  baseURL: isUsingAIGateway ? aiGatewayBaseURL : (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1'),
 });
 
 const googleGenerativeAI = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY,
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.GEMINI_API_KEY,
+  baseURL: isUsingAIGateway ? aiGatewayBaseURL : undefined,
 });
 
 const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.OPENAI_API_KEY,
+  baseURL: isUsingAIGateway ? aiGatewayBaseURL : process.env.OPENAI_BASE_URL,
 });
 
 // Helper function to analyze user preferences from conversation history

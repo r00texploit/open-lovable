@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 
 declare global {
   var activeSandbox: any;
+  var lastViteRestartTime: number;
+  var viteRestartInProgress: boolean;
 }
+
+const RESTART_COOLDOWN_MS = 5000; // 5 second cooldown between restarts
 
 export async function POST() {
   try {
@@ -12,6 +16,29 @@ export async function POST() {
         error: 'No active sandbox' 
       }, { status: 400 });
     }
+    
+    // Check if restart is already in progress
+    if (global.viteRestartInProgress) {
+      console.log('[restart-vite] Vite restart already in progress, skipping...');
+      return NextResponse.json({
+        success: true,
+        message: 'Vite restart already in progress'
+      });
+    }
+    
+    // Check cooldown
+    const now = Date.now();
+    if (global.lastViteRestartTime && (now - global.lastViteRestartTime) < RESTART_COOLDOWN_MS) {
+      const remainingTime = Math.ceil((RESTART_COOLDOWN_MS - (now - global.lastViteRestartTime)) / 1000);
+      console.log(`[restart-vite] Cooldown active, ${remainingTime}s remaining`);
+      return NextResponse.json({
+        success: true,
+        message: `Vite was recently restarted, cooldown active (${remainingTime}s remaining)`
+      });
+    }
+    
+    // Set the restart flag
+    global.viteRestartInProgress = true;
     
     console.log('[restart-vite] Forcing Vite restart...');
     
@@ -51,6 +78,10 @@ export async function POST() {
     // Wait for Vite to start up
     await new Promise(resolve => setTimeout(resolve, 3000));
     
+    // Update global state
+    global.lastViteRestartTime = Date.now();
+    global.viteRestartInProgress = false;
+    
     return NextResponse.json({
       success: true,
       message: 'Vite restarted successfully'
@@ -58,6 +89,10 @@ export async function POST() {
     
   } catch (error) {
     console.error('[restart-vite] Error:', error);
+    
+    // Clear the restart flag on error
+    global.viteRestartInProgress = false;
+    
     return NextResponse.json({ 
       success: false, 
       error: (error as Error).message 

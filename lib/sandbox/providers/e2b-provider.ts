@@ -100,18 +100,28 @@ export class E2BProvider extends SandboxProvider {
 
     const fullPath = path.startsWith('/') ? path : `/home/user/app/${path}`;
     
-    await this.sandbox.runCode(`
-      import os
+    // Use the E2B filesystem API to write the file
+    // Note: E2B SDK uses files.write() method
+    if ((this.sandbox as any).files && typeof (this.sandbox as any).files.write === 'function') {
+      // Use the files.write API if available
+      await (this.sandbox as any).files.write(fullPath, Buffer.from(content));
+      console.log(`[E2BProvider] Written file using files.write: ${fullPath}`);
+    } else {
+      // Fallback to Python code execution
+      await this.sandbox.runCode(`
+        import os
 
-      # Ensure directory exists
-      dir_path = os.path.dirname("${fullPath}")
-      os.makedirs(dir_path, exist_ok=True)
+        # Ensure directory exists
+        dir_path = os.path.dirname("${fullPath}")
+        os.makedirs(dir_path, exist_ok=True)
 
-      # Write file
-      with open("${fullPath}", 'w') as f:
-          f.write(${JSON.stringify(content)})
-      print(f"✓ Written: ${fullPath}")
-    `);
+        # Write file
+        with open("${fullPath}", 'w') as f:
+            f.write(${JSON.stringify(content)})
+        print(f"✓ Written: ${fullPath}")
+      `);
+      console.log(`[E2BProvider] Written file using Python: ${fullPath}`);
+    }
     
     this.existingFiles.add(path);
   }
@@ -473,6 +483,10 @@ print(f'✓ Vite restarted with PID: {process.pid}')
 
   getSandboxUrl(): string | null {
     return this.sandboxInfo?.url || null;
+  }
+
+  getSandboxInfo(): SandboxInfo | null {
+    return this.sandboxInfo;
   }
 
   async terminate(): Promise<void> {

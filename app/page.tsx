@@ -137,8 +137,11 @@ export default function AISandboxPage() {
   // Clear old conversation data on component mount and create/restore sandbox
   useEffect(() => {
     let isMounted = true;
+    let sandboxCreated = false; // Track if sandbox was created in this effect
 
     const initializePage = async () => {
+      // Prevent double execution in React StrictMode
+      if (sandboxCreated) return;
       // Clear old conversation
       try {
         await fetch('/api/conversation-state', {
@@ -165,9 +168,11 @@ export default function AISandboxPage() {
           console.log('[home] Attempting to restore sandbox:', sandboxIdParam);
           // For now, just create a new sandbox - you could enhance this to actually restore
           // the specific sandbox if your backend supports it
+          sandboxCreated = true;
           await createSandbox(true);
         } else {
           console.log('[home] No sandbox in URL, creating new sandbox automatically...');
+          sandboxCreated = true;
           await createSandbox(true);
         }
       } catch (error) {
@@ -369,7 +374,16 @@ export default function AISandboxPage() {
     }
   };
 
+  const sandboxCreationRef = useRef<boolean>(false);
+  
   const createSandbox = async (fromHomeScreen = false) => {
+    // Prevent duplicate sandbox creation
+    if (sandboxCreationRef.current) {
+      console.log('[createSandbox] Sandbox creation already in progress, skipping...');
+      return;
+    }
+    
+    sandboxCreationRef.current = true;
     console.log('[createSandbox] Starting sandbox creation...');
     setLoading(true);
     setShowLoadingBackground(true);
@@ -378,7 +392,7 @@ export default function AISandboxPage() {
     setScreenshotError(null);
     
     try {
-      const response = await fetch('/api/create-ai-sandbox', {
+      const response = await fetch('/api/create-ai-sandbox-v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
@@ -388,6 +402,7 @@ export default function AISandboxPage() {
       console.log('[createSandbox] Response data:', data);
       
       if (data.success) {
+        sandboxCreationRef.current = false; // Reset the ref on success
         setSandboxData(data);
         updateStatus('Sandbox active', true);
         log('Sandbox created successfully!');
@@ -454,6 +469,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       addChatMessage(`Failed to create sandbox: ${error.message}`, 'system');
     } finally {
       setLoading(false);
+      sandboxCreationRef.current = false; // Reset the ref
     }
   };
 

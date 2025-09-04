@@ -450,6 +450,10 @@ body {
     return this.sandboxInfo?.url || null;
   }
 
+  getSandboxInfo(): SandboxInfo | null {
+    return this.sandboxInfo;
+  }
+
   async terminate(): Promise<void> {
     if (this.sandbox) {
       console.log('[VercelProvider] Terminating sandbox...');

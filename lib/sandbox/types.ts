@@ -48,6 +48,7 @@ export abstract class SandboxProvider {
   abstract listFiles(directory?: string): Promise<string[]>;
   abstract installPackages(packages: string[]): Promise<CommandResult>;
   abstract getSandboxUrl(): string | null;
+  abstract getSandboxInfo(): SandboxInfo | null;
   abstract terminate(): Promise<void>;
   abstract isAlive(): boolean;
   

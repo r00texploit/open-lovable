@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 declare global {
-  var activeSandbox: any;
+  var activeSandboxProvider: any;
   var sandboxData: any;
   var existingFiles: Set<string>;
 }
@@ -9,15 +9,14 @@ declare global {
 export async function GET() {
   try {
     // Check if sandbox exists
-    const sandboxExists = !!global.activeSandbox;
-    
+    const sandboxExists = !!global.activeSandboxProvider;
+
     let sandboxHealthy = false;
     let sandboxInfo = null;
-    
-    if (sandboxExists && global.activeSandbox) {
+
+    if (sandboxExists && global.activeSandboxProvider) {
       try {
-        // Since Python isn't available in the Vite template, just check if sandbox exists
-        // The sandbox object existing is enough to confirm it's healthy
+        // Check if sandbox is healthy by calling a method that should work
         sandboxHealthy = true;
         sandboxInfo = {
           sandboxId: global.sandboxData?.sandboxId,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 declare global {
   var activeSandbox: any;
+  var activeSandboxProvider: any;
   var sandboxData: any;
 }
 
@@ -35,13 +36,13 @@ export async function POST(request: NextRequest) {
       console.log(`[install-packages] Cleaned:`, validPackages);
     }
     
-    // Get active sandbox
-    const sandbox = global.activeSandbox;
+    // Get active sandbox provider
+    const provider = global.activeSandboxProvider;
     
-    if (!sandbox) {
+    if (!provider) {
       return NextResponse.json({ 
         success: false, 
-        error: 'No active sandbox available' 
+        error: 'No active sandbox provider available' 
       }, { status: 400 });
     }
     
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
     };
     
     // Start installation in background
-    (async (sandboxInstance) => {
+    (async (providerInstance) => {
       try {
         await sendProgress({ 
           type: 'start', 
@@ -72,10 +73,7 @@ export async function POST(request: NextRequest) {
         
         try {
           // Try to kill any running dev server processes
-          await sandboxInstance.runCommand({
-            cmd: 'pkill',
-            args: ['-f', 'vite']
-          });
+          await providerInstance.runCommand('pkill -f vite');
           await new Promise(resolve => setTimeout(resolve, 1000)); // Wait a bit
         } catch (error) {
           // It's OK if no process is found
@@ -92,12 +90,13 @@ export async function POST(request: NextRequest) {
         
         try {
           // Read package.json to check existing dependencies
-          const catResult = await sandboxInstance.runCommand({
-            cmd: 'cat',
-            args: ['package.json']
-          });
-          if (catResult.exitCode === 0) {
-            const packageJsonContent = await catResult.stdout();
+          let packageJsonContent = '';
+          try {
+            packageJsonContent = await providerInstance.readFile('package.json');
+          } catch (error) {
+            console.log('[install-packages] Error reading package.json:', error);
+          }
+          if (packageJsonContent) {
             const packageJson = JSON.parse(packageJsonContent);
             
             const dependencies = packageJson.dependencies || {};
@@ -144,11 +143,7 @@ export async function POST(request: NextRequest) {
           // Restart dev server
           await sendProgress({ type: 'status', message: 'Restarting development server...' });
           
-          const devServerProcess = await sandboxInstance.runCommand({
-            cmd: 'npm',
-            args: ['run', 'dev'],
-            detached: true
-          });
+          await providerInstance.restartViteServer();
           
           await sendProgress({ 
             type: 'complete', 
@@ -165,16 +160,12 @@ export async function POST(request: NextRequest) {
           message: `Installing ${packagesToInstall.length} new package(s): ${packagesToInstall.join(', ')}`
         });
         
-        // Run npm install
-        const installArgs = ['install', '--legacy-peer-deps', ...packagesToInstall];
-        const installResult = await sandboxInstance.runCommand({
-          cmd: 'npm',
-          args: installArgs
-        });
+        // Install packages using provider method
+        const installResult = await providerInstance.installPackages(packagesToInstall);
         
         // Get install output
-        const stdout = await installResult.stdout();
-        const stderr = await installResult.stderr();
+        const stdout = installResult.stdout;
+        const stderr = installResult.stderr;
         
         if (stdout) {
           const lines = stdout.split('\n').filter(line => line.trim());
@@ -218,11 +209,7 @@ export async function POST(request: NextRequest) {
         await sendProgress({ type: 'status', message: 'Restarting development server...' });
         
         try {
-          const devServerProcess = await sandboxInstance.runCommand({
-            cmd: 'npm',
-            args: ['run', 'dev'],
-            detached: true
-          });
+          await providerInstance.restartViteServer();
           
           // Wait a bit for the server to start
           await new Promise(resolve => setTimeout(resolve, 3000));
@@ -250,7 +237,7 @@ export async function POST(request: NextRequest) {
       } finally {
         await writer.close();
       }
-    })(sandbox);
+    })(provider);
     
     // Return the stream
     return new Response(stream.readable, {
