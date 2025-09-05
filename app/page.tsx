@@ -154,7 +154,7 @@ export default function HomePage() {
                   }}
                 >
 
-                <div className="p-16 flex gap-12 items-center w-full relative">
+                <div className="p-16 flex gap-12 items-center w-full relative bg-white rounded-20">
                   <Globe />
                   <input
                     className="flex-1 bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent"

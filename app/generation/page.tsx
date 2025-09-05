@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { appConfig } from '@/config/app.config';
 import HeroInput from '@/components/HeroInput';
 import SidebarInput from '@/components/app/generation/SidebarInput';
-import SidebarQuickInput from '@/components/app/generation/SidebarQuickInput';
 import HeaderBrandKit from '@/components/shared/header/BrandKit/BrandKit';
 import { HeaderProvider } from '@/components/shared/header/HeaderContext';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -85,10 +84,12 @@ export default function AISandboxPage() {
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
   const [isPreparingDesign, setIsPreparingDesign] = useState(false);
   const [targetUrl, setTargetUrl] = useState<string>('');
+  const [sidebarScrolled, setSidebarScrolled] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'gathering' | 'planning' | 'generating' | null>(null);
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
   const [hasInitialSubmission, setHasInitialSubmission] = useState<boolean>(false);
   const [fileStructure, setFileStructure] = useState<string>('');
+  const [isApplyingCode, setIsApplyingCode] = useState(false);
   
   const [conversationContext, setConversationContext] = useState<{
     scrapedWebsites: Array<{ url: string; content: any; timestamp: Date }>;
@@ -860,6 +861,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         console.log('[applyGeneratedCode] Current iframe element:', iframeRef.current);
         console.log('[applyGeneratedCode] Current iframe src:', iframeRef.current?.src);
         
+        // Set applying code state for edits to show loading overlay
+        if (isEdit && sandboxData) {
+          setIsApplyingCode(true);
+        }
+        
         if (results.filesCreated?.length > 0) {
           setConversationContext(prev => ({
             ...prev,
@@ -929,6 +935,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 } catch (e) {
                   console.log('[home] Could not reload iframe (cross-origin):', e);
                 }
+                // Clear applying code state after reload
+                setIsApplyingCode(false);
               }, 1000);
             }
           }, refreshDelay);
@@ -1113,7 +1121,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           {/* File Explorer - Hide during edits */}
           {!generationProgress.isEdit && (
             <div className="w-[250px] border-r border-gray-200 bg-white flex flex-col flex-shrink-0">
-            <div className="p-3 bg-gray-100 text-gray-900 flex items-center justify-between">
+            <div className="p-4 bg-gray-100 text-gray-900 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <BsFolderFill style={{ width: '16px', height: '16px' }} />
                 <span className="text-sm font-medium">Explorer</span>
@@ -1121,11 +1129,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             </div>
             
             {/* File Tree */}
-            <div className="flex-1 overflow-y-auto p-2 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
               <div className="text-sm">
                 {/* Root app folder */}
                 <div 
-                  className="flex items-center gap-2 py-1 px-2 hover:bg-gray-100 rounded cursor-pointer text-gray-700"
+                  className="flex items-center gap-2 py-1.5 px-3 hover:bg-gray-100 rounded cursor-pointer text-gray-700"
                   onClick={() => toggleFolder('app')}
                 >
                   {expandedFolders.has('app') ? (
@@ -1142,7 +1150,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 </div>
                 
                 {expandedFolders.has('app') && (
-                  <div className="ml-4">
+                  <div className="ml-6">
                     {/* Group files by directory */}
                     {(() => {
                       const fileTree: { [key: string]: Array<{ name: string; edited?: boolean }> } = {};
@@ -1171,7 +1179,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                         <div key={dir} className="mb-1">
                           {dir && (
                             <div 
-                              className="flex items-center gap-2 py-1 px-2 hover:bg-gray-100 rounded cursor-pointer text-gray-700"
+                              className="flex items-center gap-2 py-1.5 px-3 hover:bg-gray-100 rounded cursor-pointer text-gray-700"
                               onClick={() => toggleFolder(dir)}
                             >
                               {expandedFolders.has(dir) ? (
@@ -1188,7 +1196,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                             </div>
                           )}
                           {(!dir || expandedFolders.has(dir)) && (
-                            <div className={dir ? 'ml-6' : ''}>
+                            <div className={dir ? 'ml-8' : ''}>
                               {files.sort((a, b) => a.name.localeCompare(b.name)).map(fileInfo => {
                                 const fullPath = dir ? `${dir}/${fileInfo.name}` : fileInfo.name;
                                 const isSelected = selectedFile === fullPath;
@@ -1196,7 +1204,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                                 return (
                                   <div 
                                     key={fullPath} 
-                                    className={`flex items-center gap-2 py-1 px-2 rounded cursor-pointer transition-all ${
+                                    className={`flex items-center gap-2 py-1.5 px-3 rounded cursor-pointer transition-all ${
                                       isSelected 
                                         ? 'bg-blue-500 text-white' 
                                         : 'text-gray-700 hover:bg-gray-100'
@@ -1491,21 +1499,32 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         </div>
       );
     } else if (activeTab === 'preview') {
-      // Show screenshot when we have one and (loading OR generating OR no sandbox yet)
-      if (urlScreenshot && (loading || generationProgress.isGenerating || !sandboxData?.url || isPreparingDesign)) {
+      // Only show loading state for initial generation, not for edits
+      const isInitialGeneration = !sandboxData?.url && (urlScreenshot || isCapturingScreenshot || isPreparingDesign || loadingStage);
+      const shouldShowLoadingOverlay = isInitialGeneration && (loading || generationProgress.isGenerating || isPreparingDesign || loadingStage || isCapturingScreenshot);
+      
+      if (isInitialGeneration) {
         return (
-          <div className="relative w-full h-full bg-gray-100">
-            <img 
-              src={urlScreenshot} 
-              alt="Website preview" 
-              className="w-full h-full object-contain"
-            />
-            {(generationProgress.isGenerating || isPreparingDesign) && (
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <div className="text-center bg-black/70 rounded-lg p-6 backdrop-blur-sm">
-                  <div className="w-12 h-12 border-3 border-gray-300 border-t-white rounded-full animate-spin mx-auto mb-3" />
-                  <p className="text-white text-sm font-medium">
-                    {generationProgress.isGenerating ? 'Generating code...' : `Preparing your design for ${targetUrl}...`}
+          <div className="relative w-full h-full bg-gray-900">
+            {/* Screenshot as background when available */}
+            {urlScreenshot && (
+              <img 
+                src={urlScreenshot} 
+                alt="Website preview" 
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            )}
+            
+            {/* Loading overlay - only show when actively processing initial generation */}
+            {shouldShowLoadingOverlay && (
+              <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-sm">
+                <div className="text-center">
+                  <div className="w-12 h-12 border-3 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
+                  <p className="text-white text-lg font-medium">
+                    {isCapturingScreenshot ? 'Analyzing website...' :
+                     isPreparingDesign ? 'Preparing design...' :
+                     generationProgress.isGenerating ? 'Generating code...' :
+                     'Loading...'}
                   </p>
                 </div>
               </div>
@@ -1514,32 +1533,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         );
       }
       
-      // Check loading stage FIRST to prevent showing old sandbox
-      // Don't show loading overlay for edits
-      if (loadingStage || (generationProgress.isGenerating && !generationProgress.isEdit)) {
-        return (
-          <div className="relative w-full h-full bg-gray-50 flex items-center justify-center">
-            <div className="text-center">
-              <div className="mb-8">
-                <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto"></div>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                {loadingStage === 'gathering' && 'Gathering website information...'}
-                {loadingStage === 'planning' && 'Planning your design...'}
-                {(loadingStage === 'generating' || generationProgress.isGenerating) && 'Generating your application...'}
-              </h3>
-              <p className="text-gray-600 text-sm">
-                {loadingStage === 'gathering' && 'Analyzing the website structure and content'}
-                {loadingStage === 'planning' && 'Creating the optimal React component architecture'}
-                {(loadingStage === 'generating' || generationProgress.isGenerating) && 'Writing clean, modern code for your app'}
-              </p>
-            </div>
-          </div>
-        );
-      }
-      
-      // Show sandbox iframe only when not in any loading state
-      if (sandboxData?.url && !loading) {
+      // Show sandbox iframe - keep showing during edits, only hide during initial loading
+      if (sandboxData?.url) {
         return (
           <div className="relative w-full h-full">
             <iframe
@@ -1550,6 +1545,26 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               allow="clipboard-write"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             />
+            
+            {/* Show loading overlay after applying code during edits */}
+            {isApplyingCode && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+                <div className="text-center">
+                  <div className="w-12 h-12 border-3 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
+                  <p className="text-white text-lg font-medium">Applying changes...</p>
+                  <p className="text-white/70 text-sm mt-2">Reloading environment</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Show a subtle indicator when code is being edited/generated (before applying) */}
+            {generationProgress.isGenerating && generationProgress.isEdit && !isApplyingCode && (
+              <div className="absolute top-4 right-4 inline-flex items-center gap-2 px-3 py-1.5 bg-black/80 backdrop-blur-sm rounded-lg">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <span className="text-white text-xs font-medium">Generating code...</span>
+              </div>
+            )}
+            
             {/* Refresh button */}
             <button
               onClick={() => {
@@ -1566,18 +1581,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
-          </div>
-        );
-      }
-      
-      // Show loading animation when capturing screenshot
-      if (isCapturingScreenshot) {
-        return (
-          <div className="flex items-center justify-center h-full bg-gray-900">
-            <div className="text-center">
-              <div className="w-12 h-12 border-3 border-gray-600 border-t-white rounded-full animate-spin mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-white">Gathering website information</h3>
-            </div>
           </div>
         );
       }
@@ -3130,7 +3133,7 @@ Focus on the key sections and content, making it clean and modern.`;
         </div>
       )}
       
-      <div className="bg-white p-[15px] border-b border-border-faint flex items-center justify-between shadow-sm">
+      <div className="bg-white py-[15px] py-[8px] border-b border-border-faint flex items-center justify-between shadow-sm">
         <HeaderBrandKit />
         <div className="flex items-center gap-2">
           {/* Model Selector - Left side */}
@@ -3183,10 +3186,7 @@ Focus on the key sections and content, making it clean and modern.`;
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
             </svg>
           </button>
-          <div className={`inline-flex items-center gap-1.5 ${status.active ? 'bg-gray-50 border border-gray-200 text-gray-700' : 'bg-gray-100 border border-gray-200 text-gray-600'} px-4 py-1.5 rounded-lg text-sm font-medium`}>
-            <span id="status-text">{status.text}</span>
-            <div className={`w-1.5 h-1.5 rounded-full ${status.active ? 'bg-green-500' : 'bg-gray-400'}`} />
-          </div>
+       
         </div>
       </div>
 
@@ -3194,8 +3194,8 @@ Focus on the key sections and content, making it clean and modern.`;
         {/* Center Panel - AI Chat (1/3 of remaining width) */}
         <div className="flex-1 max-w-[400px] flex flex-col border-r border-border bg-background">
           {/* Sidebar Input Component */}
-          <div className="p-4 border-b border-border">
-            {!hasInitialSubmission ? (
+          {!hasInitialSubmission ? (
+            <div className="p-4 border-b border-border">
               <SidebarInput
                 onSubmit={(url, style, model, instructions) => {
                   // Mark that we've had an initial submission
@@ -3217,90 +3217,62 @@ Focus on the key sections and content, making it clean and modern.`;
                 }}
                 disabled={loading || generationProgress.isGenerating}
               />
-            ) : (
-              <SidebarQuickInput
-                onSubmit={(url) => {
-                  // Clear all previous generation data for a fresh start
-                  setChatMessages([{
-                    content: 'Starting fresh generation...',
-                    type: 'system',
-                    timestamp: new Date()
-                  }]);
-                  setGenerationProgress({
-                    isGenerating: false,
-                    isThinking: false,
-                    thinkingText: '',
-                    thinkingDuration: 0,
-                    files: [],
-                    currentFile: undefined,
-                    streamedCode: '',
-                    components: [],
-                    currentComponent: 0,
-                    status: '',
-                    isEdit: false
-                  });
-                  setConversationContext({
-                    scrapedWebsites: [],
-                    generatedComponents: [],
-                    appliedCode: [],
-                    currentProject: '',
-                    lastGeneratedCode: undefined
-                  });
-                  setSandboxFiles({});
-                  setFileStructure('');
-                  setSelectedFile(null);
-                  setUrlScreenshot(null);
-                  setScreenshotError(null);
-                  
-                  // For subsequent submissions, use the previously selected style and model
-                  const prevStyle = sessionStorage.getItem('selectedStyle') || '1';
-                  const prevModel = sessionStorage.getItem('selectedModel') || appConfig.ai.defaultModel;
-                  
-                  // Store the configuration in sessionStorage
-                  sessionStorage.setItem('targetUrl', url);
-                  sessionStorage.setItem('selectedStyle', prevStyle);
-                  sessionStorage.setItem('selectedModel', prevModel);
-                  sessionStorage.setItem('autoStart', 'true');
-                  
-                  // Start generation using the existing logic
-                  setHomeUrlInput(url);
-                  setHomeContextInput('');
-                  startGeneration();
-                }}
-                disabled={loading || generationProgress.isGenerating}
-              />
-            )}
-          </div>
+            </div>
+          ) : null}
 
           {conversationContext.scrapedWebsites.length > 0 && (
-            <div className="p-4 bg-card">
-              <div className="flex flex-col gap-2">
+            <div className="p-4 bg-card border-b border-gray-200">
+              <div className="flex flex-col gap-4">
                 {conversationContext.scrapedWebsites.map((site, idx) => {
                   // Extract favicon and site info from the scraped data
                   const metadata = site.content?.metadata || {};
                   const sourceURL = metadata.sourceURL || site.url;
-                  const favicon = metadata.favicon || `https://www.google.com/s2/favicons?domain=${new URL(sourceURL).hostname}&sz=32`;
+                  const favicon = metadata.favicon || `https://www.google.com/s2/favicons?domain=${new URL(sourceURL).hostname}&sz=128`;
                   const siteName = metadata.ogSiteName || metadata.title || new URL(sourceURL).hostname;
+                  const screenshot = site.content?.screenshot || sessionStorage.getItem('websiteScreenshot');
                   
                   return (
-                    <div key={idx} className="flex items-center gap-2 text-sm">
-                      <img 
-                        src={favicon} 
-                        alt={siteName}
-                        className="w-5 h-5 rounded"
-                        onError={(e) => {
-                          e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${new URL(sourceURL).hostname}&sz=32`;
-                        }}
-                      />
-                      <a 
-                        href={sourceURL} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-black hover:text-gray-700 truncate max-w-[250px]"
-                        title={sourceURL}
-                      >
-                        {siteName}
-                      </a>
+                    <div key={idx} className="flex flex-col gap-3">
+                      {/* Site info with favicon */}
+                      <div className="flex items-center gap-4 text-sm">
+                        <img 
+                          src={favicon} 
+                          alt={siteName}
+                          className="w-16 h-16 rounded"
+                          onError={(e) => {
+                            e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${new URL(sourceURL).hostname}&sz=128`;
+                          }}
+                        />
+                        <a 
+                          href={sourceURL} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-black hover:text-gray-700 truncate max-w-[250px] font-medium"
+                          title={sourceURL}
+                        >
+                          {siteName}
+                        </a>
+                      </div>
+                      
+                      {/* Pinned screenshot */}
+                      {screenshot && (
+                        <div 
+                          className="w-full rounded-lg overflow-hidden border border-gray-200 transition-all duration-300"
+                          style={{ 
+                            opacity: sidebarScrolled ? 0 : 1,
+                            transform: sidebarScrolled ? 'translateY(-20px)' : 'translateY(0)',
+                            pointerEvents: sidebarScrolled ? 'none' : 'auto',
+                            maxHeight: sidebarScrolled ? '0' : '200px'
+                          }}
+                        >
+                          <img 
+                            src={screenshot}
+                            alt={`${siteName} preview`}
+                            className="w-full h-auto object-cover"
+                            style={{ maxHeight: '200px' }}
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -3308,7 +3280,13 @@ Focus on the key sections and content, making it clean and modern.`;
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1 scrollbar-hide" ref={chatMessagesRef}>
+          <div 
+            className="flex-1 overflow-y-auto p-6 flex flex-col gap-4 scrollbar-hide" 
+            ref={chatMessagesRef}
+            onScroll={(e) => {
+              const scrollTop = e.currentTarget.scrollTop;
+              setSidebarScrolled(scrollTop > 50);
+            }}>
             {chatMessages.map((msg, idx) => {
               // Check if this message is from a successful generation
               const isGenerationComplete = msg.content.includes('Successfully recreated') || 
@@ -3320,9 +3298,9 @@ Focus on the key sections and content, making it clean and modern.`;
               
               return (
                 <div key={idx} className="block">
-                  <div className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} mb-1`}>
+                  <div className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className="block">
-                      <div className={`block rounded-[10px] px-12 py-6 ${
+                      <div className={`block rounded-[10px] px-14 py-8 ${
                         msg.type === 'user' ? 'bg-[#36322F] text-white ml-auto max-w-[80%]' :
                         msg.type === 'ai' ? 'bg-gray-100 text-gray-900 mr-auto max-w-[80%]' :
                         msg.type === 'system' ? 'bg-[#36322F] text-white text-sm' :
@@ -3364,7 +3342,7 @@ Focus on the key sections and content, making it clean and modern.`;
                   
                       {/* Show applied files if this is an apply success message */}
                       {msg.metadata?.appliedFiles && msg.metadata.appliedFiles.length > 0 && (
-                    <div className="mt-4 inline-block bg-gray-100 rounded-[10px] p-4">
+                    <div className="mt-3 inline-block bg-gray-100 rounded-[10px] p-5">
                       <div className="text-xs font-medium mb-3 text-gray-700">
                         {msg.content.includes('Applied') ? 'Files Updated:' : 'Generated Files:'}
                       </div>
@@ -3518,76 +3496,80 @@ Focus on the key sections and content, making it clean and modern.`;
 
         {/* Right Panel - Preview or Generation (2/3 of remaining width) */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-3 py-[9.5px] bg-white border-b border-gray-200 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <div className="flex gap-1">
+          <div className="px-3 pt-4 pb-4 bg-white border-b border-gray-200 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              {/* Toggle-style Code/View switcher */}
+              <div className="inline-flex bg-gray-100 border border-gray-200 rounded-md p-0.5">
                 <button
                   onClick={() => setActiveTab('generation')}
-                  className={`p-8 rounded-lg transition-colors ${
+                  className={`px-3 py-1 rounded transition-all text-xs font-medium ${
                     activeTab === 'generation' 
-                      ? 'bg-white border border-gray-200 text-gray-900 shadow-sm' 
-                      : 'bg-gray-50 border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'bg-transparent text-gray-600 hover:text-gray-900'
                   }`}
-                  title="Code"
                 >
-                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                  </svg>
+                  <div className="flex items-center gap-1.5">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    <span>Code</span>
+                  </div>
                 </button>
                 <button
                   onClick={() => setActiveTab('preview')}
-                  className={`p-8 rounded-lg transition-colors ${
+                  className={`px-3 py-1 rounded transition-all text-xs font-medium ${
                     activeTab === 'preview' 
-                      ? 'bg-white border border-gray-200 text-gray-900 shadow-sm' 
-                      : 'bg-gray-50 border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'bg-transparent text-gray-600 hover:text-gray-900'
                   }`}
-                  title="Preview"
                 >
-                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
+                  <div className="flex items-center gap-1.5">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span>View</span>
+                  </div>
                 </button>
               </div>
             </div>
             <div className="flex gap-2 items-center">
-              {/* Live Code Generation Status - Moved to far right */}
-              {activeTab === 'generation' && (generationProgress.isGenerating || generationProgress.files.length > 0) && (
-                <div className="flex items-center gap-3">
-                  {!generationProgress.isEdit && (
-                    <div className="text-gray-600 text-sm">
-                      {generationProgress.files.length} files generated
-                    </div>
-                  )}
-                  <div className={`inline-flex items-center gap-1.5 ${generationProgress.isGenerating ? 'bg-gray-50 border border-gray-200 text-gray-700' : 'bg-gray-100 text-gray-600'} px-3 py-1.5 rounded-lg text-sm font-medium`}>
-                    {generationProgress.isGenerating ? (
-                      <>
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                        {generationProgress.isEdit ? 'Editing code' : 'Live code generation'}
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-                        Complete
-                      </>
-                    )}
-                  </div>
+              {/* Files generated count */}
+              {activeTab === 'generation' && !generationProgress.isEdit && generationProgress.files.length > 0 && (
+                <div className="text-gray-500 text-xs font-medium">
+                  {generationProgress.files.length} files generated
                 </div>
               )}
-              {sandboxData && !generationProgress.isGenerating && (
-                <>
-                  <a 
-                    href={sandboxData.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    title="Open in new tab"
-                    className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 inline-block"
-                  >
-                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                </>
+              
+              {/* Live Code Generation Status */}
+              {activeTab === 'generation' && generationProgress.isGenerating && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 border border-gray-200 rounded-md text-xs font-medium text-gray-700">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  {generationProgress.isEdit ? 'Editing code' : 'Live generation'}
+                </div>
+              )}
+              
+              {/* Sandbox Status Indicator */}
+              {sandboxData && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 border border-gray-200 rounded-md text-xs font-medium text-gray-700">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                  Sandbox active
+                </div>
+              )}
+              
+              {/* Open in new tab button */}
+              {sandboxData && (
+                <a 
+                  href={sandboxData.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  title="Open in new tab"
+                  className="p-1.5 rounded-md transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                >
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
               )}
             </div>
           </div>

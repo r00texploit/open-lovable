@@ -55,12 +55,10 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
 
   return (
     <div className="w-full">
-      <div className="bg-white rounded-20 border border-gray-200 shadow-sm">
+      <div >
         <div className="p-4 border-b border-gray-100">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">Generate New Website</h3>
-          
           {/* URL Input */}
-          <div className="flex gap-3 items-center mb-3">
+          <div className="flex gap-3 items-center">
             <Globe />
             <input
               className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"

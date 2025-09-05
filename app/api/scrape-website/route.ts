@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     
     // Scrape the website using the latest SDK patterns
     // Include screenshot if requested in formats
-    const scrapeResult = await app.scrapeUrl(url, {
+    const scrapeResult = await app.scrape(url, {
       formats: formats,
       onlyMainContent: options.onlyMainContent !== false, // Default to true for cleaner content
       waitFor: options.waitFor || 2000, // Wait for dynamic content
