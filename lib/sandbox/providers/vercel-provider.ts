@@ -34,6 +34,9 @@ export class VercelProvider extends SandboxProvider {
       // Add authentication based on environment variables
       if (process.env.VERCEL_TOKEN && process.env.VERCEL_TEAM_ID && process.env.VERCEL_PROJECT_ID) {
         console.log('[VercelProvider] Using personal access token authentication');
+        console.log('[VercelProvider] Team ID:', process.env.VERCEL_TEAM_ID);
+        console.log('[VercelProvider] Project ID:', process.env.VERCEL_PROJECT_ID);
+        console.log('[VercelProvider] Token present:', !!process.env.VERCEL_TOKEN);
         sandboxConfig.teamId = process.env.VERCEL_TEAM_ID;
         sandboxConfig.projectId = process.env.VERCEL_PROJECT_ID;
         sandboxConfig.token = process.env.VERCEL_TOKEN;
@@ -41,6 +44,7 @@ export class VercelProvider extends SandboxProvider {
         console.log('[VercelProvider] Using OIDC token authentication');
       } else {
         console.log('[VercelProvider] No authentication found - relying on default Vercel authentication');
+        console.log('[VercelProvider] Available env vars:', Object.keys(process.env).filter(k => k.startsWith('VERCEL')));
       }
 
       this.sandbox = await Sandbox.create(sandboxConfig);
@@ -371,16 +375,37 @@ body {
     
     // Install dependencies
     console.log('[VercelProvider] Installing dependencies...');
-    const installResult = await this.sandbox.runCommand({
-      cmd: 'npm',
-      args: ['install'],
-      cwd: '/app'
-    });
-    
-    if (installResult.exitCode === 0) {
-      console.log('[VercelProvider] Dependencies installed successfully');
-    } else {
-      console.warn('[VercelProvider] npm install had issues:', installResult.stderr);
+    try {
+      const installResult = await this.sandbox.runCommand({
+        cmd: 'npm',
+        args: ['install'],
+        cwd: '/app'
+      });
+      
+      if (installResult.exitCode === 0) {
+        console.log('[VercelProvider] Dependencies installed successfully');
+      } else {
+        console.warn('[VercelProvider] npm install had issues:', installResult.stderr);
+      }
+    } catch (error: any) {
+      console.error('[VercelProvider] npm install error:', error);
+      // Try alternative approach - run as shell command
+      console.log('[VercelProvider] Trying alternative npm install approach...');
+      try {
+        const altResult = await this.sandbox.runCommand({
+          cmd: 'sh',
+          args: ['-c', 'cd /app && npm install'],
+          cwd: '/'
+        });
+        if (altResult.exitCode === 0) {
+          console.log('[VercelProvider] Dependencies installed successfully (alternative method)');
+        } else {
+          console.warn('[VercelProvider] Alternative npm install also had issues:', altResult.stderr);
+        }
+      } catch (altError) {
+        console.error('[VercelProvider] Alternative npm install also failed:', altError);
+        console.warn('[VercelProvider] Continuing without npm install - packages may need to be installed manually');
+      }
     }
     
     // Start Vite dev server

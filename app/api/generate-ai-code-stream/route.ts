@@ -18,6 +18,12 @@ export const dynamic = 'force-dynamic';
 const isUsingAIGateway = !!process.env.AI_GATEWAY_API_KEY;
 const aiGatewayBaseURL = 'https://ai-gateway.vercel.sh/v1';
 
+console.log('[generate-ai-code-stream] AI Gateway config:', {
+  isUsingAIGateway,
+  hasGroqKey: !!process.env.GROQ_API_KEY,
+  hasAIGatewayKey: !!process.env.AI_GATEWAY_API_KEY
+});
+
 const groq = createGroq({
   apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.GROQ_API_KEY,
   baseURL: isUsingAIGateway ? aiGatewayBaseURL : undefined,
@@ -152,10 +158,18 @@ export async function POST(request: NextRequest) {
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
     
-    // Function to send progress updates
+    // Function to send progress updates with flushing
     const sendProgress = async (data: any) => {
       const message = `data: ${JSON.stringify(data)}\n\n`;
-      await writer.write(encoder.encode(message));
+      try {
+        await writer.write(encoder.encode(message));
+        // Force flush by writing a keep-alive comment
+        if (data.type === 'stream' || data.type === 'conversation') {
+          await writer.write(encoder.encode(': keepalive\n\n'));
+        }
+      } catch (error) {
+        console.error('[generate-ai-code-stream] Error writing to stream:', error);
+      }
     };
     
     // Start processing in background
@@ -1169,15 +1183,22 @@ CRITICAL: When files are provided in the context:
         // Determine which provider to use based on model
         const isAnthropic = model.startsWith('anthropic/');
         const isGoogle = model.startsWith('google/');
-        const isOpenAI = model.startsWith('openai/gpt-5');
-        const modelProvider = isAnthropic ? anthropic : (isOpenAI ? openai : (isGoogle ? googleGenerativeAI : groq));
+        const isOpenAI = model.startsWith('openai/');
+        const isKimiGroq = model === 'moonshotai/kimi-k2-instruct-0905';
+        const modelProvider = isAnthropic ? anthropic : 
+                              (isOpenAI ? openai : 
+                              (isGoogle ? googleGenerativeAI : 
+                              (isKimiGroq ? groq : groq)));
         
         // Fix model name transformation for different providers
         let actualModel: string;
         if (isAnthropic) {
           actualModel = model.replace('anthropic/', '');
-        } else if (model === 'openai/gpt-5') {
-          actualModel = 'gpt-5';
+        } else if (isOpenAI) {
+          actualModel = model.replace('openai/', '');
+        } else if (isKimiGroq) {
+          // Kimi on Groq - use full model string
+          actualModel = 'moonshotai/kimi-k2-instruct-0905';
         } else if (isGoogle) {
           // Google uses specific model names - convert our naming to theirs  
           actualModel = model.replace('google/', '');
@@ -1186,6 +1207,8 @@ CRITICAL: When files are provided in the context:
         }
 
         console.log(`[generate-ai-code-stream] Using provider: ${isAnthropic ? 'Anthropic' : isGoogle ? 'Google' : isOpenAI ? 'OpenAI' : 'Groq'}, model: ${actualModel}`);
+        console.log(`[generate-ai-code-stream] AI Gateway enabled: ${isUsingAIGateway}`);
+        console.log(`[generate-ai-code-stream] Model string: ${model}`);
 
         // Make streaming API call with appropriate provider
         const streamOptions: any = {
@@ -1348,6 +1371,11 @@ It's better to have 3 complete files than 10 incomplete files.`
             text: text,
             raw: true 
           });
+          
+          // Debug: Log every 100 characters streamed
+          if (generatedCode.length % 100 < text.length) {
+            console.log(`[generate-ai-code-stream] Streamed ${generatedCode.length} chars`);
+          }
           
           // Check for package tags in buffered text (ONLY for edits, not initial generation)
           let lastIndex = 0;
@@ -1638,12 +1666,28 @@ Provide the complete file content without any truncation. Include all necessary 
                   completionClient = openai;
                 } else if (model.includes('claude')) {
                   completionClient = anthropic;
+                } else if (model === 'moonshotai/kimi-k2-instruct-0905') {
+                  completionClient = groq;
                 } else {
                   completionClient = groq;
                 }
                 
+                // Determine the correct model name for the completion
+                let completionModelName: string;
+                if (model === 'moonshotai/kimi-k2-instruct-0905') {
+                  completionModelName = 'moonshotai/kimi-k2-instruct-0905';
+                } else if (model.includes('openai')) {
+                  completionModelName = model.replace('openai/', '');
+                } else if (model.includes('anthropic')) {
+                  completionModelName = model.replace('anthropic/', '');
+                } else if (model.includes('google')) {
+                  completionModelName = model.replace('google/', '');
+                } else {
+                  completionModelName = model;
+                }
+                
                 const completionResult = await streamText({
-                  model: completionClient(modelMapping[model] || model),
+                  model: completionClient(completionModelName),
                   messages: [
                     { 
                       role: 'system', 
