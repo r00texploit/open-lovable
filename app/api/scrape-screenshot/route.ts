@@ -38,24 +38,35 @@ export async function POST(req: NextRequest) {
       ]
     });
 
-    console.log('[scrape-screenshot] Scrape result success:', scrapeResult.success);
-    console.log('[scrape-screenshot] Scrape result data:', scrapeResult.data ? Object.keys(scrapeResult.data) : 'No data');
+    console.log('[scrape-screenshot] Full scrape result:', JSON.stringify(scrapeResult, null, 2));
+    console.log('[scrape-screenshot] Scrape result type:', typeof scrapeResult);
+    console.log('[scrape-screenshot] Scrape result keys:', Object.keys(scrapeResult));
     
-    if (!scrapeResult.success) {
+    // The Firecrawl v4 API might return data directly without a success flag
+    // Check if we have data with screenshot
+    if (scrapeResult && scrapeResult.screenshot) {
+      // Direct screenshot response
+      return NextResponse.json({
+        success: true,
+        screenshot: scrapeResult.screenshot,
+        metadata: scrapeResult.metadata || {}
+      });
+    } else if (scrapeResult?.data?.screenshot) {
+      // Nested data structure
+      return NextResponse.json({
+        success: true,
+        screenshot: scrapeResult.data.screenshot,
+        metadata: scrapeResult.data.metadata || {}
+      });
+    } else if (scrapeResult?.success === false) {
+      // Explicit failure
       console.error('[scrape-screenshot] Firecrawl API error:', scrapeResult.error);
-      console.error('[scrape-screenshot] Full scrapeResult:', JSON.stringify(scrapeResult, null, 2));
       throw new Error(scrapeResult.error || 'Failed to capture screenshot');
+    } else {
+      // No screenshot in response
+      console.error('[scrape-screenshot] No screenshot in response. Full response:', JSON.stringify(scrapeResult, null, 2));
+      throw new Error('Screenshot not available in response - check console for full response structure');
     }
-    
-    if (!scrapeResult.data?.screenshot) {
-      throw new Error('Screenshot not available in response');
-    }
-
-    return NextResponse.json({
-      success: true,
-      screenshot: scrapeResult.data.screenshot,
-      metadata: scrapeResult.data.metadata || {}
-    });
 
   } catch (error: any) {
     console.error('[scrape-screenshot] Screenshot capture error:', error);

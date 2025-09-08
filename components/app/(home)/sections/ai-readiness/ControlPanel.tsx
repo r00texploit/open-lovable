@@ -6,10 +6,10 @@ import {
   FileText, 
   Code, 
   Shield, 
-  Search, 
+  // Search, // Not used in current implementation 
   Zap, 
   Database,
-  Lock,
+  // Lock, // Not used in current implementation
   CheckCircle2,
   XCircle,
   Loader2,
@@ -54,7 +54,7 @@ export default function ControlPanel({
   analysisData,
   onReset,
 }: ControlPanelProps) {
-  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
+  // const [showAIAnalysis, setShowAIAnalysis] = useState(false); // Reserved for AI analysis feature
   const [aiInsights, setAiInsights] = useState<CheckItem[]>([]);
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   const [combinedChecks, setCombinedChecks] = useState<CheckItem[]>([]);
@@ -298,6 +298,7 @@ export default function ControlPanel({
 
       return () => clearInterval(checkInterval);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAnalyzing, showResults, analysisData]);
 
   useEffect(() => {
@@ -341,6 +342,8 @@ export default function ControlPanel({
     }
   };
 
+  // Utility function available but not used in current render
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-accent-black";
     if (score >= 60) return "text-accent-black";

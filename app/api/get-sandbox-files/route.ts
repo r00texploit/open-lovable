@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { parseJavaScriptFile, buildComponentTree } from '@/lib/file-parser';
 import { FileManifest, FileInfo, RouteInfo } from '@/types/file-manifest';
-import type { SandboxState } from '@/types/sandbox';
+// SandboxState type used implicitly through global.activeSandbox
 
 declare global {
   var activeSandbox: any;
@@ -76,7 +76,8 @@ export async function GET() {
             }
           }
         }
-      } catch (error) {
+      } catch (parseError) {
+        console.debug('Error parsing component info:', parseError);
         // Skip files that can't be read
         continue;
       }
@@ -180,7 +181,8 @@ function extractRoutes(files: Record<string, FileInfo>): RouteInfo[] {
       const routeMatches = fileInfo.content.matchAll(/path=["']([^"']+)["'].*(?:element|component)={([^}]+)}/g);
       
       for (const match of routeMatches) {
-        const [, routePath, componentRef] = match;
+        const [, routePath] = match;
+        // componentRef available in match but not used currently
         routes.push({
           path: routePath,
           component: path,

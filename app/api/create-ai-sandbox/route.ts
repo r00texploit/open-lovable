@@ -118,7 +118,7 @@ async function createSandboxInternal() {
     
     // First, change to the working directory
     await sandbox.runCommand('pwd');
-    const workDir = appConfig.vercelSandbox.workingDirectory;
+    // workDir is defined in appConfig - not needed here
     
     // Get the sandbox URL using the correct Vercel Sandbox API
     const sandboxUrl = sandbox.domain(appConfig.vercelSandbox.devPort);

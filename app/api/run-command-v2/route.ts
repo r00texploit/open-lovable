@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SandboxProvider } from '@/lib/sandbox/types';
+import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 
 // Get active sandbox provider from global state
 declare global {
@@ -17,7 +18,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    if (!global.activeSandboxProvider) {
+    // Get provider from sandbox manager or global state
+    const provider = sandboxManager.getActiveProvider() || global.activeSandboxProvider;
+    
+    if (!provider) {
       return NextResponse.json({ 
         success: false, 
         error: 'No active sandbox' 
@@ -26,7 +30,7 @@ export async function POST(request: NextRequest) {
     
     console.log(`[run-command-v2] Executing: ${command}`);
     
-    const result = await global.activeSandboxProvider.runCommand(command);
+    const result = await provider.runCommand(command);
     
     return NextResponse.json({
       success: result.success,

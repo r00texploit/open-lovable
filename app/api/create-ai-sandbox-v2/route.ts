@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { SandboxFactory } from '@/lib/sandbox/factory';
-import { SandboxProvider } from '@/lib/sandbox/types';
+// SandboxProvider type is used through SandboxFactory
 import type { SandboxState } from '@/types/sandbox';
+import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 
 // Store active sandbox globally
 declare global {
@@ -15,13 +16,16 @@ export async function POST() {
   try {
     console.log('[create-ai-sandbox-v2] Creating sandbox...');
     
-    // Clean up existing sandbox if any
+    // Clean up all existing sandboxes
+    console.log('[create-ai-sandbox-v2] Cleaning up existing sandboxes...');
+    await sandboxManager.terminateAll();
+    
+    // Also clean up legacy global state
     if (global.activeSandboxProvider) {
-      console.log('[create-ai-sandbox-v2] Terminating existing sandbox...');
       try {
         await global.activeSandboxProvider.terminate();
       } catch (e) {
-        console.error('Failed to terminate existing sandbox:', e);
+        console.error('Failed to terminate legacy global sandbox:', e);
       }
       global.activeSandboxProvider = null;
     }
@@ -40,7 +44,10 @@ export async function POST() {
     console.log('[create-ai-sandbox-v2] Setting up Vite React app...');
     await provider.setupViteApp();
     
-    // Store provider globally
+    // Register with sandbox manager
+    sandboxManager.registerSandbox(sandboxInfo.sandboxId, provider);
+    
+    // Also store in legacy global state for backward compatibility
     global.activeSandboxProvider = provider;
     global.sandboxData = {
       sandboxId: sandboxInfo.sandboxId,
@@ -75,6 +82,7 @@ export async function POST() {
     console.error('[create-ai-sandbox-v2] Error:', error);
     
     // Clean up on error
+    await sandboxManager.terminateAll();
     if (global.activeSandboxProvider) {
       try {
         await global.activeSandboxProvider.terminate();

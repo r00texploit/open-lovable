@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Sandbox } from '@e2b/code-interpreter';
+// Sandbox import not needed - using global sandbox from sandbox-manager
 import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
+import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 
 declare global {
   var conversationState: ConversationState | null;
@@ -294,45 +295,48 @@ export async function POST(request: NextRequest) {
       global.existingFiles = new Set<string>();
     }
     
-    // First, always check the global state for active provider
-    let provider = global.activeSandboxProvider;
+    // Try to get provider from sandbox manager first
+    let provider = sandboxId ? sandboxManager.getProvider(sandboxId) : sandboxManager.getActiveProvider();
+    
+    // Fall back to global state if not found in manager
+    if (!provider) {
+      provider = global.activeSandboxProvider;
+    }
 
-    // If we don't have a provider in this instance but we have a sandboxId,
-    // try to use the existing sandbox data or create a new one
+    // If we have a sandboxId but no provider, try to get or create one
     if (!provider && sandboxId) {
-      console.log(`[apply-ai-code-stream] Provider not in this instance for sandbox ${sandboxId}, checking existing data...`);
-
-      // If we have sandbox data but no provider, we'll create a new provider
-      // E2B doesn't support reconnection like Vercel does
-      if (global.sandboxData && global.sandboxData.sandboxId === sandboxId) {
-        console.log(`[apply-ai-code-stream] Creating new provider for existing sandbox ${sandboxId}`);
-
-        // Create a new provider instance (this will create a new sandbox since E2B doesn't support reconnection)
-        try {
-          const { SandboxFactory } = await import('@/lib/sandbox/factory');
-          provider = SandboxFactory.create();
+      console.log(`[apply-ai-code-stream] No provider found for sandbox ${sandboxId}, attempting to get or create...`);
+      
+      try {
+        provider = await sandboxManager.getOrCreateProvider(sandboxId);
+        
+        // If we got a new provider (not reconnected), we need to create a new sandbox
+        if (!provider.getSandboxInfo()) {
+          console.log(`[apply-ai-code-stream] Creating new sandbox since reconnection failed for ${sandboxId}`);
           await provider.createSandbox();
-
-          // Update the global state
-          global.activeSandboxProvider = provider;
-          console.log(`[apply-ai-code-stream] Created new provider for sandbox ${sandboxId}`);
-        } catch (providerError) {
-          console.error(`[apply-ai-code-stream] Failed to create provider for sandbox ${sandboxId}:`, providerError);
-          return NextResponse.json({
-            success: false,
-            error: `Failed to create sandbox provider for ${sandboxId}. The sandbox may have expired.`,
-            results: {
-              filesCreated: [],
-              packagesInstalled: [],
-              commandsExecuted: [],
-              errors: [`Sandbox provider creation failed: ${(providerError as Error).message}`]
-            },
-            explanation: parsed.explanation,
-            structure: parsed.structure,
-            parsedFiles: parsed.files,
-            message: `Parsed ${parsed.files.length} files but couldn't apply them - sandbox reconnection failed.`
-          }, { status: 500 });
+          await provider.setupViteApp();
+          sandboxManager.registerSandbox(sandboxId, provider);
         }
+        
+        // Update legacy global state
+        global.activeSandboxProvider = provider;
+        console.log(`[apply-ai-code-stream] Successfully got provider for sandbox ${sandboxId}`);
+      } catch (providerError) {
+        console.error(`[apply-ai-code-stream] Failed to get or create provider for sandbox ${sandboxId}:`, providerError);
+        return NextResponse.json({
+          success: false,
+          error: `Failed to create sandbox provider for ${sandboxId}. The sandbox may have expired.`,
+          results: {
+            filesCreated: [],
+            packagesInstalled: [],
+            commandsExecuted: [],
+            errors: [`Sandbox provider creation failed: ${(providerError as Error).message}`]
+          },
+          explanation: parsed.explanation,
+          structure: parsed.structure,
+          parsedFiles: parsed.files,
+          message: `Parsed ${parsed.files.length} files but couldn't apply them - sandbox reconnection failed.`
+        }, { status: 500 });
       }
     }
     
@@ -342,19 +346,18 @@ export async function POST(request: NextRequest) {
       try {
         const { SandboxFactory } = await import('@/lib/sandbox/factory');
         provider = SandboxFactory.create();
-        await provider.createSandbox();
+        const sandboxInfo = await provider.createSandbox();
+        await provider.setupViteApp();
 
-        // Store the provider globally
+        // Register with sandbox manager
+        sandboxManager.registerSandbox(sandboxInfo.sandboxId, provider);
+        
+        // Store in legacy global state
         global.activeSandboxProvider = provider;
-
-        // Update sandbox data
-        const sandboxInfo = provider.getSandboxInfo();
-        if (sandboxInfo) {
-          global.sandboxData = {
-            sandboxId: sandboxInfo.sandboxId,
-            url: sandboxInfo.url
-          };
-        }
+        global.sandboxData = {
+          sandboxId: sandboxInfo.sandboxId,
+          url: sandboxInfo.url
+        };
 
         console.log(`[apply-ai-code-stream] Created new sandbox successfully`);
       } catch (createError) {
@@ -476,7 +479,8 @@ export async function POST(request: NextRequest) {
                       if (data.type === 'success' && data.installedPackages) {
                         results.packagesInstalled = data.installedPackages;
                       }
-                    } catch (e) {
+                    } catch (parseError) {
+          console.debug('Error parsing terminal output:', parseError);
                       // Ignore parse errors
                     }
                   }

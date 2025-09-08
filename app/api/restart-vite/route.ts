@@ -52,7 +52,7 @@ export async function POST() {
       
       // Wait a moment for processes to terminate
       await new Promise(resolve => setTimeout(resolve, 2000));
-    } catch (error) {
+    } catch {
       console.log('[restart-vite] No existing Vite processes found');
     }
     
@@ -62,12 +62,13 @@ export async function POST() {
         cmd: 'bash',
         args: ['-c', 'echo \'{"errors": [], "lastChecked": '+ Date.now() +'}\' > /tmp/vite-errors.json']
       });
-    } catch (error) {
+    } catch {
       // Ignore if this fails
     }
     
     // Start Vite dev server in detached mode
-    const viteProcess = await global.activeSandbox.runCommand({
+    // Start Vite dev server in detached mode
+    await global.activeSandbox.runCommand({
       cmd: 'npm',
       args: ['run', 'dev'],
       detached: true

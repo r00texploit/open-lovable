@@ -108,8 +108,9 @@ export async function POST(request: NextRequest) {
         } else {
           missing.push(packageName);
         }
-      } catch (error) {
+      } catch (checkError) {
         // If test command fails, assume package is missing
+        console.debug(`Package check failed for ${packageName}:`, checkError);
         missing.push(packageName);
       }
     }

@@ -8,7 +8,8 @@ declare global {
 
 export async function POST(request: NextRequest) {
   try {
-    const { packages, sandboxId } = await request.json();
+    const { packages } = await request.json();
+    // sandboxId not used - using global sandbox
     
     if (!packages || !Array.isArray(packages) || packages.length === 0) {
       return NextResponse.json({ 
@@ -75,9 +76,9 @@ export async function POST(request: NextRequest) {
           // Try to kill any running dev server processes
           await providerInstance.runCommand('pkill -f vite');
           await new Promise(resolve => setTimeout(resolve, 1000)); // Wait a bit
-        } catch (error) {
+        } catch (killError) {
           // It's OK if no process is found
-          console.log('[install-packages] No existing dev server found');
+          console.debug('[install-packages] No existing dev server found:', killError);
         }
         
         // Check which packages are already installed

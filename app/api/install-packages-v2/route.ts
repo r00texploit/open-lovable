@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SandboxProvider } from '@/lib/sandbox/types';
+import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 
 declare global {
   var activeSandboxProvider: SandboxProvider | null;
@@ -16,7 +17,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    if (!global.activeSandboxProvider) {
+    // Get provider from sandbox manager or global state
+    const provider = sandboxManager.getActiveProvider() || global.activeSandboxProvider;
+    
+    if (!provider) {
       return NextResponse.json({ 
         success: false, 
         error: 'No active sandbox' 
@@ -25,7 +29,7 @@ export async function POST(request: NextRequest) {
     
     console.log(`[install-packages-v2] Installing: ${packages.join(', ')}`);
     
-    const result = await global.activeSandboxProvider.installPackages(packages);
+    const result = await provider.installPackages(packages);
     
     return NextResponse.json({
       success: result.success,

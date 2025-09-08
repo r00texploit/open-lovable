@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 
 declare global {
   var activeSandboxProvider: any;
@@ -8,19 +9,22 @@ declare global {
 
 export async function GET() {
   try {
-    // Check if sandbox exists
-    const sandboxExists = !!global.activeSandboxProvider;
+    // Check sandbox manager first, then fall back to global state
+    const provider = sandboxManager.getActiveProvider() || global.activeSandboxProvider;
+    const sandboxExists = !!provider;
 
     let sandboxHealthy = false;
     let sandboxInfo = null;
 
-    if (sandboxExists && global.activeSandboxProvider) {
+    if (sandboxExists && provider) {
       try {
-        // Check if sandbox is healthy by calling a method that should work
-        sandboxHealthy = true;
+        // Check if sandbox is healthy by getting its info
+        const providerInfo = provider.getSandboxInfo();
+        sandboxHealthy = !!providerInfo;
+        
         sandboxInfo = {
-          sandboxId: global.sandboxData?.sandboxId,
-          url: global.sandboxData?.url,
+          sandboxId: providerInfo?.sandboxId || global.sandboxData?.sandboxId,
+          url: providerInfo?.url || global.sandboxData?.url,
           filesTracked: global.existingFiles ? Array.from(global.existingFiles) : [],
           lastHealthCheck: new Date().toISOString()
         };

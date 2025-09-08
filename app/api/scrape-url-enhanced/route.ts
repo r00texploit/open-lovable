@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to scrape content');
     }
     
-    const { markdown, html, metadata, screenshot, actions } = data.data;
+    const { markdown, metadata, screenshot, actions } = data.data;
+    // html available but not used in current implementation
     
     // Get screenshot from either direct field or actions result
     const screenshotUrl = screenshot || actions?.screenshots?.[0] || null;

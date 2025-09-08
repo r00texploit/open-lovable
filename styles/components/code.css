@@ -38,8 +38,7 @@ code:not(.language-html) .function,
 }
 
 .linenumber {
-  width: 48px;
   padding: 0;
+  color:white!important;
   font-style: normal;
-  @apply !text-black-alpha-12 !pl-20 !pr-0 !text-left;
 }

@@ -29,7 +29,7 @@ export async function GET() {
         const data = JSON.parse(errorFileContent);
         errors.push(...(data.errors || []));
       }
-    } catch (error) {
+    } catch {
       // No error file exists, that's OK
     }
     
@@ -85,12 +85,12 @@ export async function GET() {
                 }
               }
             }
-          } catch (error) {
+          } catch {
             // Skip if grep fails
           }
         }
       }
-    } catch (error) {
+    } catch {
       // No log files found, that's OK
     }
     

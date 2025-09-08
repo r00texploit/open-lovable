@@ -4,7 +4,7 @@ declare global {
   var activeSandbox: any;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     if (!global.activeSandbox) {
       return NextResponse.json({ 

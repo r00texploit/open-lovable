@@ -27,7 +27,7 @@ export default function MetricBars({ metrics }: MetricBarsProps) {
     return 'bg-heat-20';
   };
   
-  const getBulletColor = (score: number) => {
+  const getBulletColor = (_score: number) => {
     // Always use heat-100 for all bullets for consistency
     return 'bg-heat-100';
   };

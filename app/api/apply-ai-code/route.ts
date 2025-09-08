@@ -488,6 +488,7 @@ body {
           console.log('Auto-generated: src/index.css');
           results.filesCreated.push('src/index.css (with Tailwind)');
         } catch (error) {
+          console.error('Failed to create index.css:', error);
           results.errors.push('Failed to create index.css with Tailwind');
         }
       }

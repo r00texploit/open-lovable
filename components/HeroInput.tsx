@@ -17,7 +17,7 @@ export default function HeroInput({
   placeholder = "Describe what you want to build...",
   className = ""
 }: HeroInputProps) {
-  const [isFocused, setIsFocused] = useState(false);
+  // const [isFocused, setIsFocused] = useState(false); // Reserved for future focus effects
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Reset textarea height when value changes (especially when cleared)

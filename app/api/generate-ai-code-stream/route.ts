@@ -245,7 +245,8 @@ export async function POST(request: NextRequest) {
                     
                     // Create surgical edit context with exact location
                     const normalizedPath = target.filePath.replace('/home/user/app/', '');
-                    const fileContent = fileContents[normalizedPath]?.content || '';
+                    // fileContent available but not used in current implementation
+                    // const fileContent = fileContents[normalizedPath]?.content || '';
                     
                     // Build enhanced context with search results
                     enhancedSystemPrompt = `

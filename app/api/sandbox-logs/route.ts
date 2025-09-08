@@ -4,7 +4,7 @@ declare global {
   var activeSandbox: any;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     if (!global.activeSandbox) {
       return NextResponse.json({ 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     });
     
     let viteRunning = false;
-    let logContent: string[] = [];
+    const logContent: string[] = [];
     
     if (psResult.exitCode === 0) {
       const psOutput = await psResult.stdout();
@@ -63,12 +63,12 @@ export async function GET(request: NextRequest) {
               logContent.push(`--- ${logFile} ---`);
               logContent.push(logFileContent);
             }
-          } catch (error) {
+          } catch {
             // Skip if can't read log file
           }
         }
       }
-    } catch (error) {
+    } catch {
       // No log files found, that's OK
     }
     

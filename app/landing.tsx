@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+// useState not currently used but kept for future interactivity
 import Link from "next/link";
 
 // Import shared components
 import { HeaderProvider } from "@/components/shared/header/HeaderContext";
-import HeaderBrandKit from "@/components/shared/header/BrandKit/BrandKit";
+// import HeaderBrandKit from "@/components/shared/header/BrandKit/BrandKit"; // Not used in current implementation
 import HeaderWrapper from "@/components/shared/header/Wrapper/Wrapper";
 import HeaderDropdownWrapper from "@/components/shared/header/Dropdown/Wrapper/Wrapper";
 import ButtonUI from "@/components/ui/shadcn/button";
