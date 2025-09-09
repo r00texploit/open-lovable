@@ -164,9 +164,9 @@ export async function POST(request: NextRequest) {
         // Install packages using provider method
         const installResult = await providerInstance.installPackages(packagesToInstall);
         
-        // Get install output
-        const stdout = installResult.stdout;
-        const stderr = installResult.stderr;
+        // Get install output - ensure stdout/stderr are strings
+        const stdout = String(installResult.stdout || '');
+        const stderr = String(installResult.stderr || '');
         
         if (stdout) {
           const lines = stdout.split('\n').filter(line => line.trim());

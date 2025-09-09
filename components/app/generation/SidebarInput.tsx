@@ -59,10 +59,20 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
         <div className="p-4 border-b border-gray-100">
           {/* URL Input */}
           <div className="flex gap-3 items-center">
-            <Globe />
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 20 20" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              className="opacity-40 flex-shrink-0"
+            >
+              <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M7 10L9 12L13 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
             <input
               className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
-              placeholder="example.com"
+              placeholder="Enter URL to scrape..."
               type="text"
               value={url}
               disabled={disabled}
@@ -150,7 +160,7 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
                   }
                 `}
               >
-                {disabled ? 'Generating...' : 'Generate Website'}
+                {disabled ? 'Scraping...' : 'Scrape Site'}
               </button>
             </div>
           </div>

@@ -174,11 +174,12 @@ export default function AISandboxPage() {
         // Mark that we have an initial submission since we're loading with a URL
         setHasInitialSubmission(true);
         
-        // Clear sessionStorage after reading
+        // Clear sessionStorage after reading  
         sessionStorage.removeItem('targetUrl');
         sessionStorage.removeItem('selectedStyle');
         sessionStorage.removeItem('selectedModel');
         sessionStorage.removeItem('additionalInstructions');
+        // Note: Don't clear siteMarkdown here, it will be cleared when used
         
         // Set the values in the component state
         setHomeUrlInput(storedUrl);
@@ -2638,20 +2639,37 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         
         // Screenshot is already being captured in parallel above
         
-        const scrapeResponse = await fetch('/api/scrape-url-enhanced', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
+        let scrapeData;
         
-        if (!scrapeResponse.ok) {
-          throw new Error('Failed to scrape website');
-        }
-        
-        const scrapeData = await scrapeResponse.json();
-        
-        if (!scrapeData.success) {
-          throw new Error(scrapeData.error || 'Failed to scrape website');
+        // Check if we have pre-scraped markdown content from search results
+        const storedMarkdown = sessionStorage.getItem('siteMarkdown');
+        if (storedMarkdown) {
+          // Use the pre-scraped content
+          scrapeData = {
+            success: true,
+            content: storedMarkdown,
+            title: new URL(url).hostname,
+            source: 'search-result'
+          };
+          sessionStorage.removeItem('siteMarkdown'); // Clear after use
+          addChatMessage('Using cached content from search results...', 'system');
+        } else {
+          // Perform fresh scraping
+          const scrapeResponse = await fetch('/api/scrape-url-enhanced', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+          });
+          
+          if (!scrapeResponse.ok) {
+            throw new Error('Failed to scrape website');
+          }
+          
+          scrapeData = await scrapeResponse.json();
+          
+          if (!scrapeData.success) {
+            throw new Error(scrapeData.error || 'Failed to scrape website');
+          }
         }
         
         setUrlStatus(['Website scraped successfully!', 'Generating React app...']);
@@ -3580,6 +3598,7 @@ Focus on the key sections and content, making it clean and modern.`;
               onChange={setAiChatInput}
               onSubmit={sendChatMessage}
               placeholder="Describe what you want to build..."
+              showSearchFeatures={false}
             />
           </div>
         </div>

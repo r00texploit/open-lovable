@@ -7,7 +7,6 @@ export class SandboxFactory {
     // Use environment variable if provider not specified
     const selectedProvider = provider || process.env.SANDBOX_PROVIDER || 'e2b';
     
-    console.log(`[SandboxFactory] Creating ${selectedProvider} provider`);
     
     switch (selectedProvider.toLowerCase()) {
       case 'e2b':

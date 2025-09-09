@@ -24,7 +24,6 @@ class SandboxManager {
     }
 
     // Try to reconnect to existing sandbox
-    console.log(`[SandboxManager] Attempting to reconnect to sandbox ${sandboxId}`);
     
     try {
       const provider = SandboxFactory.create();
@@ -41,14 +40,12 @@ class SandboxManager {
             lastAccessed: new Date()
           });
           this.activeSandboxId = sandboxId;
-          console.log(`[SandboxManager] Successfully reconnected to sandbox ${sandboxId}`);
           return provider;
         }
       }
       
       // For Vercel or if reconnection failed, return the new provider
       // The caller will need to handle creating a new sandbox
-      console.log(`[SandboxManager] Could not reconnect to ${sandboxId}, returning new provider`);
       return provider;
     } catch (error) {
       console.error(`[SandboxManager] Error reconnecting to sandbox ${sandboxId}:`, error);
@@ -67,7 +64,6 @@ class SandboxManager {
       lastAccessed: new Date()
     });
     this.activeSandboxId = sandboxId;
-    console.log(`[SandboxManager] Registered sandbox ${sandboxId}`);
   }
 
   /**
@@ -160,7 +156,6 @@ class SandboxManager {
     
     for (const id of toDelete) {
       await this.terminateSandbox(id);
-      console.log(`[SandboxManager] Cleaned up old sandbox ${id}`);
     }
   }
 }

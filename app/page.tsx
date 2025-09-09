@@ -28,11 +28,25 @@ import HeaderDropdownWrapper from "@/components/shared/header/Dropdown/Wrapper/W
 import GithubIcon from "@/components/shared/header/Github/_svg/GithubIcon";
 import ButtonUI from "@/components/ui/shadcn/button"
 
+interface SearchResult {
+  url: string;
+  title: string;
+  description: string;
+  screenshot: string | null;
+  markdown: string;
+}
+
 export default function HomePage() {
   const [url, setUrl] = useState<string>("");
   const [selectedStyle, setSelectedStyle] = useState<string>("1");
   const [selectedModel, setSelectedModel] = useState<string>(appConfig.ai.defaultModel);
   const [isValidUrl, setIsValidUrl] = useState<boolean>(false);
+  const [showSearchTiles, setShowSearchTiles] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
+  const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
+  const [showSelectMessage, setShowSelectMessage] = useState<boolean>(false);
   const router = useRouter();
   
   // Simple URL validation
@@ -41,6 +55,12 @@ export default function HomePage() {
     // Basic URL pattern - accepts domains with or without protocol
     const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
     return urlPattern.test(urlString.toLowerCase());
+  };
+
+  // Check if input is a URL (contains a dot)
+  const isURL = (str: string): boolean => {
+    const urlPattern = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
+    return urlPattern.test(str.trim());
   };
 
   const styles = [
@@ -59,20 +79,117 @@ export default function HomePage() {
     name: appConfig.ai.modelDisplayNames[model] || model,
   }));
 
-  const handleSubmit = () => {
-    if (!url.trim()) {
-      toast.error("Please enter a URL");
+  const handleSubmit = async (selectedResult?: SearchResult) => {
+    const inputValue = url.trim();
+    
+    if (!inputValue) {
+      toast.error("Please enter a URL or search term");
       return;
     }
     
-    // Store the configuration in sessionStorage
-    sessionStorage.setItem('targetUrl', url);
-    sessionStorage.setItem('selectedStyle', selectedStyle);
-    sessionStorage.setItem('selectedModel', selectedModel);
-    sessionStorage.setItem('autoStart', 'true'); // Set flag to auto-start generation
+    // If it's a search result being selected, fade out and redirect
+    if (selectedResult) {
+      setIsFadingOut(true);
+      
+      // Wait for fade animation
+      setTimeout(() => {
+        sessionStorage.setItem('targetUrl', selectedResult.url);
+        sessionStorage.setItem('selectedStyle', selectedStyle);
+        sessionStorage.setItem('selectedModel', selectedModel);
+        sessionStorage.setItem('autoStart', 'true');
+        if (selectedResult.markdown) {
+          sessionStorage.setItem('siteMarkdown', selectedResult.markdown);
+        }
+        router.push('/generation');
+      }, 500);
+      return;
+    }
     
-    // Redirect to the generation interface
-    router.push('/generation');
+    // If it's a URL, go straight to generation
+    if (isURL(inputValue)) {
+      sessionStorage.setItem('targetUrl', inputValue);
+      sessionStorage.setItem('selectedStyle', selectedStyle);
+      sessionStorage.setItem('selectedModel', selectedModel);
+      sessionStorage.setItem('autoStart', 'true');
+      router.push('/generation');
+    } else {
+      // It's a search term, fade out if results exist, then search
+      if (hasSearched && searchResults.length > 0) {
+        setIsFadingOut(true);
+        
+        setTimeout(async () => {
+          setSearchResults([]);
+          setIsFadingOut(false);
+          setShowSelectMessage(true);
+          
+          // Perform new search
+          await performSearch(inputValue);
+          setHasSearched(true);
+          setShowSearchTiles(true);
+          setShowSelectMessage(false);
+          
+          // Smooth scroll to carousel
+          setTimeout(() => {
+            const carouselSection = document.querySelector('.carousel-section');
+            if (carouselSection) {
+              carouselSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 300);
+        }, 500);
+      } else {
+        // First search, no fade needed
+        setShowSelectMessage(true);
+        setIsSearching(true);
+        setHasSearched(true);
+        setShowSearchTiles(true);
+        
+        // Scroll to carousel area immediately
+        setTimeout(() => {
+          const carouselSection = document.querySelector('.carousel-section');
+          if (carouselSection) {
+            carouselSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+        
+        await performSearch(inputValue);
+        setShowSelectMessage(false);
+        setIsSearching(false);
+        
+        // Smooth scroll to carousel
+        setTimeout(() => {
+          const carouselSection = document.querySelector('.carousel-section');
+          if (carouselSection) {
+            carouselSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 300);
+      }
+    }
+  };
+
+  // Perform search when user types
+  const performSearch = async (searchQuery: string) => {
+    if (!searchQuery.trim() || isURL(searchQuery)) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchQuery }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.results || []);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -155,32 +272,82 @@ export default function HomePage() {
                 >
 
                 <div className="p-16 flex gap-12 items-center w-full relative bg-white rounded-20">
-                  <Globe />
+                  {isURL(url) ? (
+                    // Scrape icon for URLs
+                    <svg 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 20 20" 
+                      fill="none" 
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="opacity-40 flex-shrink-0"
+                    >
+                      <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M7 10L9 12L13 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : (
+                    // Search icon for search terms
+                    <svg 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 20 20" 
+                      fill="none" 
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="opacity-40 flex-shrink-0"
+                    >
+                      <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M12.5 12.5L16.5 16.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  )}
                   <input
                     className="flex-1 bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent"
-                    placeholder="example.com"
+                    placeholder="Enter URL or search term..."
                     type="text"
                     value={url}
+                    disabled={isSearching}
                     onChange={(e) => {
-                      setUrl(e.target.value);
-                      setIsValidUrl(validateUrl(e.target.value));
+                      const value = e.target.value;
+                      setUrl(value);
+                      setIsValidUrl(validateUrl(value));
+                      // Reset search state when input changes
+                      if (value.trim() === "") {
+                        setShowSearchTiles(false);
+                        setHasSearched(false);
+                        setSearchResults([]);
+                      }
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") {
+                      if (e.key === "Enter" && !isSearching) {
                         e.preventDefault();
                         handleSubmit();
                       }
+                    }}
+                    onFocus={() => {
+                      if (url.trim() && !isURL(url)) {
+                        setShowSearchTiles(true);
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowSearchTiles(false), 200);
                     }}
                   />
                   <div
                     onClick={(e) => {
                       e.preventDefault();
-                      handleSubmit();
+                      if (!isSearching) {
+                        handleSubmit();
+                      }
                     }}
+                    className={isSearching ? 'pointer-events-none' : ''}
                   >
-                    <HeroInputSubmitButton dirty={url.length > 0} />
+                    <HeroInputSubmitButton 
+                      dirty={url.length > 0} 
+                      buttonText={isURL(url) ? 'Scrape Site' : 'Search'} 
+                      disabled={isSearching}
+                    />
                   </div>
                 </div>
+
 
                 {/* Options Section - Only show when valid URL */}
                 <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
@@ -255,7 +422,165 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Full-width oval carousel section */}
+        {showSearchTiles && hasSearched && (
+          <section className={`carousel-section relative w-full overflow-hidden mt-32 mb-32 transition-opacity duration-500 ${
+            isFadingOut ? 'opacity-0' : 'opacity-100'
+          }`}>
+            <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white rounded-[50%] transform scale-x-150 -translate-y-24" />
+            
+            {isSearching ? (
+              // Loading state with animated skeletons
+              <div className="relative h-[250px] overflow-hidden">
+                {/* Edge fade overlays */}
+                <div className="absolute left-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to right, white 0%, white 20%, transparent 100%)'}} />
+                <div className="absolute right-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to left, white 0%, white 20%, transparent 100%)'}} />
+                
+                <div className="flex gap-12 py-4 px-8">
+                  {[0, 1, 2, 3, 4].map((index) => (
+                    <div
+                      key={`loading-${index}`}
+                      className="flex-shrink-0 w-[400px] h-[240px] rounded-24 overflow-hidden border-2 border-gray-200/30 bg-white relative"
+                      style={{
+                        animation: `fadeIn 0.5s ease-out forwards`,
+                        animationDelay: `${index * 100}ms`,
+                        opacity: 0
+                      }}
+                    >
+                      <div className="absolute inset-0 skeleton-shimmer">
+                        <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 skeleton-gradient" />
+                      </div>
+                      
+                      {/* Fake browser UI */}
+                      <div className="absolute top-0 left-0 right-0 h-8 bg-gray-100 border-b border-gray-200/50 flex items-center px-3 gap-2">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 rounded-full bg-gray-300" />
+                          <div className="w-2 h-2 rounded-full bg-gray-300" />
+                          <div className="w-2 h-2 rounded-full bg-gray-300" />
+                        </div>
+                        <div className="flex-1 h-4 bg-gray-200 rounded-sm mx-4" />
+                      </div>
+                      
+                      {/* Content skeleton */}
+                      <div className="p-4 mt-8">
+                        <div className="h-6 bg-gray-200 rounded w-3/4 mb-3" />
+                        <div className="h-4 bg-gray-150 rounded w-full mb-2" />
+                        <div className="h-4 bg-gray-150 rounded w-5/6 mb-2" />
+                        <div className="h-4 bg-gray-150 rounded w-4/6" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Loading text */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-white/95 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">Searching for sites...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : searchResults.length > 0 ? (
+              // Actual results
+              <div className="relative h-[250px] overflow-hidden">
+                {/* Edge fade overlays */}
+                <div className="absolute left-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to right, white 0%, white 20%, transparent 100%)'}} />
+                <div className="absolute right-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to left, white 0%, white 20%, transparent 100%)'}} />
+                
+                <div className="carousel-container absolute left-0 flex gap-12 py-4">
+                  {/* Duplicate results for infinite scroll */}
+                  {[...searchResults, ...searchResults].map((result, index) => (
+                    <button
+                      key={`${result.url}-${index}`}
+                      onClick={() => handleSubmit(result)}
+                      className="flex-shrink-0 w-[400px] h-[240px] rounded-24 overflow-hidden border-2 border-gray-200/50 hover:border-orange-500 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] cursor-pointer bg-white"
+                    >
+                      {result.screenshot ? (
+                        <img 
+                          src={result.screenshot} 
+                          alt={result.title}
+                          className="w-full h-full object-cover object-top"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-50" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              // No results state
+              <div className="relative h-[250px] flex items-center justify-center">
+                <div className="text-center">
+                  <div className="mb-4">
+                    <svg className="w-16 h-16 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-500 text-lg">No results found</p>
+                  <p className="text-gray-400 text-sm mt-1">Try a different search term</p>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
       </div>
+
+      <style jsx>{`
+        @keyframes infiniteScroll {
+          from {
+            transform: translateX(0);
+          }
+          to {
+            transform: translateX(-50%);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .carousel-container {
+          animation: infiniteScroll 30s linear infinite;
+        }
+
+        .carousel-container:hover {
+          animation-play-state: paused;
+        }
+
+        .skeleton-shimmer {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .skeleton-gradient {
+          animation: shimmer 2s infinite;
+        }
+      `}</style>
     </HeaderProvider>
   );
 }
