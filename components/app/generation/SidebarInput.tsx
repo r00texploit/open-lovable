@@ -44,9 +44,9 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!url.trim() || disabled) return;
-    
+
     onSubmit(url.trim(), selectedStyle, selectedModel, additionalInstructions || undefined);
-    
+
     // Reset form
     setUrl("");
     setAdditionalInstructions("");
@@ -57,37 +57,12 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
     <div className="w-full">
       <div >
         <div className="p-4 border-b border-gray-100">
-          {/* URL Input */}
-          <div className="flex gap-3 items-center">
-            <svg 
-              width="20" 
-              height="20" 
-              viewBox="0 0 20 20" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-              className="opacity-40 flex-shrink-0"
-            >
-              <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M7 10L9 12L13 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <input
-              className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
-              placeholder="Enter URL to scrape..."
-              type="text"
-              value={url}
-              disabled={disabled}
-              onChange={(e) => {
-                setUrl(e.target.value);
-                setIsValidUrl(validateUrl(e.target.value));
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-            />
-          </div>
+         {/* link to home page with button */}
+         <a href="/">
+          <button className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
+            Generate a new website
+          </button>
+         </a>
         </div>
 
         {/* Options Section - Show when valid URL */}
@@ -104,8 +79,8 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
                     disabled={disabled}
                     className={`
                       py-2 px-2 rounded text-xs font-medium border transition-all text-center
-                      ${selectedStyle === style.id 
-                        ? 'border-orange-500 bg-orange-50 text-orange-900' 
+                      ${selectedStyle === style.id
+                        ? 'border-orange-500 bg-orange-50 text-orange-900'
                         : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
                       }
                       ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
@@ -133,7 +108,7 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
                 ))}
               </select>
             </div>
-            
+
             {/* Additional Instructions */}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-2">Additional Instructions (optional)</label>
@@ -155,7 +130,7 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
                 className={`
                   w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-all
                   ${isValidUrl && !disabled
-                    ? 'bg-orange-500 hover:bg-orange-600 text-white' 
+                    ? 'bg-orange-500 hover:bg-orange-600 text-white'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   }
                 `}

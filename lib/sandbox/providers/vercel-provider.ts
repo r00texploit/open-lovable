@@ -35,23 +35,13 @@ export class VercelProvider extends SandboxProvider {
         sandboxConfig.projectId = process.env.VERCEL_PROJECT_ID;
         sandboxConfig.token = process.env.VERCEL_TOKEN;
       } else if (process.env.VERCEL_OIDC_TOKEN) {
-      } else {
+        sandboxConfig.oidcToken = process.env.VERCEL_OIDC_TOKEN;
       }
-
-        runtime: sandboxConfig.runtime,
-        timeout: sandboxConfig.timeout,
-        ports: sandboxConfig.ports,
-        hasTeamId: !!sandboxConfig.teamId,
-        hasProjectId: !!sandboxConfig.projectId,
-        hasToken: !!sandboxConfig.token
-      });
 
       this.sandbox = await Sandbox.create(sandboxConfig);
       
       const sandboxId = this.sandbox.sandboxId;
-        sandboxId: sandboxId,
-        status: this.sandbox.status
-      });
+      // Sandbox created successfully
       
       // Get the sandbox URL using the correct Vercel Sandbox API
       const sandboxUrl = this.sandbox.domain(5173);
@@ -91,9 +81,33 @@ export class VercelProvider extends SandboxProvider {
         env: {}
       });
       
+      // Handle stdout and stderr - they might be functions in Vercel SDK
+      let stdout = '';
+      let stderr = '';
+      
+      try {
+        if (typeof result.stdout === 'function') {
+          stdout = await result.stdout();
+        } else {
+          stdout = result.stdout || '';
+        }
+      } catch (e) {
+        stdout = '';
+      }
+      
+      try {
+        if (typeof result.stderr === 'function') {
+          stderr = await result.stderr();
+        } else {
+          stderr = result.stderr || '';
+        }
+      } catch (e) {
+        stderr = '';
+      }
+      
       return {
-        stdout: result.stdout || '',
-        stderr: result.stderr || '',
+        stdout: stdout,
+        stderr: stderr,
         exitCode: result.exitCode || 0,
         success: result.exitCode === 0
       };
@@ -115,21 +129,12 @@ export class VercelProvider extends SandboxProvider {
     // Vercel sandbox default working directory is /vercel/sandbox
     const fullPath = path.startsWith('/') ? path : `/vercel/sandbox/${path}`;
     
-      originalPath: path,
-      fullPath: fullPath,
-      contentLength: content.length,
-      contentPreview: content.substring(0, 100) + (content.length > 100 ? '...' : ''),
-      sandboxId: this.sandbox.sandboxId,
-      sandboxStatus: this.sandbox.status
-    });
+    // Writing file to sandbox
     
     // Based on Vercel SDK docs, writeFiles expects path and Buffer content
     try {
       const buffer = Buffer.from(content, 'utf-8');
-        path: fullPath,
-        bufferLength: buffer.length,
-        isBuffer: Buffer.isBuffer(buffer)
-      });
+      // Writing file with buffer
       
       await this.sandbox.writeFiles([{
         path: fullPath,
@@ -148,6 +153,7 @@ export class VercelProvider extends SandboxProvider {
       });
       
       // Fallback to command-based approach if writeFiles fails
+      // Falling back to command-based file write
       
       // Ensure directory exists
       const dir = fullPath.substring(0, fullPath.lastIndexOf('/'));
@@ -156,10 +162,7 @@ export class VercelProvider extends SandboxProvider {
           cmd: 'mkdir',
           args: ['-p', dir]
         });
-          exitCode: mkdirResult.exitCode,
-          stdout: mkdirResult.stdout,
-          stderr: mkdirResult.stderr
-        });
+        // Directory created
       }
       
       // Write file using echo and redirection
@@ -175,10 +178,7 @@ export class VercelProvider extends SandboxProvider {
         args: ['-c', `echo "${escapedContent}" > "${fullPath}"`]
       });
       
-        exitCode: writeResult.exitCode,
-        stdout: writeResult.stdout,
-        stderr: writeResult.stderr
-      });
+      // File written
       
       if (writeResult.exitCode === 0) {
         this.existingFiles.add(path);
@@ -201,11 +201,35 @@ export class VercelProvider extends SandboxProvider {
       args: [fullPath]
     });
     
-    if (result.exitCode !== 0) {
-      throw new Error(`Failed to read file: ${result.stderr}`);
+    // Handle stdout and stderr - they might be functions in Vercel SDK
+    let stdout = '';
+    let stderr = '';
+    
+    try {
+      if (typeof result.stdout === 'function') {
+        stdout = await result.stdout();
+      } else {
+        stdout = result.stdout || '';
+      }
+    } catch (e) {
+      stdout = '';
     }
     
-    return result.stdout || '';
+    try {
+      if (typeof result.stderr === 'function') {
+        stderr = await result.stderr();
+      } else {
+        stderr = result.stderr || '';
+      }
+    } catch (e) {
+      stderr = '';
+    }
+    
+    if (result.exitCode !== 0) {
+      throw new Error(`Failed to read file: ${stderr}`);
+    }
+    
+    return stdout;
   }
 
   async listFiles(directory: string = '/vercel/sandbox'): Promise<string[]> {
@@ -219,11 +243,24 @@ export class VercelProvider extends SandboxProvider {
       cwd: '/'
     });
     
+    // Handle stdout - it might be a function in Vercel SDK
+    let stdout = '';
+    
+    try {
+      if (typeof result.stdout === 'function') {
+        stdout = await result.stdout();
+      } else {
+        stdout = result.stdout || '';
+      }
+    } catch (e) {
+      stdout = '';
+    }
+    
     if (result.exitCode !== 0) {
       return [];
     }
     
-    return (result.stdout || '').split('\n').filter((line: string) => line.trim() !== '');
+    return stdout.split('\n').filter((line: string) => line.trim() !== '');
   }
 
   async installPackages(packages: string[]): Promise<CommandResult> {
@@ -233,6 +270,7 @@ export class VercelProvider extends SandboxProvider {
 
     const flags = process.env.NPM_FLAGS || '';
     
+    // Installing packages
     
     // Build args array
     const args = ['install'];
@@ -247,14 +285,38 @@ export class VercelProvider extends SandboxProvider {
       cwd: '/vercel/sandbox'
     });
     
+    // Handle stdout and stderr - they might be functions in Vercel SDK
+    let stdout = '';
+    let stderr = '';
+    
+    try {
+      if (typeof result.stdout === 'function') {
+        stdout = await result.stdout();
+      } else {
+        stdout = result.stdout || '';
+      }
+    } catch (e) {
+      stdout = '';
+    }
+    
+    try {
+      if (typeof result.stderr === 'function') {
+        stderr = await result.stderr();
+      } else {
+        stderr = result.stderr || '';
+      }
+    } catch (e) {
+      stderr = '';
+    }
+    
     // Restart Vite if configured and successful
     if (result.exitCode === 0 && process.env.AUTO_RESTART_VITE === 'true') {
       await this.restartViteServer();
     }
     
     return {
-      stdout: result.stdout || '',
-      stderr: result.stderr || '',
+      stdout: stdout,
+      stderr: stderr,
       exitCode: result.exitCode || 0,
       success: result.exitCode === 0
     };
@@ -265,19 +327,14 @@ export class VercelProvider extends SandboxProvider {
       throw new Error('No active sandbox');
     }
 
-      sandboxId: this.sandbox.sandboxId,
-      status: this.sandbox.status
-    });
+    // Setting up Vite app for sandbox
     
     // Create directory structure
     const mkdirResult = await this.sandbox.runCommand({
       cmd: 'mkdir',
       args: ['-p', '/vercel/sandbox/src']
     });
-      exitCode: mkdirResult.exitCode,
-      stdout: mkdirResult.stdout,
-      stderr: mkdirResult.stderr
-    });
+    // Directory structure created
     
     // Create package.json
     const packageJson = {
@@ -413,6 +470,7 @@ body {
     
     await this.writeFile('src/index.css', indexCss);
     
+    // Installing npm dependencies
     
     // Install dependencies
     try {
@@ -422,12 +480,10 @@ body {
         cwd: '/vercel/sandbox'
       });
       
-        exitCode: installResult.exitCode,
-        stdout: typeof installResult.stdout === 'function' ? 'function' : installResult.stdout,
-        stderr: typeof installResult.stderr === 'function' ? 'function' : installResult.stderr
-      });
+      // npm install completed
       
       if (installResult.exitCode === 0) {
+        // Dependencies installed successfully
       } else {
         console.warn('[VercelProvider] npm install had issues:', installResult.stderr);
       }
@@ -445,6 +501,7 @@ body {
           cwd: '/vercel/sandbox'
         });
         if (altResult.exitCode === 0) {
+          // Alternative npm install succeeded
         } else {
           console.warn('[VercelProvider] Alternative npm install also had issues:', altResult.stderr);
         }
@@ -455,6 +512,7 @@ body {
     }
     
     // Start Vite dev server
+    // Starting Vite dev server
     
     // Kill any existing Vite processes
     await this.sandbox.runCommand({
@@ -470,6 +528,7 @@ body {
       cwd: '/vercel/sandbox'
     });
     
+    // Vite server started in background
     
     // Wait for Vite to be ready
     await new Promise(resolve => setTimeout(resolve, 7000));
@@ -490,6 +549,7 @@ body {
       throw new Error('No active sandbox');
     }
 
+    // Restarting Vite server
     
     // Kill existing Vite process
     await this.sandbox.runCommand({
@@ -508,6 +568,7 @@ body {
       cwd: '/vercel/sandbox'
     });
     
+    // Vite server started in background
     
     // Wait for Vite to be ready
     await new Promise(resolve => setTimeout(resolve, 7000));

@@ -550,6 +550,15 @@ export async function POST(request: NextRequest) {
               fileContent = fileContent.replace(/import\s+['"]\.\/[^'"]+\.css['"];?\s*\n?/g, '');
             }
             
+            // Fix common Tailwind CSS errors in CSS files
+            if (file.path.endsWith('.css')) {
+              // Replace shadow-3xl with shadow-2xl (shadow-3xl doesn't exist)
+              fileContent = fileContent.replace(/shadow-3xl/g, 'shadow-2xl');
+              // Replace any other non-existent shadow utilities
+              fileContent = fileContent.replace(/shadow-4xl/g, 'shadow-2xl');
+              fileContent = fileContent.replace(/shadow-5xl/g, 'shadow-2xl');
+            }
+            
             // Create directory if needed
             const dirPath = normalizedPath.includes('/') ? normalizedPath.substring(0, normalizedPath.lastIndexOf('/')) : '';
             if (dirPath) {

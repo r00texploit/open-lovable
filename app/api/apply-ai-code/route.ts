@@ -128,6 +128,7 @@ function parseAIResponse(response: string): ParsedResponse {
 
 declare global {
   var activeSandbox: any;
+  var activeSandboxProvider: any;
   var existingFiles: Set<string>;
   var sandboxState: SandboxState;
 }
@@ -150,8 +151,11 @@ export async function POST(request: NextRequest) {
       global.existingFiles = new Set<string>();
     }
     
+    // Get the active sandbox or provider
+    const sandbox = global.activeSandbox || global.activeSandboxProvider;
+    
     // If no active sandbox, just return parsed results
-    if (!global.activeSandbox) {
+    if (!sandbox) {
       return NextResponse.json({
         success: true,
         results: {
@@ -165,6 +169,30 @@ export async function POST(request: NextRequest) {
         parsedFiles: parsed.files,
         message: `Parsed ${parsed.files.length} files successfully. Create a sandbox to apply them.`
       });
+    }
+    
+    // Verify sandbox is ready before applying code
+    console.log('[apply-ai-code] Verifying sandbox is ready...');
+    
+    // For Vercel sandboxes, check if Vite is running
+    if (sandbox.constructor?.name === 'VercelProvider' || sandbox.getSandboxInfo?.()?.provider === 'vercel') {
+      console.log('[apply-ai-code] Detected Vercel sandbox, checking Vite status...');
+      try {
+        // Check if Vite process is running
+        const checkResult = await sandbox.runCommand('pgrep -f vite');
+        if (!checkResult || !checkResult.stdout) {
+          console.log('[apply-ai-code] Vite not running, starting it...');
+          // Start Vite if not running
+          await sandbox.runCommand('sh -c "cd /vercel/sandbox && nohup npm run dev > /tmp/vite.log 2>&1 &"');
+          // Wait for Vite to start
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          console.log('[apply-ai-code] Vite started, proceeding with code application');
+        } else {
+          console.log('[apply-ai-code] Vite is already running');
+        }
+      } catch (e) {
+        console.log('[apply-ai-code] Could not check Vite status, proceeding anyway:', e);
+      }
     }
     
     // Apply to active sandbox
@@ -336,11 +364,28 @@ export async function POST(request: NextRequest) {
           fileContent = fileContent.replace(/import\s+['"]\.\/[^'"]+\.css['"];?\s*\n?/g, '');
         }
         
+        // Fix common Tailwind CSS errors in CSS files
+        if (file.path.endsWith('.css')) {
+          // Replace shadow-3xl with shadow-2xl (shadow-3xl doesn't exist)
+          fileContent = fileContent.replace(/shadow-3xl/g, 'shadow-2xl');
+          // Replace any other non-existent shadow utilities
+          fileContent = fileContent.replace(/shadow-4xl/g, 'shadow-2xl');
+          fileContent = fileContent.replace(/shadow-5xl/g, 'shadow-2xl');
+        }
+        
         console.log(`[apply-ai-code] Writing file using E2B files API: ${fullPath}`);
         
         try {
-          // Use the correct E2B API - sandbox.files.write()
-          await global.activeSandbox.files.write(fullPath, fileContent);
+          // Check if we're using provider pattern (v2) or direct sandbox (v1)
+          if (sandbox.writeFile) {
+            // V2: Provider pattern (Vercel/E2B provider)
+            await sandbox.writeFile(file.path, fileContent);
+          } else if (sandbox.files?.write) {
+            // V1: Direct E2B sandbox
+            await sandbox.files.write(fullPath, fileContent);
+          } else {
+            throw new Error('Unsupported sandbox type');
+          }
           console.log(`[apply-ai-code] Successfully wrote file: ${fullPath}`);
           
           // Update file cache
@@ -432,10 +477,15 @@ function App() {
 export default App;`;
       
       try {
-        await global.activeSandbox.writeFiles([{
-          path: 'src/App.jsx',
-          content: Buffer.from(appContent)
-        }]);
+        // Use provider pattern if available
+        if (sandbox.writeFile) {
+          await sandbox.writeFile('src/App.jsx', appContent);
+        } else if (sandbox.writeFiles) {
+          await sandbox.writeFiles([{
+            path: 'src/App.jsx',
+            content: Buffer.from(appContent)
+          }]);
+        }
         
         console.log('Auto-generated: src/App.jsx');
         results.filesCreated.push('src/App.jsx (auto-generated)');
@@ -480,10 +530,15 @@ body {
   min-height: 100vh;
 }`;
 
-          await global.activeSandbox.writeFiles([{
-            path: 'src/index.css',
-            content: Buffer.from(indexCssContent)
-          }]);
+          // Use provider pattern if available
+          if (sandbox.writeFile) {
+            await sandbox.writeFile('src/index.css', indexCssContent);
+          } else if (sandbox.writeFiles) {
+            await sandbox.writeFiles([{
+              path: 'src/index.css',
+              content: Buffer.from(indexCssContent)
+            }]);
+          }
           
           console.log('Auto-generated: src/index.css');
           results.filesCreated.push('src/index.css (with Tailwind)');
@@ -502,15 +557,38 @@ body {
         const cmdName = commandParts[0];
         const args = commandParts.slice(1);
         
-        // Execute command using Vercel Sandbox
-        const result = await global.activeSandbox.runCommand({
-          cmd: cmdName,
-          args
-        });
+        // Execute command using sandbox
+        let result;
+        if (sandbox.runCommand && typeof sandbox.runCommand === 'function') {
+          // Check if this is a provider pattern sandbox
+          const testResult = await sandbox.runCommand(cmd);
+          if (testResult && typeof testResult === 'object' && 'stdout' in testResult) {
+            // Provider returns CommandResult directly
+            result = testResult;
+          } else {
+            // Direct sandbox - expects object with cmd and args
+            result = await sandbox.runCommand({
+              cmd: cmdName,
+              args
+            });
+          }
+        }
         
         console.log(`Executed: ${cmd}`);
-        const stdout = await result.stdout();
-        const stderr = await result.stderr();
+        
+        // Handle result based on type
+        let stdout = '';
+        let stderr = '';
+        
+        if (result) {
+          if (typeof result.stdout === 'string') {
+            stdout = result.stdout;
+            stderr = result.stderr || '';
+          } else if (typeof result.stdout === 'function') {
+            stdout = await result.stdout();
+            stderr = await result.stderr();
+          }
+        }
         
         if (stdout) console.log(stdout);
         if (stderr) console.log(`Errors: ${stderr}`);

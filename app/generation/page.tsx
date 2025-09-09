@@ -86,6 +86,7 @@ export default function AISandboxPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showLoadingBackground, setShowLoadingBackground] = useState(false);
   const [urlScreenshot, setUrlScreenshot] = useState<string | null>(null);
+  const [isScreenshotLoaded, setIsScreenshotLoaded] = useState(false);
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
   const [isPreparingDesign, setIsPreparingDesign] = useState(false);
@@ -93,6 +94,7 @@ export default function AISandboxPage() {
   const [targetUrl, setTargetUrl] = useState<string>('');
   const [sidebarScrolled, setSidebarScrolled] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'gathering' | 'planning' | 'generating' | null>(null);
+  const [isStartingNewGeneration, setIsStartingNewGeneration] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
   const [hasInitialSubmission, setHasInitialSubmission] = useState<boolean>(false);
@@ -566,25 +568,10 @@ export default function AISandboxPage() {
         // Fetch sandbox files after creation
         setTimeout(fetchSandboxFiles, 1000);
         
-        // Restart Vite server to ensure it's running
-        setTimeout(async () => {
-          try {
-            console.log('[createSandbox] Ensuring Vite server is running...');
-            const restartResponse = await fetch('/api/restart-vite', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
-            });
-            
-            if (restartResponse.ok) {
-              const restartData = await restartResponse.json();
-              if (restartData.success) {
-                console.log('[createSandbox] Vite server started successfully');
-              }
-            }
-          } catch (error) {
-            console.error('[createSandbox] Error starting Vite server:', error);
-          }
-        }, 2000);
+        // For Vercel sandboxes, Vite is already started during setupViteApp
+        // No need to restart it immediately after creation
+        // Only restart if there's an actual issue later
+        console.log('[createSandbox] Sandbox ready with Vite server running');
         
         // Only add welcome message if not coming from home screen
         if (!fromHomeScreen) {
@@ -624,7 +611,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
   };
 
-  const applyGeneratedCode = async (code: string, isEdit: boolean = false) => {
+  const applyGeneratedCode = async (code: string, isEdit: boolean = false, overrideSandboxData?: SandboxData) => {
     setLoading(true);
     log('Applying AI-generated code...');
     
@@ -641,6 +628,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       }
       
       // Use streaming endpoint for real-time feedback
+      const effectiveSandboxData = overrideSandboxData || sandboxData;
       const response = await fetch('/api/apply-ai-code-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -648,7 +636,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           response: code,
           isEdit: isEdit,
           packages: pendingPackages,
-          sandboxId: sandboxData?.sandboxId // Pass the sandbox ID to ensure proper connection
+          sandboxId: effectiveSandboxData?.sandboxId // Pass the sandbox ID to ensure proper connection
         })
       });
       
@@ -940,11 +928,12 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           const refreshDelay = appConfig.codeApplication.defaultRefreshDelay; // Allow Vite to process changes
           
           setTimeout(() => {
-            if (iframeRef.current && sandboxData?.url) {
+            const currentSandboxData = effectiveSandboxData;
+            if (iframeRef.current && currentSandboxData?.url) {
               console.log('[home] Refreshing iframe after code application...');
               
               // Method 1: Change src with timestamp
-              const urlWithTimestamp = `${sandboxData.url}?t=${Date.now()}&applied=true`;
+              const urlWithTimestamp = `${currentSandboxData.url}?t=${Date.now()}&applied=true`;
               iframeRef.current.src = urlWithTimestamp;
               
               // Method 2: Force reload after a short delay
@@ -966,7 +955,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         }
         
           // Give Vite HMR a moment to detect changes, then ensure refresh
-          if (iframeRef.current && sandboxData?.url) {
+          const currentSandboxData = effectiveSandboxData;
+          if (iframeRef.current && currentSandboxData?.url) {
             // Wait for Vite to process the file changes
             // If packages were installed, wait longer for Vite to restart
             const packagesInstalled = results?.packagesInstalled?.length > 0 || data.results?.packagesInstalled?.length > 0;
@@ -974,14 +964,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             console.log(`[applyGeneratedCode] Packages installed: ${packagesInstalled}, refresh delay: ${refreshDelay}ms`);
             
             setTimeout(async () => {
-            if (iframeRef.current && sandboxData?.url) {
+            if (iframeRef.current && currentSandboxData?.url) {
               console.log('[applyGeneratedCode] Starting iframe refresh sequence...');
               console.log('[applyGeneratedCode] Current iframe src:', iframeRef.current.src);
-              console.log('[applyGeneratedCode] Sandbox URL:', sandboxData.url);
+              console.log('[applyGeneratedCode] Sandbox URL:', currentSandboxData.url);
               
               // Method 1: Try direct navigation first
               try {
-                const urlWithTimestamp = `${sandboxData.url}?t=${Date.now()}&force=true`;
+                const urlWithTimestamp = `${currentSandboxData.url}?t=${Date.now()}&force=true`;
                 console.log('[applyGeneratedCode] Attempting direct navigation to:', urlWithTimestamp);
                 
                 // Remove any existing onload handler
@@ -1027,7 +1017,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               iframeRef.current.remove();
               
               // Add new iframe
-              newIframe.src = `${sandboxData.url}?t=${Date.now()}&recreated=true`;
+              newIframe.src = `${currentSandboxData.url}?t=${Date.now()}&recreated=true`;
               parent?.appendChild(newIframe);
               
               // Update ref
@@ -1520,11 +1510,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         </div>
       );
     } else if (activeTab === 'preview') {
-      // Only show loading state for initial generation, not for edits
+      // Show loading state for initial generation or when starting a new generation with existing sandbox
       const isInitialGeneration = !sandboxData?.url && (urlScreenshot || isCapturingScreenshot || isPreparingDesign || loadingStage);
-      const shouldShowLoadingOverlay = isInitialGeneration && (loading || generationProgress.isGenerating || isPreparingDesign || loadingStage || isCapturingScreenshot);
+      const isNewGenerationWithSandbox = isStartingNewGeneration && sandboxData?.url;
+      const shouldShowLoadingOverlay = (isInitialGeneration || isNewGenerationWithSandbox) && 
+        (loading || generationProgress.isGenerating || isPreparingDesign || loadingStage || isCapturingScreenshot || isStartingNewGeneration);
       
-      if (isInitialGeneration) {
+      if (isInitialGeneration || isNewGenerationWithSandbox) {
         return (
           <div className="relative w-full h-full bg-gray-900">
             {/* Screenshot as background when available */}
@@ -1533,20 +1525,68 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               <img 
                 src={urlScreenshot} 
                 alt="Website preview" 
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+                style={{ 
+                  opacity: isScreenshotLoaded ? 1 : 0,
+                  willChange: 'opacity'
+                }}
+                onLoad={() => setIsScreenshotLoaded(true)}
+                loading="eager"
               />
             )}
             
             {/* Loading overlay - only show when actively processing initial generation */}
             {shouldShowLoadingOverlay && (
-              <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-sm">
-                <div className="text-center">
+              <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-sm">
+                {/* Large animated browser URL bar */}
+                <div className="w-full max-w-4xl mb-12 px-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                  <div className="bg-gray-800/90 rounded-2xl p-6 backdrop-blur-sm border border-gray-700/50 shadow-2xl transform scale-100 animate-pulse-subtle">
+                    <div className="flex items-center gap-4">
+                      {/* Browser dots - bigger */}
+                      <div className="flex gap-3">
+                        <div className="w-5 h-5 rounded-full bg-red-500/70 animate-pulse" style={{ animationDelay: '0s' }} />
+                        <div className="w-5 h-5 rounded-full bg-yellow-500/70 animate-pulse" style={{ animationDelay: '0.1s' }} />
+                        <div className="w-5 h-5 rounded-full bg-green-500/70 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                      </div>
+                      {/* URL bar - bigger */}
+                      <div className="flex-1 bg-gray-900/50 rounded-lg px-6 py-3">
+                        <p className="text-gray-300 text-xl truncate animate-text-shimmer">
+                          {targetUrl || homeUrlInput.replace(/^https?:\/\//i, '') || 'example.com'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loading animation with skeleton */}
+                <div className="text-center max-w-md">
+                  {/* Animated skeleton lines */}
+                  <div className="mb-6 space-y-3">
+                    <div className="h-2 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded animate-pulse" 
+                         style={{ animationDuration: '1.5s', animationDelay: '0s' }} />
+                    <div className="h-2 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded animate-pulse w-4/5 mx-auto" 
+                         style={{ animationDuration: '1.5s', animationDelay: '0.2s' }} />
+                    <div className="h-2 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded animate-pulse w-3/5 mx-auto" 
+                         style={{ animationDuration: '1.5s', animationDelay: '0.4s' }} />
+                  </div>
+                  
+                  {/* Spinner */}
                   <div className="w-12 h-12 border-3 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
+                  
+                  {/* Status text */}
                   <p className="text-white text-lg font-medium">
                     {isCapturingScreenshot ? 'Analyzing website...' :
                      isPreparingDesign ? 'Preparing design...' :
                      generationProgress.isGenerating ? 'Generating code...' :
                      'Loading...'}
+                  </p>
+                  
+                  {/* Subtle progress hint */}
+                  <p className="text-white/60 text-sm mt-2">
+                    {isCapturingScreenshot ? 'Taking a screenshot of the site' :
+                     isPreparingDesign ? 'Understanding the layout and structure' :
+                     generationProgress.isGenerating ? 'Writing React components' :
+                     'Please wait...'}
                   </p>
                 </div>
               </div>
@@ -2049,10 +2089,16 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         // setLeftPanelVisible(true);
         
         // Wait for sandbox creation if it's still in progress
+        let activeSandboxData = sandboxData;
         if (sandboxPromise) {
           addChatMessage('Waiting for sandbox to be ready...', 'system');
           try {
-            await sandboxPromise;
+            const newSandboxData = await sandboxPromise;
+            if (newSandboxData) {
+              activeSandboxData = newSandboxData;
+              // Also update the state for future use
+              setSandboxData(newSandboxData);
+            }
             // Remove the waiting message
             setChatMessages(prev => prev.filter(msg => msg.content !== 'Waiting for sandbox to be ready...'));
           } catch {
@@ -2061,9 +2107,16 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           }
         }
         
-        if (sandboxData && generatedCode) {
+        if (activeSandboxData && generatedCode) {
+          // For new sandbox creations (especially Vercel), add a delay to ensure Vite is ready
+          if (sandboxCreating) {
+            console.log('[startGeneration] New sandbox created, waiting for services to be ready...');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+          
           // Use isEdit flag that was determined at the start
-          await applyGeneratedCode(generatedCode, isEdit);
+          // Pass the sandbox data from the promise if it's different from the state
+          await applyGeneratedCode(generatedCode, isEdit, activeSandboxData !== sandboxData ? activeSandboxData : undefined);
         }
       }
       
@@ -2562,6 +2615,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       
       const data = await response.json();
       if (data.success && data.screenshot) {
+        setIsScreenshotLoaded(false); // Reset loaded state for new screenshot
         setUrlScreenshot(data.screenshot);
         // Set preparing design state
         setIsPreparingDesign(true);
@@ -2593,6 +2647,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     
     setHomeScreenFading(true);
     
+    // Set immediate loading state for better UX
+    setIsStartingNewGeneration(true);
+    setLoadingStage('gathering');
+    
+    // Immediately switch to preview tab to show loading
+    setActiveTab('preview');
+    
     // Set loading background to ensure proper visual feedback
     setShowLoadingBackground(true);
     
@@ -2621,6 +2682,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     setTimeout(async () => {
       setShowHomeScreen(false);
       setHomeScreenFading(false);
+      
+      // Clear the starting flag after transition
+      setTimeout(() => {
+        setIsStartingNewGeneration(false);
+      }, 1000);
       
       // Wait for sandbox to be ready (if it's still creating)
       await sandboxPromise;
@@ -2676,6 +2742,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         
         // Clear preparing design state and switch to generation tab
         setIsPreparingDesign(false);
+        setIsScreenshotLoaded(false); // Reset loaded state
         setUrlScreenshot(null); // Clear screenshot when starting generation
         setTargetUrl(''); // Clear target URL
         
@@ -2967,11 +3034,13 @@ Focus on the key sections and content, making it clean and modern.`;
         }));
         
         // Clear screenshot and preparing design states to prevent them from showing on next run
+        setIsScreenshotLoaded(false); // Reset loaded state
         setUrlScreenshot(null);
         setIsPreparingDesign(false);
         setTargetUrl('');
         setScreenshotError(null);
         setLoadingStage(null); // Clear loading stage
+        setIsStartingNewGeneration(false); // Clear new generation flag
         setShowLoadingBackground(false); // Clear loading background
         
         setTimeout(() => {
@@ -2982,6 +3051,8 @@ Focus on the key sections and content, making it clean and modern.`;
         addChatMessage(`Failed to clone website: ${error.message}`, 'system');
         setUrlStatus([]);
         setIsPreparingDesign(false);
+        setIsStartingNewGeneration(false); // Clear new generation flag on error
+        setLoadingStage(null);
         // Also clear generation progress on error
         setGenerationProgress(prev => ({
           ...prev,
@@ -2998,247 +3069,6 @@ Focus on the key sections and content, making it clean and modern.`;
   return (
     <HeaderProvider>
       <div className="font-sans bg-background text-foreground h-screen flex flex-col">
-      {/* Home Screen Overlay */}
-      {showHomeScreen && (
-        <div className={`fixed inset-0 z-50 transition-opacity duration-500 ${homeScreenFading ? 'opacity-0' : 'opacity-100'}`}>
-          {/* Clean Background */}
-          <div className="absolute inset-0 bg-white overflow-hidden">
-          </div>
-          
-          
-          {/* Close button on hover */}
-          <button
-            onClick={() => {
-              setHomeScreenFading(true);
-              setTimeout(() => {
-                setShowHomeScreen(false);
-                setHomeScreenFading(false);
-              }, 500);
-            }}
-            className="absolute top-8 right-8 text-gray-500 hover:text-gray-700 transition-all duration-300 opacity-0 hover:opacity-100 bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-sm"
-            style={{ opacity: 0 }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
-          >
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          
-          {/* Header */}
-          <div className="absolute top-0 left-0 right-0 z-20 px-6 py-4 flex items-center justify-between animate-[fadeIn_0.8s_ease-out]">
-            <HeaderBrandKit />
-            <a 
-              href="https://github.com/mendableai/open-lovable" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-6 px-6 py-8 rounded-8 text-label-medium font-medium text-accent-black hover:bg-black-alpha-4 active:bg-black-alpha-6 transition-all duration-200"
-            >
-              <FiGithub style={{ width: '16px', height: '16px' }} />
-              <span>Use this Template</span>
-            </a>
-          </div>
-          
-          {/* Main content */}
-          <div className="relative z-10 h-full flex items-center justify-center px-4">
-            <div className="text-center max-w-4xl min-w-[600px] mx-auto">
-              {/* Firecrawl-style Header */}
-              <div className="text-center">
-                <h1 className="text-[2.5rem] lg:text-[3.8rem] text-center text-[#36322F] font-semibold tracking-tight leading-[0.9] animate-[fadeIn_0.8s_ease-out]">
-                  <span className="hidden md:inline">Open Lovable</span>
-                  <span className="md:hidden">Open Lovable</span>
-                </h1>
-                <motion.p 
-                  className="text-base lg:text-lg max-w-lg mx-auto mt-2.5 text-zinc-500 text-center text-balance"
-                  animate={{
-                    opacity: showStyleSelector ? 0.7 : 1
-                  }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                >
-                  Re-imagine any website, in seconds.
-                </motion.p>
-              </div>
-              
-              <form onSubmit={handleHomeScreenSubmit} className="mt-5 max-w-3xl mx-auto">
-                <div className="w-full relative group">
-                  <input
-                    type="text"
-                    value={homeUrlInput}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setHomeUrlInput(value);
-                      
-                      // Check if it's a valid domain
-                      const domainRegex = /^(https?:\/\/)?(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})(\/?.*)?$/;
-                      if (domainRegex.test(value) && value.length > 5) {
-                        // Small delay to make the animation feel smoother
-                        setTimeout(() => setShowStyleSelector(true), 100);
-                      } else {
-                        setShowStyleSelector(false);
-                        setSelectedStyle(null);
-                      }
-                    }}
-                    placeholder=" "
-                    aria-placeholder="https://firecrawl.dev"
-                    className="h-[3.25rem] w-full resize-none focus-visible:outline-none focus-visible:ring-orange-500 focus-visible:ring-2 rounded-[18px] text-sm text-[#36322F] px-4 pr-12 border-[.75px] border-border bg-white"
-                    style={{
-                      boxShadow: '0 0 0 1px #e3e1de66, 0 1px 2px #5f4a2e14, 0 4px 6px #5f4a2e0a, 0 40px 40px -24px #684b2514',
-                      filter: 'drop-shadow(rgba(249, 224, 184, 0.3) -0.731317px -0.731317px 35.6517px)'
-                    }}
-                    autoFocus
-                  />
-                  <div 
-                    aria-hidden="true" 
-                    className={`absolute top-1/2 -translate-y-1/2 left-4 pointer-events-none text-sm text-opacity-50 text-start transition-opacity ${
-                      homeUrlInput ? 'opacity-0' : 'opacity-100'
-                    }`}
-                  >
-                    <span className="text-[#605A57]/50" style={{ fontFamily: 'monospace' }}>
-                      https://firecrawl.dev
-                    </span>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={!homeUrlInput.trim()}
-                    className="absolute top-1/2 transform -translate-y-1/2 right-2 flex h-10 items-center justify-center rounded-md px-3 text-sm font-medium text-zinc-500 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    title={selectedStyle ? `Clone with ${selectedStyle} Style` : 'Clone Website'}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 10 4 15 9 20"></polyline>
-                      <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
-                    </svg>
-                  </button>
-                </div>
-                  
-                  {/* Style Selector - Slides out when valid domain is entered */}
-                  {showStyleSelector && (
-                    <div className="overflow-hidden mt-4">
-                      <div className={`transition-all duration-500 ease-out transform ${
-                        showStyleSelector ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
-                      }`}>
-                    <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-4 shadow-sm">
-                      <p className="text-sm text-gray-600 mb-3 font-medium">How do you want your site to look?</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {[
-                          { name: 'Neobrutalist', description: 'Bold colors, thick borders' },
-                          { name: 'Glassmorphism', description: 'Frosted glass effects' },
-                          { name: 'Minimalist', description: 'Clean and simple' },
-                          { name: 'Dark Mode', description: 'Dark theme' },
-                          { name: 'Gradient', description: 'Colorful gradients' },
-                          { name: 'Retro', description: '80s/90s aesthetic' },
-                          { name: 'Modern', description: 'Contemporary design' },
-                          { name: 'Monochrome', description: 'Black and white' }
-                        ].map((style) => (
-                          <button
-                            key={style.name}
-                            type="button"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                // Submit the form
-                                const form = e.currentTarget.closest('form');
-                                if (form) {
-                                  form.requestSubmit();
-                                }
-                              }
-                            }}
-                            onClick={() => {
-                              if (selectedStyle === style.name) {
-                                // Deselect if clicking the same style
-                                setSelectedStyle(null);
-                                // Keep only additional context, remove the style theme part
-                                const currentAdditional = homeContextInput.replace(/^[^,]+theme\s*,?\s*/, '').trim();
-                                setHomeContextInput(currentAdditional);
-                              } else {
-                                // Select new style
-                                setSelectedStyle(style.name);
-                                // Extract any additional context (everything after the style theme)
-                                const currentAdditional = homeContextInput.replace(/^[^,]+theme\s*,?\s*/, '').trim();
-                                setHomeContextInput(style.name.toLowerCase() + ' theme' + (currentAdditional ? ', ' + currentAdditional : ''));
-                              }
-                            }}
-                            className={`p-3 rounded-lg border transition-all ${
-                              selectedStyle === style.name
-                                ? 'border-orange-400 bg-orange-50 text-gray-900 shadow-sm'
-                                : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/50 text-gray-700'
-                            }`}
-                          >
-                            <div className="text-sm font-medium">{style.name}</div>
-                            <div className="text-xs text-gray-500 mt-1">{style.description}</div>
-                          </button>
-                        ))}
-                      </div>
-                      
-                      {/* Additional context input - part of the style selector */}
-                      <div className="mt-4 mb-2">
-                        <input
-                          type="text"
-                          value={(() => {
-                            if (!selectedStyle) return homeContextInput;
-                            // Extract additional context by removing the style theme part
-                            const additional = homeContextInput.replace(new RegExp('^' + selectedStyle.toLowerCase() + ' theme\\s*,?\\s*', 'i'), '');
-                            return additional;
-                          })()}
-                          onChange={(e) => {
-                            const additionalContext = e.target.value;
-                            if (selectedStyle) {
-                              setHomeContextInput(selectedStyle.toLowerCase() + ' theme' + (additionalContext.trim() ? ', ' + additionalContext : ''));
-                            } else {
-                              setHomeContextInput(additionalContext);
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              const form = e.currentTarget.closest('form');
-                              if (form) {
-                                form.requestSubmit();
-                              }
-                            }
-                          }}
-                          placeholder="Add more details: specific features, color preferences..."
-                          className="w-full px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all duration-200"
-                        />
-                      </div>
-                    </div>
-                      </div>
-                    </div>
-                  )}
-              </form>
-              
-              {/* Model Selector */}
-              <div className="mt-6 flex items-center justify-center animate-[fadeIn_1s_ease-out]">
-                <select
-                  value={aiModel}
-                  onChange={(e) => {
-                    const newModel = e.target.value;
-                    setAiModel(newModel);
-                    const params = new URLSearchParams(searchParams);
-                    params.set('model', newModel);
-                    if (sandboxData?.sandboxId) {
-                      params.set('sandbox', sandboxData.sandboxId);
-                    }
-                    router.push(`/generation?${params.toString()}`);
-                  }}
-                  className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-[#36322F] focus:border-transparent"
-                  style={{
-                    boxShadow: '0 0 0 1px #e3e1de66, 0 1px 2px #5f4a2e14'
-                  }}
-                >
-                  {appConfig.ai.availableModels.map(model => (
-                    <option key={model} value={model}>
-                      {model.includes('claude') ? `Claude ${model.split('-')[2]}` : 
-                       model.includes('gpt') ? `GPT-${model.split('-')[1]}` : model}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
       <div className="bg-white py-[15px] py-[8px] border-b border-border-faint flex items-center justify-between shadow-sm">
         <HeaderBrandKit />
         <div className="flex items-center gap-2">
@@ -3444,7 +3274,7 @@ Focus on the key sections and content, making it clean and modern.`;
                         </div>
                       </div>
                     ) : (
-                      msg.content
+                      <span className="text-body-input">{msg.content}</span>
                     )}
                       </div>
                   

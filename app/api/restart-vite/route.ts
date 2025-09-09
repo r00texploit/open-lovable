@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 declare global {
   var activeSandbox: any;
+  var activeSandboxProvider: any;
   var lastViteRestartTime: number;
   var viteRestartInProgress: boolean;
 }
@@ -10,7 +11,10 @@ const RESTART_COOLDOWN_MS = 5000; // 5 second cooldown between restarts
 
 export async function POST() {
   try {
-    if (!global.activeSandbox) {
+    // Check both v1 and v2 global references
+    const provider = global.activeSandbox || global.activeSandboxProvider;
+    
+    if (!provider) {
       return NextResponse.json({ 
         success: false, 
         error: 'No active sandbox' 
@@ -40,44 +44,41 @@ export async function POST() {
     // Set the restart flag
     global.viteRestartInProgress = true;
     
-    console.log('[restart-vite] Forcing Vite restart...');
+    console.log('[restart-vite] Using provider method to restart Vite...');
     
-    // Kill existing Vite processes
-    try {
-      await global.activeSandbox.runCommand({
-        cmd: 'pkill',
-        args: ['-f', 'vite']
-      });
-      console.log('[restart-vite] Killed existing Vite processes');
+    // Use the provider's restartViteServer method if available
+    if (typeof provider.restartViteServer === 'function') {
+      await provider.restartViteServer();
+      console.log('[restart-vite] Vite restarted via provider method');
+    } else {
+      // Fallback to manual restart using provider's runCommand
+      console.log('[restart-vite] Fallback to manual Vite restart...');
       
-      // Wait a moment for processes to terminate
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    } catch {
-      console.log('[restart-vite] No existing Vite processes found');
+      // Kill existing Vite processes
+      try {
+        await provider.runCommand('pkill -f vite');
+        console.log('[restart-vite] Killed existing Vite processes');
+        
+        // Wait a moment for processes to terminate
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch {
+        console.log('[restart-vite] No existing Vite processes found');
+      }
+      
+      // Clear any error tracking files
+      try {
+        await provider.runCommand('bash -c "echo \'{\\"errors\\": [], \\"lastChecked\\": '+ Date.now() +'}\' > /tmp/vite-errors.json"');
+      } catch {
+        // Ignore if this fails
+      }
+      
+      // Start Vite dev server in background
+      await provider.runCommand('sh -c "nohup npm run dev > /tmp/vite.log 2>&1 &"');
+      console.log('[restart-vite] Vite dev server restarted');
+      
+      // Wait for Vite to start up
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
-    
-    // Clear any error tracking files
-    try {
-      await global.activeSandbox.runCommand({
-        cmd: 'bash',
-        args: ['-c', 'echo \'{"errors": [], "lastChecked": '+ Date.now() +'}\' > /tmp/vite-errors.json']
-      });
-    } catch {
-      // Ignore if this fails
-    }
-    
-    // Start Vite dev server in detached mode
-    // Start Vite dev server in detached mode
-    await global.activeSandbox.runCommand({
-      cmd: 'npm',
-      args: ['run', 'dev'],
-      detached: true
-    });
-    
-    console.log('[restart-vite] Vite dev server restarted');
-    
-    // Wait for Vite to start up
-    await new Promise(resolve => setTimeout(resolve, 3000));
     
     // Update global state
     global.lastViteRestartTime = Date.now();
