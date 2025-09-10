@@ -30,15 +30,24 @@ GEMINI_API_KEY=your_gemini_api_key        # https://aistudio.google.com/app/apik
 GROQ_API_KEY=your_groq_api_key            # https://console.groq.com
 
 # =================================================================
-# SANDBOX PROVIDER - Choose ONE: E2B or Vercel
+# SANDBOX PROVIDER - Choose ONE: Vercel (default) or E2B
 # =================================================================
-SANDBOX_PROVIDER=e2b  # or 'vercel'
+SANDBOX_PROVIDER=vercel  # or 'e2b'
 
-# E2B Sandbox (default)
-E2B_API_KEY=your_e2b_api_key            # https://e2b.dev
+# Option 1: Vercel Sandbox (default)
+# Choose one authentication method:
 
-# OR Vercel Sandbox
-VERCEL_OIDC_TOKEN=your_vercel_oidc_token # https://vercel.com
+# Method A: OIDC Token (recommended for development)
+# Run `vercel link` then `vercel env pull` to get VERCEL_OIDC_TOKEN automatically
+VERCEL_OIDC_TOKEN=auto_generated_by_vercel_env_pull
+
+# Method B: Personal Access Token (for production or when OIDC unavailable)
+# VERCEL_TEAM_ID=team_xxxxxxxxx      # Your Vercel team ID 
+# VERCEL_PROJECT_ID=prj_xxxxxxxxx    # Your Vercel project ID
+# VERCEL_TOKEN=vercel_xxxxxxxxxxxx   # Personal access token from Vercel dashboard
+
+# Option 2: E2B Sandbox
+# E2B_API_KEY=your_e2b_api_key      # https://e2b.dev
 ```
 
 3. **Run**
