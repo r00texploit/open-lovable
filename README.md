@@ -32,7 +32,7 @@ GROQ_API_KEY=your_groq_api_key            # https://console.groq.com
 # =================================================================
 # SANDBOX PROVIDER - Choose ONE: E2B or Vercel
 # =================================================================
-# SANDBOX_PROVIDER=e2b  # or 'vercel'
+SANDBOX_PROVIDER=e2b  # or 'vercel'
 
 # E2B Sandbox (default)
 E2B_API_KEY=your_e2b_api_key            # https://e2b.dev

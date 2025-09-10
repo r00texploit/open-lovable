@@ -181,8 +181,9 @@ function AISandboxPage() {
         // Add details to context if provided
         if (detailsParam) {
           setHomeContextInput(detailsParam);
-        } else if (storedStyle) {
-          // If we have a style but no details, set the style as context
+        } else if (storedStyle && !urlParam) {
+          // Only apply stored style if no screenshot URL is provided
+          // This prevents unwanted style inheritance when using screenshot search
           const styleNames: Record<string, string> = {
             '1': 'Glassmorphism',
             '2': 'Neumorphism',
@@ -206,6 +207,10 @@ function AISandboxPage() {
           }
           
           setHomeContextInput(contextString);
+        } else if (storedInstructions && !urlParam) {
+          // Apply only instructions if no style but instructions are provided
+          // and no screenshot URL is provided
+          setHomeContextInput(storedInstructions);
         }
         
         if (storedModel) {
@@ -730,10 +735,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   setTimeout(() => {
                     setCodeApplicationState({ stage: null });
                   }, 3000);
+                  // Reset loading state when complete
+                  setLoading(false);
                   break;
                   
                 case 'error':
                   addChatMessage(`Error: ${data.message || data.error || 'Unknown error'}`, 'system');
+                  // Reset loading state on error
+                  setLoading(false);
                   break;
                   
                 case 'warning':
@@ -1527,26 +1536,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             {/* Loading overlay - only show when actively processing initial generation */}
             {shouldShowLoadingOverlay && (
               <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-sm">
-                {/* Large animated browser URL bar */}
-                <div className="w-full max-w-4xl mb-12 px-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                  <div className="bg-gray-800/90 rounded-2xl p-6 backdrop-blur-sm border border-gray-700/50 shadow-2xl transform scale-100 animate-pulse-subtle">
-                    <div className="flex items-center gap-4">
-                      {/* Browser dots - bigger */}
-                      <div className="flex gap-3">
-                        <div className="w-5 h-5 rounded-full bg-red-500/70 animate-pulse" style={{ animationDelay: '0s' }} />
-                        <div className="w-5 h-5 rounded-full bg-yellow-500/70 animate-pulse" style={{ animationDelay: '0.1s' }} />
-                        <div className="w-5 h-5 rounded-full bg-green-500/70 animate-pulse" style={{ animationDelay: '0.2s' }} />
-                      </div>
-                      {/* URL bar - bigger */}
-                      <div className="flex-1 bg-gray-900/50 rounded-lg px-6 py-3">
-                        <p className="text-gray-300 text-xl truncate animate-text-shimmer">
-                          {targetUrl || homeUrlInput.replace(/^https?:\/\//i, '') || 'example.com'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Loading animation with skeleton */}
                 <div className="text-center max-w-md">
                   {/* Animated skeleton lines */}
@@ -1610,13 +1599,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                       </div>
-                    ) : (
-                      <div className="w-16 h-16 mx-auto">
-                        <svg className="w-full h-full text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                    )}
+                    ) : null}
                   </div>
                   
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -2755,12 +2738,44 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           currentProject: `${url} Clone`
         }));
         
+        // Filter out style-related context when using screenshot/URL-based generation
+        // Only keep user's explicit instructions, not inherited styles
+        let filteredContext = homeContextInput;
+        if (homeUrlInput && homeContextInput) {
+          // Check if the context contains default style names that shouldn't be inherited
+          const stylePatterns = [
+            'Glassmorphism style design',
+            'Neumorphism style design', 
+            'Brutalism style design',
+            'Minimalist style design',
+            'Dark Mode style design',
+            'Gradient Rich style design',
+            '3D Depth style design',
+            'Retro Wave style design',
+            'Modern clean and minimalist style design',
+            'Fun colorful and playful style design',
+            'Corporate professional and sleek style design',
+            'Creative artistic and unique style design'
+          ];
+          
+          // If the context exactly matches or starts with a style pattern, filter it out
+          const startsWithStyle = stylePatterns.some(pattern => 
+            homeContextInput.trim().startsWith(pattern)
+          );
+          
+          if (startsWithStyle) {
+            // Extract only the additional instructions part after the style
+            const additionalMatch = homeContextInput.match(/\. (.+)$/);
+            filteredContext = additionalMatch ? additionalMatch[1] : '';
+          }
+        }
+        
         const prompt = `I want to recreate the ${url} website as a complete React application based on the scraped content below.
 
 ${JSON.stringify(scrapeData, null, 2)}
 
-${homeContextInput ? `ADDITIONAL CONTEXT/REQUIREMENTS FROM USER:
-${homeContextInput}
+${filteredContext ? `ADDITIONAL CONTEXT/REQUIREMENTS FROM USER:
+${filteredContext}
 
 Please incorporate these requirements into the design and implementation.` : ''}
 
@@ -2773,7 +2788,7 @@ IMPORTANT INSTRUCTIONS:
 - Create proper component structure
 - Make sure the app actually renders visible content
 - Create ALL components that you reference in imports
-${homeContextInput ? '- Apply the user\'s context/theme requirements throughout the application' : ''}
+${filteredContext ? '- Apply the user\'s context/theme requirements throughout the application' : ''}
 
 Focus on the key sections and content, making it clean and modern.`;
         
