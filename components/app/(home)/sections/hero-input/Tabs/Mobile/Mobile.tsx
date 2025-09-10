@@ -1,4 +1,3 @@
-//@ts-nocheck
 import { animate, AnimatePresence, cubicBezier, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
@@ -13,7 +12,7 @@ export default function HeroInputTabsMobile(props: {
 }) {
   // Filter tabs based on allowedModes if provided
   const visibleTabs = props.allowedModes
-    ? tabs.filter((tab) => props.allowedModes.includes(tab.value))
+    ? tabs.filter((tab) => props.allowedModes!.includes(tab.value))
     : tabs;
 
   const activeTab = visibleTabs.find((tab) => tab.value === props.tab)!;

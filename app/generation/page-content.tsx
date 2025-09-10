@@ -14,7 +14,6 @@ import {
   FiFile, 
   FiChevronRight, 
   FiChevronDown,
-  FiGithub,
   BsFolderFill, 
   BsFolder2Open,
   SiJavascript, 
@@ -72,24 +71,27 @@ function AISandboxPage() {
   const [showHomeScreen, setShowHomeScreen] = useState(true);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['app', 'src', 'src/components']));
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [homeScreenFading, setHomeScreenFading] = useState(false);
+  const [_homeScreenFading, setHomeScreenFading] = useState(false);
   const [homeUrlInput, setHomeUrlInput] = useState('');
   const [homeContextInput, setHomeContextInput] = useState('');
   const [activeTab, setActiveTab] = useState<'generation' | 'preview'>('preview');
-  const [showStyleSelector, setShowStyleSelector] = useState(false);
-  const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
-  const [showLoadingBackground, setShowLoadingBackground] = useState(false);
+  // const [showStyleSelector, setShowStyleSelector] = useState(false);
+  const [_selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [_showLoadingBackground, setShowLoadingBackground] = useState(false);
   const [urlScreenshot, setUrlScreenshot] = useState<string | null>(null);
   const [isScreenshotLoaded, setIsScreenshotLoaded] = useState(false);
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
   const [isPreparingDesign, setIsPreparingDesign] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [targetUrl, setTargetUrl] = useState<string>('');
   const [sidebarScrolled, setSidebarScrolled] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'gathering' | 'planning' | 'generating' | null>(null);
   const [isStartingNewGeneration, setIsStartingNewGeneration] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
   const [hasInitialSubmission, setHasInitialSubmission] = useState<boolean>(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [fileStructure, setFileStructure] = useState<string>('');
   
   const [conversationContext, setConversationContext] = useState<{
@@ -387,6 +389,7 @@ function AISandboxPage() {
     addChatMessage('Checking packages... Sandbox is ready with Vite configuration.', 'system');
   };
   
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSurfaceError = (_errors: any[]) => {
     // Function kept for compatibility but Vite errors are now handled by template
     
@@ -397,6 +400,7 @@ function AISandboxPage() {
     }
   };
   
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const installPackages = async (packages: string[]) => {
     if (!sandboxData) {
       addChatMessage('No active sandbox. Create a sandbox first!', 'system');
@@ -2082,12 +2086,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         if (sandboxPromise) {
           addChatMessage('Waiting for sandbox to be ready...', 'system');
           try {
-            const newSandboxData = await sandboxPromise;
-            if (newSandboxData != null) {
-              activeSandboxData = newSandboxData;
-              // Also update the state for future use
-              setSandboxData(newSandboxData);
-            }
+            await sandboxPromise;
+            // Sandbox creation completed - the sandbox data is already set in state by createSandbox
+            activeSandboxData = sandboxData;
             // Remove the waiting message
             setChatMessages(prev => prev.filter(msg => msg.content !== 'Waiting for sandbox to be ready...'));
           } catch {
@@ -2626,10 +2627,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
   };
 
-  const handleHomeScreenSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await startGeneration();
-  };
+  // const handleHomeScreenSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   await startGeneration();
+  // };
 
   const startGeneration = async () => {
     if (!homeUrlInput.trim()) return;
@@ -3517,7 +3518,7 @@ Focus on the key sections and content, making it clean and modern.`;
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+    <Suspense fallback={<div>Loading...</div>}>
       <AISandboxPage />
     </Suspense>
   );

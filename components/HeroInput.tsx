@@ -43,7 +43,7 @@ export default function HeroInput({
     } else {
       setShowTiles(false);
     }
-  }, [value, isFocused]);
+  }, [value, isFocused, showSearchFeatures]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {

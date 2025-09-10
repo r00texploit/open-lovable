@@ -39,7 +39,7 @@ const pathVariants: Variants = {
 
 // Higher-order component for icon animation
 const withIconAnimation = (IconComponent: React.ComponentType<any>) => {
-  return ({
+  const AnimatedIcon = ({
     isHovered = false,
     className,
     ...props
@@ -63,11 +63,13 @@ const withIconAnimation = (IconComponent: React.ComponentType<any>) => {
       </div>
     );
   };
+  AnimatedIcon.displayName = `Animated${IconComponent.displayName || IconComponent.name || 'Icon'}`;
+  return AnimatedIcon;
 };
 
 // Higher-order component for icon animation
 const withChartIconAnimation = (IconComponent: React.ComponentType<any>) => {
-  return ({
+  const AnimatedChartIcon = ({
     isHovered = false,
     className,
     ...props
@@ -113,6 +115,8 @@ const withChartIconAnimation = (IconComponent: React.ComponentType<any>) => {
       </div>
     );
   };
+  AnimatedChartIcon.displayName = `AnimatedChart${IconComponent.displayName || IconComponent.name || 'Icon'}`;
+  return AnimatedChartIcon;
 };
 
 // Base icon components

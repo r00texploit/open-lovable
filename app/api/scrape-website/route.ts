@@ -49,23 +49,27 @@ export async function POST(request: NextRequest) {
     });
     
     // Handle the response according to the latest SDK structure
-    if (!scrapeResult.success) {
-      throw new Error(scrapeResult.error || "Failed to scrape website");
+    const result = scrapeResult as any;
+    if (result.success === false) {
+      throw new Error(result.error || "Failed to scrape website");
     }
+    
+    // The SDK may return data directly or nested
+    const data = result.data || result;
     
     return NextResponse.json({
       success: true,
       data: {
-        title: scrapeResult.data?.metadata?.title || "Untitled",
-        content: scrapeResult.data?.markdown || scrapeResult.data?.html || "",
-        description: scrapeResult.data?.metadata?.description || "",
-        markdown: scrapeResult.data?.markdown || "",
-        html: scrapeResult.data?.html || "",
-        metadata: scrapeResult.data?.metadata || {},
-        screenshot: scrapeResult.data?.screenshot || null,
-        links: scrapeResult.data?.links || [],
+        title: data?.metadata?.title || "Untitled",
+        content: data?.markdown || data?.html || "",
+        description: data?.metadata?.description || "",
+        markdown: data?.markdown || "",
+        html: data?.html || "",
+        metadata: data?.metadata || {},
+        screenshot: data?.screenshot || null,
+        links: data?.links || [],
         // Include raw data for flexibility
-        raw: scrapeResult.data
+        raw: data
       }
     });
     
@@ -94,7 +98,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Optional: Add OPTIONS handler for CORS if needed
-export async function OPTIONS(_request: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {

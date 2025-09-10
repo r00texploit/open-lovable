@@ -12,7 +12,7 @@ This project is configured to use Vercel Sandboxes for code execution.
 
 ## Vercel Authentication
 
-### Option 1: OIDC Token (Recommended for Vercel deployments)
+### Option 1: OIDC Token (Automatic for Vercel deployments)
 When running in a Vercel environment, authentication happens automatically via OIDC tokens. No configuration needed!
 
 ### Option 2: Personal Access Token (For local development)

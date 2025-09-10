@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     
     // Create a summary of available files for the AI
     const validFiles = Object.entries(manifest.files as Record<string, any>)
-      .filter(([path, _info]) => {
+      .filter(([path]) => {
         // Filter out invalid paths
         return path.includes('.') && !path.match(/\/\d+$/);
       });

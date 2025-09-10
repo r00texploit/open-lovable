@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { AnimatePresence, cubicBezier, motion } from "motion/react";

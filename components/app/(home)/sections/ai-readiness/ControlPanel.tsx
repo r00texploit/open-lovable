@@ -54,7 +54,8 @@ export default function ControlPanel({
   analysisData,
   onReset,
 }: ControlPanelProps) {
-  // const [showAIAnalysis, setShowAIAnalysis] = useState(false); // Reserved for AI analysis feature
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [showAIAnalysis, setShowAIAnalysis] = useState(false); // Reserved for AI analysis feature
   const [aiInsights, setAiInsights] = useState<CheckItem[]>([]);
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   const [combinedChecks, setCombinedChecks] = useState<CheckItem[]>([]);
@@ -268,7 +269,7 @@ export default function ControlPanel({
               }
             }
           })
-          .catch(error => {
+          .catch((error: any) => {
             console.error('AI analysis error:', error);
             // Remove loading tiles on error
             setCombinedChecks(prev => prev.filter(c => !(c as any).isLoading));

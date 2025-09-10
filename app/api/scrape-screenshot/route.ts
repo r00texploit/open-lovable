@@ -51,17 +51,17 @@ export async function POST(req: NextRequest) {
         screenshot: scrapeResult.screenshot,
         metadata: scrapeResult.metadata || {}
       });
-    } else if (scrapeResult?.data?.screenshot) {
+    } else if ((scrapeResult as any)?.data?.screenshot) {
       // Nested data structure
       return NextResponse.json({
         success: true,
-        screenshot: scrapeResult.data.screenshot,
-        metadata: scrapeResult.data.metadata || {}
+        screenshot: (scrapeResult as any).data.screenshot,
+        metadata: (scrapeResult as any).data.metadata || {}
       });
-    } else if (scrapeResult?.success === false) {
+    } else if ((scrapeResult as any)?.success === false) {
       // Explicit failure
-      console.error('[scrape-screenshot] Firecrawl API error:', scrapeResult.error);
-      throw new Error(scrapeResult.error || 'Failed to capture screenshot');
+      console.error('[scrape-screenshot] Firecrawl API error:', (scrapeResult as any).error);
+      throw new Error((scrapeResult as any).error || 'Failed to capture screenshot');
     } else {
       // No screenshot in response
       console.error('[scrape-screenshot] No screenshot in response. Full response:', JSON.stringify(scrapeResult, null, 2));
@@ -72,19 +72,10 @@ export async function POST(req: NextRequest) {
     console.error('[scrape-screenshot] Screenshot capture error:', error);
     console.error('[scrape-screenshot] Error stack:', error.stack);
     
-    // Provide fallback response for development
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[scrape-screenshot] Returning placeholder screenshot for development');
-      return NextResponse.json({
-        success: true,
-        screenshot: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-        metadata: { error: 'Screenshot capture failed, using placeholder' }
-      });
-    }
+    // Provide fallback response for development - removed NODE_ENV check as it doesn't work in Next.js production builds
     
     return NextResponse.json({ 
-      error: error.message || 'Failed to capture screenshot',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: error.message || 'Failed to capture screenshot'
     }, { status: 500 });
   }
 }

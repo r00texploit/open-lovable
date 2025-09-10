@@ -70,7 +70,7 @@ interface HeroFlameProps {
 
 export function HeroFlame({ className, size = "medium" }: HeroFlameProps) {
   const [frameIndex, setFrameIndex] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {

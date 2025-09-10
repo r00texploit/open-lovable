@@ -14,10 +14,10 @@ export default function LivePreviewFrame({
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialPositionSetRef = useRef(false);
-  const idleStartTimerRef = useRef<NodeJS.Timeout>();
-  const idleMoveTimerRef = useRef<NodeJS.Timeout>();
+  const idleStartTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const idleMoveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
   const [cursorPosition, setCursorPosition] = useState<{
@@ -83,7 +83,7 @@ export default function LivePreviewFrame({
             // Only start the idle timer if not already idle and no timer is running
             idleStartTimerRef.current = setTimeout(() => {
               setIsIdle(true);
-              idleStartTimerRef.current = undefined; // Clear ref after timer runs
+              idleStartTimerRef.current = null; // Clear ref after timer runs
             }, 5000);
           }
           if (animationFrameId) {
@@ -96,7 +96,7 @@ export default function LivePreviewFrame({
           // If we were waiting to go idle, cancel it because we're moving again
           if (idleStartTimerRef.current) {
             clearTimeout(idleStartTimerRef.current);
-            idleStartTimerRef.current = undefined;
+            idleStartTimerRef.current = null;
           }
           // Ensure idle state is false if we are moving significantly
           if (isIdle) setIsIdle(false);
@@ -127,7 +127,7 @@ export default function LivePreviewFrame({
   const cleanupConnection = () => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = undefined;
+      reconnectTimeoutRef.current = null;
     }
     if (wsRef.current) {
       wsRef.current.close();
@@ -171,7 +171,7 @@ export default function LivePreviewFrame({
         // Clear any pending reconnection attempts
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
-          reconnectTimeoutRef.current = undefined;
+          reconnectTimeoutRef.current = null;
         }
       });
 
@@ -197,7 +197,7 @@ export default function LivePreviewFrame({
             // --- Interrupt Idle State ---
             if (idleStartTimerRef.current) {
               clearTimeout(idleStartTimerRef.current);
-              idleStartTimerRef.current = undefined;
+              idleStartTimerRef.current = null;
             }
             if (isIdle) {
               setIsIdle(false);

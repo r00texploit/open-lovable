@@ -1,4 +1,3 @@
-//@ts-nocheck
 
 import { AnimationOptions, cubicBezier } from "motion";
 import { Application, Container, Graphics, Sprite } from "pixi.js";
@@ -94,11 +93,11 @@ export default function AnimatedRect(props: Props) {
     },
     render,
     animate: (renderProps: Partial<Props>, settings?: AnimationOptions) =>
-      props.app.animate(p, renderProps, {
+      (props.app as any).animate(p, renderProps, {
         ...p.animationConfig,
         ...settings,
         onUpdate: render,
       }),
-    reset: () => props.app.animate(p, props, { onUpdate: render }),
+    reset: () => (props.app as any).animate(p, props, { onUpdate: render }),
   };
 }

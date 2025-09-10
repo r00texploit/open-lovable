@@ -1,4 +1,3 @@
-//@ts-nocheck
 
 import { Application, Graphics } from "pixi.js";
 
@@ -58,22 +57,22 @@ export default function BlinkingContainer({
       animatedRect.animate({ scale: 1 });
     },
     blink: ({ delay = 0 }: { delay?: number } = {}) => {
-      app
+      (app as any)
         .animate(0, 0.32, {
           repeatType: "reverse",
           repeat: 2,
           delay,
           duration: 0.065,
           ease: "linear",
-          onUpdate: (value) => {
+          onUpdate: (value: any) => {
             blinkLayer.alpha = value as number;
           },
         })
         .then(() => {
-          app.animate(0.32, 0, {
+          (app as any).animate(0.32, 0, {
             duration: 0.065,
             ease: "linear",
-            onUpdate: (value) => {
+            onUpdate: (value: any) => {
               blinkLayer.alpha = value as number;
             },
           });

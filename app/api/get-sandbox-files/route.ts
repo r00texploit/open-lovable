@@ -44,7 +44,7 @@ export async function GET() {
       throw new Error('Failed to list files');
     }
     
-    const fileList = (await findResult.stdout()).split('\n').filter(f => f.trim());
+    const fileList = (await findResult.stdout()).split('\n').filter((f: string) => f.trim());
     console.log('[get-sandbox-files] Found', fileList.length, 'files');
     
     // Read content of each file (limit to reasonable sizes)
@@ -91,7 +91,7 @@ export async function GET() {
     
     let structure = '';
     if (treeResult.exitCode === 0) {
-      const dirs = (await treeResult.stdout()).split('\n').filter(d => d.trim());
+      const dirs = (await treeResult.stdout()).split('\n').filter((d: string) => d.trim());
       structure = dirs.slice(0, 50).join('\n'); // Limit to 50 lines
     }
     

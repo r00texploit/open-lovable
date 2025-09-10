@@ -41,7 +41,7 @@ export async function GET() {
       });
       
       if (findResult.exitCode === 0) {
-        const logFiles = (await findResult.stdout()).split('\n').filter(f => f.trim());
+        const logFiles = (await findResult.stdout()).split('\n').filter((f: string) => f.trim());
         
         for (const logFile of logFiles.slice(0, 3)) {
           try {
@@ -51,7 +51,7 @@ export async function GET() {
             });
             
             if (grepResult.exitCode === 0) {
-              const errorLines = (await grepResult.stdout()).split('\n').filter(line => line.trim());
+              const errorLines = (await grepResult.stdout()).split('\n').filter((line: string) => line.trim());
               
               for (const line of errorLines) {
                 // Extract package name from error line

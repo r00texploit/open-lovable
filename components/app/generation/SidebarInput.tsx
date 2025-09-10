@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Globe from "@/components/app/(home)/sections/hero-input/_svg/Globe";
-import HeroInputSubmitButton from "@/components/app/(home)/sections/hero-input/Button/Button";
+import Link from "next/link";
 
 interface SidebarInputProps {
   onSubmit: (url: string, style: string, model: string, instructions?: string) => void;
@@ -16,12 +15,12 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
   const [additionalInstructions, setAdditionalInstructions] = useState<string>("");
   const [isValidUrl, setIsValidUrl] = useState<boolean>(false);
 
-  // Simple URL validation
-  const validateUrl = (urlString: string) => {
-    if (!urlString) return false;
-    const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
-    return urlPattern.test(urlString.toLowerCase());
-  };
+  // Simple URL validation - currently unused but keeping for future use
+  // const validateUrl = (urlString: string) => {
+  //   if (!urlString) return false;
+  //   const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+  //   return urlPattern.test(urlString.toLowerCase());
+  // };
 
   const styles = [
     { id: "1", name: "Glassmorphism", description: "Frosted glass effect" },
@@ -58,11 +57,11 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
       <div >
         <div className="p-4 border-b border-gray-100">
          {/* link to home page with button */}
-         <a href="/">
+         <Link href="/">
           <button className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
             Generate a new website
           </button>
-         </a>
+         </Link>
         </div>
 
         {/* Options Section - Show when valid URL */}

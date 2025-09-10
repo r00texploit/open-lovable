@@ -90,10 +90,9 @@ export const SlateButton = React.forwardRef<
               (React.isValidElement(Icon) ? (
                 Icon
               ) : (
-                //@ts-ignore
+                //@ts-expect-error - Icon component type allows JSX element
                 <Icon
                   className={cn(iconSizes[size], "flex-shrink-0")}
-                  // @ts-ignore - Some icons support isHovered and isOpen
                   isHovered={isHovered}
                   isOpen={isOpen}
                 />
@@ -104,10 +103,9 @@ export const SlateButton = React.forwardRef<
               (React.isValidElement(Icon) ? (
                 Icon
               ) : (
-                //@ts-ignore
+                //@ts-expect-error - Icon component type allows JSX element
                 <Icon
                   className={cn(iconSizes[size], "flex-shrink-0")}
-                  // @ts-ignore - Some icons support isHovered and isOpen
                   isHovered={isHovered}
                   isOpen={isOpen}
                 />

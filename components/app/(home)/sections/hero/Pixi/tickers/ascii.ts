@@ -129,7 +129,7 @@ const tickAscii: Ticker = async ({ app, canvas }) => {
 
   let i = 0;
 
-  //@ts-ignore
+  //@ts-expect-error - safeAdd method exists on extended ticker
   app.ticker.safeAdd(() => {
     i++;
     if (i >= sprites.length) i = 0;
