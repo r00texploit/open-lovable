@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseMorphEdits, applyMorphEditToFile } from '@/lib/morph-fast-apply';
 import { Sandbox } from '@e2b/code-interpreter';
 import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
@@ -278,6 +279,12 @@ export async function POST(request: NextRequest) {
     
     // Parse the AI response
     const parsed = parseAIResponse(response);
+    const morphEnabled = Boolean(isEdit && process.env.MORPH_API_KEY);
+    const morphEdits = morphEnabled ? parseMorphEdits(response) : [];
+    console.log('[apply-ai-code-stream] Morph Fast Apply mode:', morphEnabled);
+    if (morphEnabled) {
+      console.log('[apply-ai-code-stream] Morph edits found:', morphEdits.length);
+    }
     
     // Log what was parsed
     console.log('[apply-ai-code-stream] Parsed result:');
@@ -392,6 +399,14 @@ export async function POST(request: NextRequest) {
           message: 'Starting code application...',
           totalSteps: 3
         });
+        if (morphEnabled) {
+          await sendProgress({ type: 'info', message: 'Morph Fast Apply enabled' });
+          await sendProgress({ type: 'info', message: `Parsed ${morphEdits.length} Morph edits` });
+          if (morphEdits.length === 0) {
+            console.warn('[apply-ai-code-stream] Morph enabled but no <edit> blocks found; falling back to full-file flow');
+            await sendProgress({ type: 'warning', message: 'Morph enabled but no <edit> blocks found; falling back to full-file flow' });
+          }
+        }
         
         // Step 1: Install packages
         const packagesArray = Array.isArray(packages) ? packages : [];
@@ -463,7 +478,7 @@ export async function POST(request: NextRequest) {
                       if (data.type === 'success' && data.installedPackages) {
                         results.packagesInstalled = data.installedPackages;
                       }
-                    } catch (e) {
+                    } catch {
                       // Ignore parse errors
                     }
                   }
@@ -496,11 +511,60 @@ export async function POST(request: NextRequest) {
         
         // Filter out config files that shouldn't be created
         const configFiles = ['tailwind.config.js', 'vite.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'postcss.config.js'];
-        const filteredFiles = filesArray.filter(file => {
+        let filteredFiles = filesArray.filter(file => {
           if (!file || typeof file !== 'object') return false;
           const fileName = (file.path || '').split('/').pop() || '';
           return !configFiles.includes(fileName);
         });
+
+        // If Morph is enabled and we have edits, apply them before file writes
+        const morphUpdatedPaths = new Set<string>();
+        if (morphEnabled && morphEdits.length > 0 && sandboxInstance) {
+          await sendProgress({ type: 'info', message: `Applying ${morphEdits.length} fast edits via Morph...` });
+          for (const [idx, edit] of morphEdits.entries()) {
+            try {
+              await sendProgress({ type: 'file-progress', current: idx + 1, total: morphEdits.length, fileName: edit.targetFile, action: 'morph-applying' });
+              const result = await applyMorphEditToFile({
+                sandbox: sandboxInstance,
+                targetPath: edit.targetFile,
+                instructions: edit.instructions,
+                updateSnippet: edit.update
+              });
+              if (result.success && result.normalizedPath) {
+                console.log('[apply-ai-code-stream] Morph updated', result.normalizedPath);
+                morphUpdatedPaths.add(result.normalizedPath);
+                if (results.filesUpdated) results.filesUpdated.push(result.normalizedPath);
+                await sendProgress({ type: 'file-complete', fileName: result.normalizedPath, action: 'morph-updated' });
+              } else {
+                const msg = result.error || 'Unknown Morph error';
+                console.error('[apply-ai-code-stream] Morph apply failed for', edit.targetFile, msg);
+                if (results.errors) results.errors.push(`Morph apply failed for ${edit.targetFile}: ${msg}`);
+                await sendProgress({ type: 'file-error', fileName: edit.targetFile, error: msg });
+              }
+            } catch (err) {
+              const msg = (err as Error).message;
+              console.error('[apply-ai-code-stream] Morph apply exception for', edit.targetFile, msg);
+              if (results.errors) results.errors.push(`Morph apply exception for ${edit.targetFile}: ${msg}`);
+              await sendProgress({ type: 'file-error', fileName: edit.targetFile, error: msg });
+            }
+          }
+        }
+
+        // Avoid overwriting Morph-updated files in the file write loop
+        if (morphUpdatedPaths.size > 0) {
+          filteredFiles = filteredFiles.filter(file => {
+            if (!file?.path) return true;
+            let normalizedPath = file.path.startsWith('/') ? file.path.slice(1) : file.path;
+            const fileName = normalizedPath.split('/').pop() || '';
+            if (!normalizedPath.startsWith('src/') &&
+                !normalizedPath.startsWith('public/') &&
+                normalizedPath !== 'index.html' &&
+                !configFiles.includes(fileName)) {
+              normalizedPath = 'src/' + normalizedPath;
+            }
+            return !morphUpdatedPaths.has(normalizedPath);
+          });
+        }
         
         for (const [index, file] of filteredFiles.entries()) {
           try {
