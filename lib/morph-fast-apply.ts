@@ -87,6 +87,23 @@ async function readFileFromSandbox(sandbox: any, normalizedPath: string, fullPat
     return await sandbox.files.read(fullPath);
   }
 
+  // Try provider runCommand (preferred for provider pattern)
+  if (typeof sandbox?.runCommand === 'function') {
+    try {
+      const res = await sandbox.runCommand(`cat ${normalizedPath}`);
+      if (res && typeof res.stdout === 'string') {
+        return res.stdout as string;
+      }
+    } catch {}
+    // fallback to absolute path
+    try {
+      const resAbs = await sandbox.runCommand(`cat ${fullPath}`);
+      if (resAbs && typeof resAbs.stdout === 'string') {
+        return resAbs.stdout as string;
+      }
+    } catch {}
+  }
+
   // Try shell cat via commands.run
   if (sandbox?.commands?.run) {
     const result = await sandbox.commands.run(`cat ${fullPath}`, { cwd: '/home/user/app', timeout: 30 });
@@ -100,6 +117,28 @@ async function readFileFromSandbox(sandbox: any, normalizedPath: string, fullPat
 
 // Write a file to sandbox and update cache
 async function writeFileToSandbox(sandbox: any, normalizedPath: string, fullPath: string, content: string): Promise<void> {
+  // Provider pattern (writeFile)
+  if (typeof sandbox?.writeFile === 'function') {
+    await sandbox.writeFile(normalizedPath, content);
+    return;
+  }
+
+  // Provider pattern (runCommand redirect)
+  if (typeof sandbox?.runCommand === 'function') {
+    // Ensure directory exists
+    const dir = normalizedPath.includes('/') ? normalizedPath.substring(0, normalizedPath.lastIndexOf('/')) : '';
+    if (dir) {
+      try { await sandbox.runCommand(`mkdir -p ${dir}`); } catch {}
+    }
+    // Write via heredoc with proper escaping
+    const heredoc = `bash -lc 'cat > ${normalizedPath} <<\"EOF\"\n${content.replace(/\\/g, '\\\\').replace(/\n/g, '\n').replace(/\$/g, '\$')}\nEOF'`;
+    const result = await sandbox.runCommand(heredoc);
+    if (result?.stdout || result?.stderr) {
+      // no-op
+    }
+    return;
+  }
+
   // Prefer E2B files API
   if (sandbox?.files?.write) {
     await sandbox.files.write(fullPath, content);
