@@ -30,6 +30,11 @@ GEMINI_API_KEY=your_gemini_api_key        # https://aistudio.google.com/app/apik
 GROQ_API_KEY=your_groq_api_key            # https://console.groq.com
 
 # =================================================================
+# FAST APPLY (Optional - for faster edits)
+# =================================================================
+MORPH_API_KEY=your_morphllm_api_key    # https://morphllm.com/dashboard
+
+# =================================================================
 # SANDBOX PROVIDER - Choose ONE: Vercel (default) or E2B
 # =================================================================
 SANDBOX_PROVIDER=vercel  # or 'e2b'
