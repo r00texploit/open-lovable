@@ -11,21 +11,37 @@ import { FileManifest } from '@/types/file-manifest';
 import type { ConversationState, ConversationMessage, ConversationEdit } from '@/types/conversation';
 import { appConfig } from '@/config/app.config';
 
+// Force dynamic route to enable streaming
+export const dynamic = 'force-dynamic';
+
+// Check if we're using Vercel AI Gateway
+const isUsingAIGateway = !!process.env.AI_GATEWAY_API_KEY;
+const aiGatewayBaseURL = 'https://ai-gateway.vercel.sh/v1';
+
+console.log('[generate-ai-code-stream] AI Gateway config:', {
+  isUsingAIGateway,
+  hasGroqKey: !!process.env.GROQ_API_KEY,
+  hasAIGatewayKey: !!process.env.AI_GATEWAY_API_KEY
+});
+
 const groq = createGroq({
-  apiKey: process.env.GROQ_API_KEY,
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.GROQ_API_KEY,
+  baseURL: isUsingAIGateway ? aiGatewayBaseURL : undefined,
 });
 
 const anthropic = createAnthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  baseURL: process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1',
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.ANTHROPIC_API_KEY,
+  baseURL: isUsingAIGateway ? aiGatewayBaseURL : (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1'),
 });
 
 const googleGenerativeAI = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY,
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.GEMINI_API_KEY,
+  baseURL: isUsingAIGateway ? aiGatewayBaseURL : undefined,
 });
 
 const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.OPENAI_API_KEY,
+  baseURL: isUsingAIGateway ? aiGatewayBaseURL : process.env.OPENAI_BASE_URL,
 });
 
 // Helper function to analyze user preferences from conversation history
@@ -142,10 +158,18 @@ export async function POST(request: NextRequest) {
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
     
-    // Function to send progress updates
+    // Function to send progress updates with flushing
     const sendProgress = async (data: any) => {
       const message = `data: ${JSON.stringify(data)}\n\n`;
-      await writer.write(encoder.encode(message));
+      try {
+        await writer.write(encoder.encode(message));
+        // Force flush by writing a keep-alive comment
+        if (data.type === 'stream' || data.type === 'conversation') {
+          await writer.write(encoder.encode(': keepalive\n\n'));
+        }
+      } catch (error) {
+        console.error('[generate-ai-code-stream] Error writing to stream:', error);
+      }
     };
     
     // Start processing in background
@@ -170,7 +194,7 @@ export async function POST(request: NextRequest) {
           if (manifest) {
             await sendProgress({ type: 'status', message: '🔍 Creating search plan...' });
             
-            const fileContents = global.sandboxState.fileCache.files;
+            const fileContents = global.sandboxState.fileCache?.files || {};
             console.log('[generate-ai-code-stream] Files available for search:', Object.keys(fileContents).length);
             
             // STEP 1: Get search plan from AI
@@ -220,8 +244,9 @@ export async function POST(request: NextRequest) {
                     console.log('[generate-ai-code-stream] Target selected:', target);
                     
                     // Create surgical edit context with exact location
-                    const normalizedPath = target.filePath.replace('/home/user/app/', '');
-                    const fileContent = fileContents[normalizedPath]?.content || '';
+                    // normalizedPath would be: target.filePath.replace('/home/user/app/', '');
+                    // fileContent available but not used in current implementation
+                    // const fileContent = fileContents[normalizedPath]?.content || '';
                     
                     // Build enhanced context with search results
                     enhancedSystemPrompt = `
@@ -331,7 +356,7 @@ User request: "${prompt}"`;
                         
                         // For now, fall back to keyword search since we don't have file contents for search execution
                         // This path happens when no manifest was initially available
-                        let targetFiles = [];
+                        let targetFiles: any[] = [];
                         if (!searchPlan || searchPlan.searchTerms.length === 0) {
                           console.warn('[generate-ai-code-stream] No target files after fetch, searching for relevant files');
                           
@@ -551,7 +576,7 @@ Remember: You are a SURGEON making a precise incision, not an artist repainting 
         }
         
         // Build system prompt with conversation awareness
-        const systemPrompt = `You are an expert React developer with perfect memory of the conversation. You maintain context across messages and remember scraped websites, generated components, and applied code. Generate clean, modern React code for Vite applications.
+        let systemPrompt = `You are an expert React developer with perfect memory of the conversation. You maintain context across messages and remember scraped websites, generated components, and applied code. Generate clean, modern React code for Vite applications.
 ${conversationContext}
 
 🚨 CRITICAL RULES - YOUR MOST IMPORTANT INSTRUCTIONS:
@@ -569,6 +594,11 @@ ${conversationContext}
    - Simple style/text change = 1 file ONLY
    - New component = 2 files MAX (component + parent)
    - If >3 files, YOU'RE DOING TOO MUCH
+6. **DO NOT CREATE SVGs FROM SCRATCH**:
+   - NEVER generate custom SVG code unless explicitly asked
+   - Use existing icon libraries (lucide-react, heroicons, etc.)
+   - Or use placeholder elements/text if icons are not critical
+   - Only create custom SVGs when user specifically requests "create an SVG" or "draw an SVG"
 
 COMPONENT RELATIONSHIPS (CHECK THESE FIRST):
 - Navigation usually lives INSIDE Header.jsx, not separate Nav.jsx
@@ -897,6 +927,24 @@ CRITICAL: When files are provided in the context:
 4. Do NOT ask to see files - they are already provided in the context above
 5. Make the requested change immediately`;
 
+        // If Morph Fast Apply is enabled (edit mode + MORPH_API_KEY), force <edit> block output
+        const morphFastApplyEnabled = Boolean(isEdit && process.env.MORPH_API_KEY);
+        if (morphFastApplyEnabled) {
+          systemPrompt += `
+
+MORPH FAST APPLY MODE (EDIT-ONLY):
+- Output edits as <edit> blocks, not full <file> blocks, for files that already exist.
+- Format for each edit:
+  <edit target_file="src/components/Header.jsx">
+    <instructions>Describe the minimal change, single sentence.</instructions>
+    <update>Provide the SMALLEST code snippet necessary to perform the change.</update>
+  </edit>
+- Only use <file> blocks when you must CREATE a brand-new file.
+- Prefer ONE edit block for a simple change; multiple edits only if absolutely needed for separate files.
+- Keep updates minimal and precise; do not rewrite entire files.
+`;
+        }
+
         // Build full prompt with context
         let fullPrompt = prompt;
         if (context) {
@@ -955,13 +1003,15 @@ CRITICAL: When files are provided in the context:
                   // Store files in cache
                   for (const [path, content] of Object.entries(filesData.files)) {
                     const normalizedPath = path.replace('/home/user/app/', '');
-                    global.sandboxState.fileCache.files[normalizedPath] = {
-                      content: content as string,
-                      lastModified: Date.now()
-                    };
+                    if (global.sandboxState.fileCache) {
+                      global.sandboxState.fileCache.files[normalizedPath] = {
+                        content: content as string,
+                        lastModified: Date.now()
+                      };
+                    }
                   }
                   
-                  if (filesData.manifest) {
+                  if (filesData.manifest && global.sandboxState.fileCache) {
                     global.sandboxState.fileCache.manifest = filesData.manifest;
                     
                     // Now try to analyze edit intent with the fetched manifest
@@ -993,7 +1043,7 @@ CRITICAL: When files are provided in the context:
                   }
                   
                   // Update variables
-                  backendFiles = global.sandboxState.fileCache.files;
+                  backendFiles = global.sandboxState.fileCache?.files || {};
                   hasBackendFiles = Object.keys(backendFiles).length > 0;
                   console.log('[generate-ai-code-stream] Updated backend cache with fetched files');
                 }
@@ -1140,6 +1190,17 @@ CRITICAL: When files are provided in the context:
           }
           
           if (contextParts.length > 0) {
+            if (morphFastApplyEnabled) {
+              contextParts.push('\nOUTPUT FORMAT (REQUIRED IN MORPH MODE):');
+              contextParts.push('<edit target_file="src/components/Component.jsx">');
+              contextParts.push('<instructions>Minimal, precise instruction.</instructions>');
+              contextParts.push('<update>// Smallest necessary snippet</update>');
+              contextParts.push('</edit>');
+              contextParts.push('\nIf you need to create a NEW file, then and only then output a full file:');
+              contextParts.push('<file path="src/components/NewComponent.jsx">');
+              contextParts.push('// Full file content when creating new files');
+              contextParts.push('</file>');
+            }
             fullPrompt = `CONTEXT:\n${contextParts.join('\n')}\n\nUSER REQUEST:\n${prompt}`;
           }
         }
@@ -1154,11 +1215,32 @@ CRITICAL: When files are provided in the context:
         // Determine which provider to use based on model
         const isAnthropic = model.startsWith('anthropic/');
         const isGoogle = model.startsWith('google/');
-        const isOpenAI = model.startsWith('openai/gpt-5');
-        const modelProvider = isAnthropic ? anthropic : (isOpenAI ? openai : (isGoogle ? googleGenerativeAI : groq));
-        const actualModel = isAnthropic ? model.replace('anthropic/', '') : 
-                           (model === 'openai/gpt-5') ? 'gpt-5' :
-                           (isGoogle ? model.replace('google/', '') : model);
+        const isOpenAI = model.startsWith('openai/');
+        const isKimiGroq = model === 'moonshotai/kimi-k2-instruct-0905';
+        const modelProvider = isAnthropic ? anthropic : 
+                              (isOpenAI ? openai : 
+                              (isGoogle ? googleGenerativeAI : 
+                              (isKimiGroq ? groq : groq)));
+        
+        // Fix model name transformation for different providers
+        let actualModel: string;
+        if (isAnthropic) {
+          actualModel = model.replace('anthropic/', '');
+        } else if (isOpenAI) {
+          actualModel = model.replace('openai/', '');
+        } else if (isKimiGroq) {
+          // Kimi on Groq - use full model string
+          actualModel = 'moonshotai/kimi-k2-instruct-0905';
+        } else if (isGoogle) {
+          // Google uses specific model names - convert our naming to theirs  
+          actualModel = model.replace('google/', '');
+        } else {
+          actualModel = model;
+        }
+
+        console.log(`[generate-ai-code-stream] Using provider: ${isAnthropic ? 'Anthropic' : isGoogle ? 'Google' : isOpenAI ? 'OpenAI' : 'Groq'}, model: ${actualModel}`);
+        console.log(`[generate-ai-code-stream] AI Gateway enabled: ${isUsingAIGateway}`);
+        console.log(`[generate-ai-code-stream] Model string: ${model}`);
 
         // Make streaming API call with appropriate provider
         const streamOptions: any = {
@@ -1243,7 +1325,61 @@ It's better to have 3 complete files than 10 incomplete files.`
           };
         }
         
-        const result = await streamText(streamOptions);
+        let result;
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (retryCount <= maxRetries) {
+          try {
+            result = await streamText(streamOptions);
+            break; // Success, exit retry loop
+          } catch (streamError: any) {
+            console.error(`[generate-ai-code-stream] Error calling streamText (attempt ${retryCount + 1}/${maxRetries + 1}):`, streamError);
+            
+            // Check if this is a Groq service unavailable error
+            const isGroqServiceError = isKimiGroq && streamError.message?.includes('Service unavailable');
+            const isRetryableError = streamError.message?.includes('Service unavailable') || 
+                                    streamError.message?.includes('rate limit') ||
+                                    streamError.message?.includes('timeout');
+            
+            if (retryCount < maxRetries && isRetryableError) {
+              retryCount++;
+              console.log(`[generate-ai-code-stream] Retrying in ${retryCount * 2} seconds...`);
+              
+              // Send progress update about retry
+              await sendProgress({ 
+                type: 'info', 
+                message: `Service temporarily unavailable, retrying (attempt ${retryCount + 1}/${maxRetries + 1})...` 
+              });
+              
+              // Wait before retry with exponential backoff
+              await new Promise(resolve => setTimeout(resolve, retryCount * 2000));
+              
+              // If Groq fails, try switching to a fallback model
+              if (isGroqServiceError && retryCount === maxRetries) {
+                console.log('[generate-ai-code-stream] Groq service unavailable, falling back to GPT-4');
+                streamOptions.model = openai('gpt-4-turbo');
+                actualModel = 'gpt-4-turbo';
+              }
+            } else {
+              // Final error, send to user
+              await sendProgress({ 
+                type: 'error', 
+                message: `Failed to initialize ${isGoogle ? 'Gemini' : isAnthropic ? 'Claude' : isOpenAI ? 'GPT-5' : isKimiGroq ? 'Kimi (Groq)' : 'Groq'} streaming: ${streamError.message}` 
+              });
+              
+              // If this is a Google model error, provide helpful info
+              if (isGoogle) {
+                await sendProgress({ 
+                  type: 'info', 
+                  message: 'Tip: Make sure your GEMINI_API_KEY is set correctly and has proper permissions.' 
+                });
+              }
+              
+              throw streamError;
+            }
+          }
+        }
         
         // Stream the response and parse in real-time
         let generatedCode = '';
@@ -1258,7 +1394,7 @@ It's better to have 3 complete files than 10 incomplete files.`
         let tagBuffer = '';
         
         // Stream the response and parse for packages in real-time
-        for await (const textPart of result.textStream) {
+        for await (const textPart of result?.textStream || []) {
           const text = textPart || '';
           generatedCode += text;
           currentFile += text;
@@ -1300,6 +1436,11 @@ It's better to have 3 complete files than 10 incomplete files.`
             text: text,
             raw: true 
           });
+          
+          // Debug: Log every 100 characters streamed
+          if (generatedCode.length % 100 < text.length) {
+            console.log(`[generate-ai-code-stream] Streamed ${generatedCode.length} chars`);
+          }
           
           // Check for package tags in buffered text (ONLY for edits, not initial generation)
           let lastIndex = 0;
@@ -1590,12 +1731,28 @@ Provide the complete file content without any truncation. Include all necessary 
                   completionClient = openai;
                 } else if (model.includes('claude')) {
                   completionClient = anthropic;
+                } else if (model === 'moonshotai/kimi-k2-instruct-0905') {
+                  completionClient = groq;
                 } else {
                   completionClient = groq;
                 }
                 
+                // Determine the correct model name for the completion
+                let completionModelName: string;
+                if (model === 'moonshotai/kimi-k2-instruct-0905') {
+                  completionModelName = 'moonshotai/kimi-k2-instruct-0905';
+                } else if (model.includes('openai')) {
+                  completionModelName = model.replace('openai/', '');
+                } else if (model.includes('anthropic')) {
+                  completionModelName = model.replace('anthropic/', '');
+                } else if (model.includes('google')) {
+                  completionModelName = model.replace('google/', '');
+                } else {
+                  completionModelName = model;
+                }
+                
                 const completionResult = await streamText({
-                  model: completionClient(modelMapping[model] || model),
+                  model: completionClient(completionModelName),
                   messages: [
                     { 
                       role: 'system', 
@@ -1603,8 +1760,7 @@ Provide the complete file content without any truncation. Include all necessary 
                     },
                     { role: 'user', content: completionPrompt }
                   ],
-                  temperature: isGPT5 ? undefined : appConfig.ai.defaultTemperature,
-                  maxTokens: appConfig.ai.truncationRecoveryMaxTokens
+                  temperature: model.startsWith('openai/gpt-5') ? undefined : appConfig.ai.defaultTemperature
                 });
                 
                 // Get the full text from the stream
@@ -1715,12 +1871,18 @@ Provide the complete file content without any truncation. Include all necessary 
       }
     })();
     
-    // Return the stream
+    // Return the stream with proper headers for streaming support
     return new Response(stream.readable, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
+        'Transfer-Encoding': 'chunked',
+        'Content-Encoding': 'none', // Prevent compression that can break streaming
+        'X-Accel-Buffering': 'no', // Disable nginx buffering
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
     });
     

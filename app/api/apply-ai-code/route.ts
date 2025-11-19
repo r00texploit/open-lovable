@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseMorphEdits, applyMorphEditToFile } from '@/lib/morph-fast-apply';
 import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
 
@@ -128,6 +129,7 @@ function parseAIResponse(response: string): ParsedResponse {
 
 declare global {
   var activeSandbox: any;
+  var activeSandboxProvider: any;
   var existingFiles: Set<string>;
   var sandboxState: SandboxState;
 }
@@ -144,14 +146,23 @@ export async function POST(request: NextRequest) {
     
     // Parse the AI response
     const parsed = parseAIResponse(response);
+    const morphEnabled = Boolean(isEdit && process.env.MORPH_API_KEY);
+    const morphEdits = morphEnabled ? parseMorphEdits(response) : [];
+    console.log('[apply-ai-code] Morph Fast Apply mode:', morphEnabled);
+    if (morphEnabled) {
+      console.log('[apply-ai-code] Morph edits found:', morphEdits.length);
+    }
     
     // Initialize existingFiles if not already
     if (!global.existingFiles) {
       global.existingFiles = new Set<string>();
     }
     
+    // Get the active sandbox or provider
+    const sandbox = global.activeSandbox || global.activeSandboxProvider;
+    
     // If no active sandbox, just return parsed results
-    if (!global.activeSandbox) {
+    if (!sandbox) {
       return NextResponse.json({
         success: true,
         results: {
@@ -167,11 +178,43 @@ export async function POST(request: NextRequest) {
       });
     }
     
+    // Verify sandbox is ready before applying code
+    console.log('[apply-ai-code] Verifying sandbox is ready...');
+    
+    // For Vercel sandboxes, check if Vite is running
+    if (sandbox.constructor?.name === 'VercelProvider' || sandbox.getSandboxInfo?.()?.provider === 'vercel') {
+      console.log('[apply-ai-code] Detected Vercel sandbox, checking Vite status...');
+      try {
+        // Check if Vite process is running
+        const checkResult = await sandbox.runCommand('pgrep -f vite');
+        if (!checkResult || !checkResult.stdout) {
+          console.log('[apply-ai-code] Vite not running, starting it...');
+          // Start Vite if not running
+          await sandbox.runCommand('sh -c "cd /vercel/sandbox && nohup npm run dev > /tmp/vite.log 2>&1 &"');
+          // Wait for Vite to start
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          console.log('[apply-ai-code] Vite started, proceeding with code application');
+        } else {
+          console.log('[apply-ai-code] Vite is already running');
+        }
+      } catch (e) {
+        console.log('[apply-ai-code] Could not check Vite status, proceeding anyway:', e);
+      }
+    }
+    
     // Apply to active sandbox
     console.log('[apply-ai-code] Applying code to sandbox...');
     console.log('[apply-ai-code] Is edit mode:', isEdit);
     console.log('[apply-ai-code] Files to write:', parsed.files.map(f => f.path));
     console.log('[apply-ai-code] Existing files:', Array.from(global.existingFiles));
+    if (morphEnabled) {
+      console.log('[apply-ai-code] Morph Fast Apply enabled');
+      if (morphEdits.length > 0) {
+        console.log('[apply-ai-code] Parsed Morph edits:', morphEdits.map(e => e.targetFile));
+      } else {
+        console.log('[apply-ai-code] No <edit> blocks found in response');
+      }
+    }
     
     const results = {
       filesCreated: [] as string[],
@@ -296,9 +339,46 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // Attempt Morph Fast Apply for edits before file creation
+    const morphUpdatedPaths = new Set<string>();
+
+    if (morphEnabled && morphEdits.length > 0) {
+      if (!global.activeSandbox) {
+        console.warn('[apply-ai-code] Morph edits found but no active sandbox; skipping Morph application');
+      } else {
+        console.log(`[apply-ai-code] Applying ${morphEdits.length} fast edits via Morph...`);
+        for (const edit of morphEdits) {
+          try {
+            const result = await applyMorphEditToFile({
+              sandbox: global.activeSandbox,
+              targetPath: edit.targetFile,
+              instructions: edit.instructions,
+              updateSnippet: edit.update
+            });
+
+            if (result.success && result.normalizedPath) {
+              morphUpdatedPaths.add(result.normalizedPath);
+              results.filesUpdated.push(result.normalizedPath);
+              console.log('[apply-ai-code] Morph applied to', result.normalizedPath);
+            } else {
+              const msg = result.error || 'Unknown Morph error';
+              console.error('[apply-ai-code] Morph apply failed:', msg);
+              results.errors.push(`Morph apply failed for ${edit.targetFile}: ${msg}`);
+            }
+          } catch (e) {
+            console.error('[apply-ai-code] Morph apply exception:', e);
+            results.errors.push(`Morph apply exception for ${edit.targetFile}: ${(e as Error).message}`);
+          }
+        }
+      }
+    }
+    if (morphEnabled && morphEdits.length === 0) {
+      console.warn('[apply-ai-code] Morph enabled but no <edit> blocks found; falling back to full-file flow');
+    }
+
     // Filter out config files that shouldn't be created
     const configFiles = ['tailwind.config.js', 'vite.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'postcss.config.js'];
-    const filteredFiles = parsed.files.filter(file => {
+    let filteredFiles = parsed.files.filter(file => {
       const fileName = file.path.split('/').pop() || '';
       if (configFiles.includes(fileName)) {
         console.warn(`[apply-ai-code] Skipping config file: ${file.path} - already exists in template`);
@@ -306,6 +386,21 @@ export async function POST(request: NextRequest) {
       }
       return true;
     });
+
+    // Avoid overwriting files already updated by Morph
+    if (morphUpdatedPaths.size > 0) {
+      filteredFiles = filteredFiles.filter(file => {
+        let normalizedPath = file.path.startsWith('/') ? file.path.slice(1) : file.path;
+        const fileName = normalizedPath.split('/').pop() || '';
+        if (!normalizedPath.startsWith('src/') &&
+            !normalizedPath.startsWith('public/') &&
+            normalizedPath !== 'index.html' &&
+            !configFiles.includes(fileName)) {
+          normalizedPath = 'src/' + normalizedPath;
+        }
+        return !morphUpdatedPaths.has(normalizedPath);
+      });
+    }
     
     // Create or update files AFTER package installation
     for (const file of filteredFiles) {
@@ -336,11 +431,28 @@ export async function POST(request: NextRequest) {
           fileContent = fileContent.replace(/import\s+['"]\.\/[^'"]+\.css['"];?\s*\n?/g, '');
         }
         
+        // Fix common Tailwind CSS errors in CSS files
+        if (file.path.endsWith('.css')) {
+          // Replace shadow-3xl with shadow-2xl (shadow-3xl doesn't exist)
+          fileContent = fileContent.replace(/shadow-3xl/g, 'shadow-2xl');
+          // Replace any other non-existent shadow utilities
+          fileContent = fileContent.replace(/shadow-4xl/g, 'shadow-2xl');
+          fileContent = fileContent.replace(/shadow-5xl/g, 'shadow-2xl');
+        }
+        
         console.log(`[apply-ai-code] Writing file using E2B files API: ${fullPath}`);
         
         try {
-          // Use the correct E2B API - sandbox.files.write()
-          await global.activeSandbox.files.write(fullPath, fileContent);
+          // Check if we're using provider pattern (v2) or direct sandbox (v1)
+          if (sandbox.writeFile) {
+            // V2: Provider pattern (Vercel/E2B provider)
+            await sandbox.writeFile(file.path, fileContent);
+          } else if (sandbox.files?.write) {
+            // V1: Direct E2B sandbox
+            await sandbox.files.write(fullPath, fileContent);
+          } else {
+            throw new Error('Unsupported sandbox type');
+          }
           console.log(`[apply-ai-code] Successfully wrote file: ${fullPath}`);
           
           // Update file cache
@@ -354,7 +466,7 @@ export async function POST(request: NextRequest) {
           
         } catch (writeError) {
           console.error(`[apply-ai-code] E2B file write error:`, writeError);
-          throw writeError;
+          throw writeError as Error;
         }
         
         
@@ -432,15 +544,17 @@ function App() {
 export default App;`;
       
       try {
-        await global.activeSandbox.runCode(`
-file_path = "/home/user/app/src/App.jsx"
-file_content = """${appContent.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"""
-
-with open(file_path, 'w') as f:
-    f.write(file_content)
-
-print(f"Auto-generated: {file_path}")
-        `);
+        // Use provider pattern if available
+        if (sandbox.writeFile) {
+          await sandbox.writeFile('src/App.jsx', appContent);
+        } else if (sandbox.writeFiles) {
+          await sandbox.writeFiles([{
+            path: 'src/App.jsx',
+            content: Buffer.from(appContent)
+          }]);
+        }
+        
+        console.log('Auto-generated: src/App.jsx');
         results.filesCreated.push('src/App.jsx (auto-generated)');
       } catch (error) {
         results.errors.push(`Failed to create App.jsx: ${(error as Error).message}`);
@@ -459,9 +573,7 @@ print(f"Auto-generated: {file_path}")
       
       if (!isEdit && !indexCssInParsed && !indexCssExists) {
         try {
-          await global.activeSandbox.runCode(`
-file_path = "/home/user/app/src/index.css"
-file_content = """@tailwind base;
+          const indexCssContent = `@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -483,15 +595,22 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-}"""
+}`;
 
-with open(file_path, 'w') as f:
-    f.write(file_content)
-
-print(f"Auto-generated: {file_path}")
-          `);
+          // Use provider pattern if available
+          if (sandbox.writeFile) {
+            await sandbox.writeFile('src/index.css', indexCssContent);
+          } else if (sandbox.writeFiles) {
+            await sandbox.writeFiles([{
+              path: 'src/index.css',
+              content: Buffer.from(indexCssContent)
+            }]);
+          }
+          
+          console.log('Auto-generated: src/index.css');
           results.filesCreated.push('src/index.css (with Tailwind)');
         } catch (error) {
+          console.error('Failed to create index.css:', error);
           results.errors.push('Failed to create index.css with Tailwind');
         }
       }
@@ -500,15 +619,47 @@ print(f"Auto-generated: {file_path}")
     // Execute commands
     for (const cmd of parsed.commands) {
       try {
-        await global.activeSandbox.runCode(`
-import subprocess
-os.chdir('/home/user/app')
-result = subprocess.run(${JSON.stringify(cmd.split(' '))}, capture_output=True, text=True)
-print(f"Executed: ${cmd}")
-print(result.stdout)
-if result.stderr:
-    print(f"Errors: {result.stderr}")
-        `);
+        // Parse command and arguments
+        const commandParts = cmd.trim().split(/\s+/);
+        const cmdName = commandParts[0];
+        const args = commandParts.slice(1);
+        
+        // Execute command using sandbox
+        let result;
+        if (sandbox.runCommand && typeof sandbox.runCommand === 'function') {
+          // Check if this is a provider pattern sandbox
+          const testResult = await sandbox.runCommand(cmd);
+          if (testResult && typeof testResult === 'object' && 'stdout' in testResult) {
+            // Provider returns CommandResult directly
+            result = testResult;
+          } else {
+            // Direct sandbox - expects object with cmd and args
+            result = await sandbox.runCommand({
+              cmd: cmdName,
+              args
+            });
+          }
+        }
+        
+        console.log(`Executed: ${cmd}`);
+        
+        // Handle result based on type
+        let stdout = '';
+        let stderr = '';
+        
+        if (result) {
+          if (typeof result.stdout === 'string') {
+            stdout = result.stdout;
+            stderr = result.stderr || '';
+          } else if (typeof result.stdout === 'function') {
+            stdout = await result.stdout();
+            stderr = await result.stderr();
+          }
+        }
+        
+        if (stdout) console.log(stdout);
+        if (stderr) console.log(`Errors: ${stderr}`);
+        
         results.commandsExecuted.push(cmd);
       } catch (error) {
         results.errors.push(`Failed to execute ${cmd}: ${(error as Error).message}`);
