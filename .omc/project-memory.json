@@ -1,0 +1,494 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1780259247206,
+  "projectRoot": "/Users/halim/open-lovable",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "next",
+        "version": "15.4.3",
+        "category": "fullstack"
+      },
+      {
+        "name": "react",
+        "version": "19.1.0",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "19.1.0",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "pnpm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "pnpm build",
+    "testCommand": null,
+    "lintCommand": "pnpm lint",
+    "devCommand": "pnpm dev",
+    "scripts": {
+      "dev": "next dev --turbopack",
+      "build": "next build",
+      "start": "next start",
+      "lint": "next lint",
+      "test:api": "node tests/api-endpoints.test.js",
+      "test:code": "node tests/code-execution.test.js",
+      "test:all": "npm run test:integration && npm run test:api && npm run test:code"
+    }
+  },
+  "conventions": {
+    "namingStyle": "camelCase",
+    "importStyle": "ES modules",
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "app",
+      "components",
+      "lib",
+      "public"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "app": {
+      "path": "app",
+      "purpose": "Application code",
+      "fileCount": 5,
+      "lastAccessed": 1780259247151,
+      "keyFiles": [
+        "favicon.ico",
+        "globals.css",
+        "landing.tsx",
+        "layout.tsx",
+        "page.tsx"
+      ]
+    },
+    "atoms": {
+      "path": "atoms",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1780259247151,
+      "keyFiles": [
+        "sheets.ts"
+      ]
+    },
+    "components": {
+      "path": "components",
+      "purpose": "UI components",
+      "fileCount": 7,
+      "lastAccessed": 1780259247162,
+      "keyFiles": [
+        "CodeApplicationProgress.tsx",
+        "FirecrawlIcon.tsx",
+        "FirecrawlLogo.tsx",
+        "HMRErrorDetector.tsx",
+        "HeroInput.tsx"
+      ]
+    },
+    "config": {
+      "path": "config",
+      "purpose": "Configuration files",
+      "fileCount": 1,
+      "lastAccessed": 1780259247167,
+      "keyFiles": [
+        "app.config.ts"
+      ]
+    },
+    "hooks": {
+      "path": "hooks",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1780259247168,
+      "keyFiles": [
+        "useDebouncedCallback.ts",
+        "useDebouncedEffect.ts",
+        "useSwitchingCode.ts"
+      ]
+    },
+    "lib": {
+      "path": "lib",
+      "purpose": "Library code",
+      "fileCount": 9,
+      "lastAccessed": 1780259247169,
+      "keyFiles": [
+        "build-validator.ts",
+        "context-selector.ts",
+        "edit-examples.ts",
+        "edit-intent-analyzer.ts",
+        "file-parser.ts"
+      ]
+    },
+    "open-lovable": {
+      "path": "open-lovable",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1780259247174,
+      "keyFiles": []
+    },
+    "packages": {
+      "path": "packages",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1780259247174,
+      "keyFiles": []
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 6,
+      "lastAccessed": 1780259247175,
+      "keyFiles": [
+        "compressor.json",
+        "file.svg",
+        "firecrawl-logo",
+        "firecrawl.svg",
+        "globe.svg"
+      ]
+    },
+    "styles": {
+      "path": "styles",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1780259247181,
+      "keyFiles": [
+        "chrome-bug.css",
+        "colors.json",
+        "fire.css",
+        "inside-border-fix.css",
+        "main.css"
+      ]
+    },
+    "types": {
+      "path": "types",
+      "purpose": "Type definitions",
+      "fileCount": 3,
+      "lastAccessed": 1780259247184,
+      "keyFiles": [
+        "conversation.ts",
+        "file-manifest.ts",
+        "sandbox.ts"
+      ]
+    },
+    "utils": {
+      "path": "utils",
+      "purpose": "Utility functions",
+      "fileCount": 4,
+      "lastAccessed": 1780259247200,
+      "keyFiles": [
+        "cn.ts",
+        "init-canvas.ts",
+        "set-timeout-on-visible.ts",
+        "sleep.ts"
+      ]
+    },
+    "app/api": {
+      "path": "app/api",
+      "purpose": "API routes",
+      "fileCount": 0,
+      "lastAccessed": 1780259247201,
+      "keyFiles": []
+    },
+    "components/app": {
+      "path": "components/app",
+      "purpose": "Application code",
+      "fileCount": 1,
+      "lastAccessed": 1780259247203,
+      "keyFiles": []
+    },
+    "open-lovable/node_modules": {
+      "path": "open-lovable/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 0,
+      "lastAccessed": 1780259247204,
+      "keyFiles": []
+    },
+    "styles/components": {
+      "path": "styles/components",
+      "purpose": "UI components",
+      "fileCount": 3,
+      "lastAccessed": 1780259247205,
+      "keyFiles": [
+        "button.css",
+        "code.css",
+        "index.css"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "app/generation/page.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1780263520650,
+      "type": "file"
+    },
+    {
+      "path": ".env.local",
+      "accessCount": 4,
+      "lastAccessed": 1780264357958,
+      "type": "file"
+    },
+    {
+      "path": "lib/sandbox/providers/vercel-provider.ts",
+      "accessCount": 3,
+      "lastAccessed": 1780261971942,
+      "type": "file"
+    },
+    {
+      "path": "app/api/sandbox-status/route.ts",
+      "accessCount": 3,
+      "lastAccessed": 1780261992078,
+      "type": "file"
+    },
+    {
+      "path": "app/page.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1780263520702,
+      "type": "file"
+    },
+    {
+      "path": "app/layout.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1780264378230,
+      "type": "file"
+    },
+    {
+      "path": "prisma/schema.prisma",
+      "accessCount": 3,
+      "lastAccessed": 1780264639419,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 2,
+      "lastAccessed": 1780261491102,
+      "type": "file"
+    },
+    {
+      "path": "app/api/create-ai-sandbox/route.ts",
+      "accessCount": 2,
+      "lastAccessed": 1780261941259,
+      "type": "file"
+    },
+    {
+      "path": "config/app.config.ts",
+      "accessCount": 2,
+      "lastAccessed": 1780261963954,
+      "type": "file"
+    },
+    {
+      "path": "lib/sandbox/factory.ts",
+      "accessCount": 2,
+      "lastAccessed": 1780262948441,
+      "type": "file"
+    },
+    {
+      "path": "app/api/stripe/webhook/route.ts",
+      "accessCount": 2,
+      "lastAccessed": 1780264320790,
+      "type": "file"
+    },
+    {
+      "path": "app/api/stripe/portal/route.ts",
+      "accessCount": 2,
+      "lastAccessed": 1780264320952,
+      "type": "file"
+    },
+    {
+      "path": "app/api/stripe/checkout-session/route.ts",
+      "accessCount": 2,
+      "lastAccessed": 1780264321109,
+      "type": "file"
+    },
+    {
+      "path": "next.config.ts",
+      "accessCount": 2,
+      "lastAccessed": 1780264405256,
+      "type": "file"
+    },
+    {
+      "path": "lib/db/prisma.ts",
+      "accessCount": 2,
+      "lastAccessed": 1780264639730,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 1,
+      "lastAccessed": 1780261452253,
+      "type": "file"
+    },
+    {
+      "path": ".cursor/mcp.json",
+      "accessCount": 1,
+      "lastAccessed": 1780261452304,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 1,
+      "lastAccessed": 1780261452405,
+      "type": "file"
+    },
+    {
+      "path": "tailwind.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780261455277,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1780261455334,
+      "type": "file"
+    },
+    {
+      "path": "lib/sandbox/sandbox-manager.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780261464111,
+      "type": "file"
+    },
+    {
+      "path": "lib/ai/provider-manager.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780261464165,
+      "type": "file"
+    },
+    {
+      "path": "lib/sandbox/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780261466724,
+      "type": "file"
+    },
+    {
+      "path": "types/sandbox.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780261470154,
+      "type": "file"
+    },
+    {
+      "path": "app/api/monitor-vite-logs/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780261946562,
+      "type": "file"
+    },
+    {
+      "path": "components/SandboxPreview.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1780261946616,
+      "type": "file"
+    },
+    {
+      "path": "app/api/create-ai-sandbox-v2/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780262941024,
+      "type": "file"
+    },
+    {
+      "path": "lib/sandbox/providers/e2b-provider.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780262941074,
+      "type": "file"
+    },
+    {
+      "path": "components/HeroInput.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1780263537528,
+      "type": "file"
+    },
+    {
+      "path": "lib/stripe/stripe.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780264252032,
+      "type": "file"
+    },
+    {
+      "path": "lib/auth/auth-options.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780264266387,
+      "type": "file"
+    },
+    {
+      "path": "app/api/usage/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780264289756,
+      "type": "file"
+    },
+    {
+      "path": "middleware.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780264342912,
+      "type": "file"
+    },
+    {
+      "path": "app/auth/signin/page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1780264343097,
+      "type": "file"
+    },
+    {
+      "path": "app/pricing/page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1780264343277,
+      "type": "file"
+    },
+    {
+      "path": "components/providers.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1780264364907,
+      "type": "file"
+    },
+    {
+      "path": "components/user-nav.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1780264405433,
+      "type": "file"
+    },
+    {
+      "path": "scripts/init-db.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780264424204,
+      "type": "file"
+    },
+    {
+      "path": "components/usage-indicator.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1780264424380,
+      "type": "file"
+    },
+    {
+      "path": "prisma.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780264639572,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
