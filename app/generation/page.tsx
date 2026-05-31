@@ -366,17 +366,40 @@ function AISandboxPage() {
     if (shouldAutoGenerate && homeUrlInput && !showHomeScreen) {
       // Reset the flag
       setShouldAutoGenerate(false);
-      
+
       // Trigger generation after a short delay to ensure everything is set up
       const timer = setTimeout(() => {
         console.log('[generation] Auto-triggering generation from URL params');
         startGeneration();
       }, 1000);
-      
+
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldAutoGenerate, homeUrlInput, showHomeScreen]);
+
+  // Periodic health check to detect sandbox timeout early
+  useEffect(() => {
+    // Only run health check if we have an active sandbox
+    if (!sandboxData?.url) return;
+
+    console.log('[health-check] Starting periodic sandbox health check');
+
+    // Check every 30 seconds
+    const intervalId = setInterval(() => {
+      // Only check if we're not currently generating code
+      if (!generationProgress.isGenerating) {
+        console.log('[health-check] Running periodic health check...');
+        checkSandboxStatus(true); // autoRecreate = true
+      }
+    }, 30000); // 30 seconds
+
+    return () => {
+      console.log('[health-check] Stopping periodic health check');
+      clearInterval(intervalId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sandboxData?.url, generationProgress.isGenerating]);
 
   const updateStatus = (text: string, active: boolean) => {
     setStatus({ text, active });
@@ -489,11 +512,33 @@ function AISandboxPage() {
     }
   };
 
-  const checkSandboxStatus = async () => {
+  const checkSandboxStatus = async (autoRecreate = true) => {
     try {
-      const response = await fetch('/api/sandbox-status');
+      // Use checkHealth=true to get actual health status including 502 detection
+      const response = await fetch('/api/sandbox-status?checkHealth=true');
       const data = await response.json();
-      
+
+      if (data.needsRecreation && autoRecreate) {
+        console.log('[checkSandboxStatus] Sandbox needs recreation, auto-recreating...');
+        addChatMessage('⚠️ Sandbox timed out (15 min limit). Creating a new sandbox...', 'system');
+        setSandboxData(null);
+        updateStatus('Recreating sandbox...', false);
+
+        // Clear the iframe
+        if (iframeRef.current) {
+          iframeRef.current.src = '';
+        }
+
+        // Create new sandbox
+        const newSandbox = await createSandbox();
+
+        if (newSandbox) {
+          addChatMessage('✅ New sandbox created! You can continue building.', 'system');
+        }
+
+        return;
+      }
+
       if (data.active && data.healthy && data.sandboxData) {
         console.log('[checkSandboxStatus] Setting sandboxData from API:', data.sandboxData);
         setSandboxData(data.sandboxData);
@@ -1601,6 +1646,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               title="Open Lovable Sandbox"
               allow="clipboard-write"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+              onLoad={() => {
+                console.log('[iframe] Loaded successfully');
+              }}
+              onError={() => {
+                console.error('[iframe] Failed to load - sandbox may have timed out');
+                // Trigger health check which will detect 502 and recreate
+                checkSandboxStatus(true);
+              }}
             />
             
             {/* Package installation overlay - shows when installing packages or applying code */}
