@@ -7,51 +7,119 @@ declare global {
   var existingFiles: Set<string>;
 }
 
-export async function GET() {
+/**
+ * Check if the sandbox URL is actually responding
+ * This detects 502 errors when the sandbox has timed out or crashed
+ */
+async function checkSandboxHealth(url: string | null): Promise<{ healthy: boolean; statusCode?: number; error?: string }> {
+  if (!url) {
+    return { healthy: false, error: 'No sandbox URL provided' };
+  }
+
   try {
+    // Attempt to fetch the sandbox URL with a short timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+    const response = await fetch(url, {
+      method: 'HEAD',
+      signal: controller.signal,
+      // Don't follow redirects, just check if the server is responding
+      redirect: 'manual'
+    });
+
+    clearTimeout(timeoutId);
+
+    // 502 indicates the sandbox is not listening (timed out or crashed)
+    if (response.status === 502) {
+      return {
+        healthy: false,
+        statusCode: 502,
+        error: 'Sandbox not listening on port (timed out or crashed)'
+      };
+    }
+
+    // Any response means the server is up (even 404, 500, etc.)
+    // The important thing is the Vite server is running
+    return { healthy: true, statusCode: response.status };
+
+  } catch (error: any) {
+    // Network errors, timeouts, etc. indicate the sandbox is unreachable
+    if (error.name === 'AbortError') {
+      return { healthy: false, error: 'Connection timeout' };
+    }
+    return { healthy: false, error: error.message };
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const checkHealth = searchParams.get('checkHealth') === 'true'; // Enable actual health check
+
     // Check sandbox manager first, then fall back to global state
     const provider = sandboxManager.getActiveProvider() || global.activeSandboxProvider;
     const sandboxExists = !!provider;
 
     let sandboxHealthy = false;
     let sandboxInfo = null;
+    let needsRecreation = false;
+    let healthDetails = null;
 
     if (sandboxExists && provider) {
       try {
         // Check if sandbox is healthy by getting its info
         const providerInfo = provider.getSandboxInfo();
-        sandboxHealthy = !!providerInfo;
-        
+
         sandboxInfo = {
           sandboxId: providerInfo?.sandboxId || global.sandboxData?.sandboxId,
           url: providerInfo?.url || global.sandboxData?.url,
           filesTracked: global.existingFiles ? Array.from(global.existingFiles) : [],
           lastHealthCheck: new Date().toISOString()
         };
+
+        // Perform actual health check if requested
+        if (checkHealth && sandboxInfo.url) {
+          healthDetails = await checkSandboxHealth(sandboxInfo.url);
+          sandboxHealthy = healthDetails.healthy;
+
+          // If we got a 502, the sandbox needs to be recreated
+          if (healthDetails.statusCode === 502) {
+            needsRecreation = true;
+            console.log('[sandbox-status] Sandbox returned 502, needs recreation');
+          }
+        } else {
+          // Basic health check - just verify provider has info
+          sandboxHealthy = !!providerInfo;
+        }
       } catch (error) {
         console.error('[sandbox-status] Health check failed:', error);
         sandboxHealthy = false;
       }
     }
-    
+
     return NextResponse.json({
       success: true,
       active: sandboxExists,
       healthy: sandboxHealthy,
+      needsRecreation,
       sandboxData: sandboxInfo,
-      message: sandboxHealthy 
-        ? 'Sandbox is active and healthy' 
-        : sandboxExists 
-          ? 'Sandbox exists but is not responding' 
-          : 'No active sandbox'
+      healthDetails,
+      message: needsRecreation
+        ? 'Sandbox has timed out and needs to be recreated'
+        : sandboxHealthy
+          ? 'Sandbox is active and healthy'
+          : sandboxExists
+            ? 'Sandbox exists but is not responding'
+            : 'No active sandbox'
     });
-    
+
   } catch (error) {
     console.error('[sandbox-status] Error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: false,
       active: false,
-      error: (error as Error).message 
+      error: (error as Error).message
     }, { status: 500 });
   }
 }
