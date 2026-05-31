@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"mkdir -p prisma lib/stripe lib/auth lib/db app/api/auth/[...nextauth] app/api/stripe\",\"description\":\"Create required directories\"}",
-  "error": "Exit code 1\n(eval):1: no matches found: app/api/auth/[...nextauth]",
-  "timestamp": "2026-05-31T21:50:19.574Z",
-  "retry_count": 3
+  "tool_input_preview": "{\"command\":\"npx prisma migrate dev --name init\",\"timeout\":120000,\"description\":\"Run migration\"}",
+  "error": "Exit code 1\nLoaded Prisma config from prisma.config.ts.\n\nPrisma schema loaded from prisma/schema.prisma.\nError: The datasource.url property is required in your Prisma config file when using prisma migrate dev.",
+  "timestamp": "2026-05-31T22:09:28.663Z",
+  "retry_count": 15
 }

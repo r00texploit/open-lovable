@@ -244,9 +244,21 @@
   },
   "hotPaths": [
     {
+      "path": "prisma.config.ts",
+      "accessCount": 12,
+      "lastAccessed": 1780265363702,
+      "type": "file"
+    },
+    {
       "path": "app/generation/page.tsx",
       "accessCount": 10,
       "lastAccessed": 1780263520650,
+      "type": "file"
+    },
+    {
+      "path": "prisma/schema.prisma",
+      "accessCount": 6,
+      "lastAccessed": 1780265403129,
       "type": "file"
     },
     {
@@ -280,15 +292,9 @@
       "type": "file"
     },
     {
-      "path": "prisma/schema.prisma",
+      "path": "lib/db/prisma.ts",
       "accessCount": 3,
-      "lastAccessed": 1780264639419,
-      "type": "file"
-    },
-    {
-      "path": "prisma.config.ts",
-      "accessCount": 3,
-      "lastAccessed": 1780265070353,
+      "lastAccessed": 1780265409573,
       "type": "file"
     },
     {
@@ -337,12 +343,6 @@
       "path": "next.config.ts",
       "accessCount": 2,
       "lastAccessed": 1780264405256,
-      "type": "file"
-    },
-    {
-      "path": "lib/db/prisma.ts",
-      "accessCount": 2,
-      "lastAccessed": 1780264639730,
       "type": "file"
     },
     {
