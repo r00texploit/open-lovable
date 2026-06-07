@@ -19,10 +19,12 @@ import {
   Sparkles,
   ArrowRight,
   Settings,
+  Globe,
 } from 'lucide-react';
 import { SparkableLogo } from '@/components/brand/sparkable-logo';
 import { UsageBar } from '@/components/subscription/usage-bar';
 import { ManageSubscriptionButton } from '@/components/subscription/manage-button';
+import { SiteSettingsPanel } from '@/components/site/site-settings-panel';
 import {
   getTierDisplayName,
   getTierColor,
@@ -84,7 +86,7 @@ export default function SettingsPage() {
   const { data: session, status } = useSession();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'subscription' | 'usage' | 'billing'>('subscription');
+  const [activeTab, setActiveTab] = useState<'subscription' | 'usage' | 'billing' | 'sites'>('subscription');
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -185,6 +187,7 @@ export default function SettingsPage() {
             { id: 'subscription', label: 'Subscription', icon: Crown },
             { id: 'usage', label: 'Usage', icon: Zap },
             { id: 'billing', label: 'Billing', icon: CreditCard },
+            { id: 'sites', label: 'Sites', icon: Globe },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -451,6 +454,17 @@ export default function SettingsPage() {
                   </div>
                 </FireCard>
               )}
+            </motion.div>
+          )}
+
+          {activeTab === 'sites' && (
+            <motion.div
+              key="sites"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <SiteSettingsPanel />
             </motion.div>
           )}
         </AnimatePresence>
