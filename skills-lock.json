@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "framer-motion": {
+      "source": "pproenca/dot-skills",
+      "sourceType": "github",
+      "skillPath": "skills/.experimental/framer-motion/SKILL.md",
+      "computedHash": "40a05a1671ae7dbba9bf4d483d37927e593a2b4b569a4388d29ce922cc54c2c6"
+    }
+  }
+}

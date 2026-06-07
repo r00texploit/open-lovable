@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { Sandbox } from '@vercel/sandbox';
 import type { SandboxState } from '@/types/sandbox';
 import { appConfig } from '@/config/app.config';
 
@@ -11,6 +10,17 @@ declare global {
   var sandboxState: SandboxState;
   var sandboxCreationInProgress: boolean;
   var sandboxCreationPromise: Promise<any> | null;
+}
+
+// Dynamic import for Vercel Sandbox SDK (server-only)
+async function getVercelSandbox() {
+  const { Sandbox } = await import('@vercel/sandbox');
+  return Sandbox;
+}
+
+function hasUsableOidcToken(): boolean {
+  const token = process.env.VERCEL_OIDC_TOKEN;
+  return !!token && token !== 'auto_generated_by_vercel_env_pull';
 }
 
 export async function POST() {
@@ -102,12 +112,14 @@ async function createSandboxInternal() {
       sandboxConfig.teamId = process.env.VERCEL_TEAM_ID;
       sandboxConfig.projectId = process.env.VERCEL_PROJECT_ID;
       sandboxConfig.token = process.env.VERCEL_TOKEN;
-    } else if (process.env.VERCEL_OIDC_TOKEN) {
+    } else if (hasUsableOidcToken()) {
       console.log('[create-ai-sandbox] Using OIDC token authentication');
+      sandboxConfig.oidcToken = process.env.VERCEL_OIDC_TOKEN;
     } else {
       console.log('[create-ai-sandbox] No authentication found - relying on default Vercel authentication');
     }
     
+    const Sandbox = await getVercelSandbox();
     sandbox = await Sandbox.create(sandboxConfig);
     
     const sandboxId = sandbox.sandboxId;

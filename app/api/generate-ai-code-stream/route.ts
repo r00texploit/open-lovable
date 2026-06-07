@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { createGroq } from '@ai-sdk/groq';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
@@ -10,6 +11,14 @@ import { executeSearchPlan, formatSearchResultsForAI, selectTargetFile } from '@
 import { FileManifest } from '@/types/file-manifest';
 import type { ConversationState, ConversationMessage, ConversationEdit } from '@/types/conversation';
 import { appConfig } from '@/config/app.config';
+import { authOptions } from '@/lib/auth/auth-options';
+import {
+  TOKEN_USAGE_FALLBACK,
+  assertTokenAllowance,
+  estimateTokensFromText,
+  extractTokenUsage,
+  incrementTokenUsage,
+} from '@/lib/usage/token-usage';
 
 // Force dynamic route to enable streaming
 export const dynamic = 'force-dynamic';
@@ -90,14 +99,25 @@ declare global {
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, model = 'openai/gpt-oss-20b', context, isEdit = false } = await request.json();
-    
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Authentication required',
+      }, { status: 401 });
+    }
+
+    const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false, uploadedImage } = await request.json();
+
     console.log('[generate-ai-code-stream] Received request:');
     console.log('[generate-ai-code-stream] - prompt:', prompt);
     console.log('[generate-ai-code-stream] - isEdit:', isEdit);
     console.log('[generate-ai-code-stream] - context.sandboxId:', context?.sandboxId);
     console.log('[generate-ai-code-stream] - context.currentFiles:', context?.currentFiles ? Object.keys(context.currentFiles) : 'none');
     console.log('[generate-ai-code-stream] - currentFiles count:', context?.currentFiles ? Object.keys(context.currentFiles).length : 0);
+    console.log('[generate-ai-code-stream] - uploadedImage:', uploadedImage ? `${uploadedImage.type} (${uploadedImage.name})` : 'none');
     
     // Initialize conversation state if not exists
     if (!global.conversationState) {
@@ -151,6 +171,31 @@ export async function POST(request: NextRequest) {
         success: false, 
         error: 'Prompt is required' 
       }, { status: 400 });
+    }
+
+    const preflightEstimate = estimateTokensFromText(
+      prompt,
+      context?.structure,
+      context?.currentFiles ? JSON.stringify(context.currentFiles) : undefined,
+      context?.conversationContext ? JSON.stringify(context.conversationContext) : undefined
+    );
+    const preflightTokens = Math.min(preflightEstimate, TOKEN_USAGE_FALLBACK);
+    const allowance = await assertTokenAllowance(userId, preflightTokens);
+
+    if (!allowance.allowed) {
+      return NextResponse.json({
+        success: false,
+        error: 'Monthly token limit reached',
+        limitReached: true,
+        upgradeUrl: '/pricing',
+        usage: {
+          used: allowance.usage.generationsUsed,
+          limit: allowance.usage.generationsLimit,
+          remaining: Math.max(0, allowance.remaining),
+          unit: 'tokens',
+          period: 'month',
+        },
+      }, { status: 429 });
     }
     
     // Create a stream for real-time updates
@@ -1242,12 +1287,86 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
         console.log(`[generate-ai-code-stream] AI Gateway enabled: ${isUsingAIGateway}`);
         console.log(`[generate-ai-code-stream] Model string: ${model}`);
 
+        // Build user message content - support multimodal with images
+        let userMessageContent: any = fullPrompt + `
+
+CRITICAL: You MUST complete EVERY file you start. If you write:
+<file path="src/components/Hero.jsx">
+
+You MUST include the closing </file> tag and ALL the code in between.
+
+NEVER write partial code like:
+<h1>Build and deploy on the AI Cloud.</h1>
+<p>Some text...</p>  ❌ WRONG
+
+ALWAYS write complete code:
+<h1>Build and deploy on the AI Cloud.</h1>
+<p>Some text here with full content</p>  ✅ CORRECT
+
+If you're running out of space, generate FEWER files but make them COMPLETE.
+It's better to have 3 complete files than 10 incomplete files.`;
+
+        // If an image was uploaded, convert to multimodal message format and expose
+        // a real data URL the generated app can render directly.
+        if (uploadedImage?.base64) {
+          const uploadedImageDataUrl = `data:${uploadedImage.type || 'image/png'};base64,${uploadedImage.base64}`;
+          const dataUrlInstruction =
+            uploadedImageDataUrl.length < 700000
+              ? `
+
+UPLOADED_IMAGE_DATA_URL:
+${uploadedImageDataUrl}
+
+CRITICAL IMAGE ASSET RULES:
+- The uploaded image is not only inspiration. It is a real asset.
+- Use the exact UPLOADED_IMAGE_DATA_URL above as the src for the main/reference image in the generated app.
+- Do NOT replace it with text-only blocks, colored placeholder cards, fake labels, stock photos, or generic placeholder images.
+- If you create a gallery, hero image, product/menu image, mood board, or brand-photo strip based on the upload, at least one visible <img> must use this exact data URL.
+- Add meaningful alt text from the user's prompt and make the image responsive with object-cover/object-contain as appropriate.`
+              : `
+
+CRITICAL IMAGE ASSET RULES:
+- The uploaded image is a real visual asset, not just inspiration.
+- The data URL is too large to safely inline in code, so do not invent placeholder imagery.
+- Build the layout around the uploaded image content and clearly reserve an image slot for the provided upload.`;
+
+          userMessageContent = [
+            {
+              type: 'text',
+              text: fullPrompt + `
+
+I have uploaded an image for reference. Please analyze this image and use it as a visual reference for the design, layout, colors, and style when generating the website.${dataUrlInstruction}
+
+CRITICAL: You MUST complete EVERY file you start. If you write:
+<file path="src/components/Hero.jsx">
+
+You MUST include the closing </file> tag and ALL the code in between.
+
+NEVER write partial code like:
+<h1>Build and deploy on the AI Cloud.</h1>
+<p>Some text...</p>  ❌ WRONG
+
+ALWAYS write complete code:
+<h1>Build and deploy on the AI Cloud.</h1>
+<p>Some text here with full content</p>  ✅ CORRECT
+
+If you're running out of space, generate FEWER files but make them COMPLETE.
+It's better to have 3 complete files than 10 incomplete files.`
+            },
+            {
+              type: 'image',
+              image: uploadedImage.base64,
+              mimeType: uploadedImage.type || 'image/png'
+            }
+          ];
+        }
+
         // Make streaming API call with appropriate provider
         const streamOptions: any = {
           model: modelProvider(actualModel),
           messages: [
-            { 
-              role: 'system', 
+            {
+              role: 'system',
               content: systemPrompt + `
 
 🚨 CRITICAL CODE GENERATION RULES - VIOLATION = FAILURE 🚨:
@@ -1284,25 +1403,9 @@ Examples of CORRECT CODE (ALWAYS DO THIS):
 
 REMEMBER: It's better to generate fewer COMPLETE files than many INCOMPLETE files.`
             },
-            { 
-              role: 'user', 
-              content: fullPrompt + `
-
-CRITICAL: You MUST complete EVERY file you start. If you write:
-<file path="src/components/Hero.jsx">
-
-You MUST include the closing </file> tag and ALL the code in between.
-
-NEVER write partial code like:
-<h1>Build and deploy on the AI Cloud.</h1>
-<p>Some text...</p>  ❌ WRONG
-
-ALWAYS write complete code:
-<h1>Build and deploy on the AI Cloud.</h1>
-<p>Some text here with full content</p>  ✅ CORRECT
-
-If you're running out of space, generate FEWER files but make them COMPLETE.
-It's better to have 3 complete files than 10 incomplete files.`
+            {
+              role: 'user',
+              content: userMessageContent
             }
           ],
           maxTokens: 8192, // Reduce to ensure completion
@@ -1611,6 +1714,59 @@ It's better to have 3 complete files than 10 incomplete files.`
         // Extract explanation
         const explanationMatch = generatedCode.match(/<explanation>([\s\S]*?)<\/explanation>/);
         const explanation = explanationMatch ? explanationMatch[1].trim() : 'Code generated successfully!';
+        // Calculate token usage with improved accuracy
+        const estimatedTokens = estimateTokensFromText(fullPrompt, generatedCode);
+        let actualTokens = estimatedTokens;
+        let inputTokens: number | undefined;
+        let outputTokens: number | undefined;
+
+        // Try to extract actual usage from provider response
+        try {
+          const usageResult = await (
+            typeof result?.totalUsage?.then === 'function'
+              ? result.totalUsage
+              : typeof result?.usage?.then === 'function'
+                ? result.usage
+                : Promise.resolve(result?.usage || result?.totalUsage)
+          );
+
+          const extracted = extractTokenUsage(usageResult);
+          if (extracted) {
+            actualTokens = extracted.totalTokens;
+            inputTokens = extracted.promptTokens;
+            outputTokens = extracted.completionTokens;
+            console.log('[generate-ai-code-stream] Provider token usage:', {
+              input: extracted.promptTokens,
+              output: extracted.completionTokens,
+              total: extracted.totalTokens,
+              estimated: estimatedTokens
+            });
+          }
+        } catch (usageError) {
+          console.warn('[generate-ai-code-stream] Could not read provider token usage, using estimate:', {
+            estimated: estimatedTokens,
+            error: usageError
+          });
+        }
+
+        const chargedTokens = Math.min(actualTokens, Math.max(1, allowance.remaining));
+        const usageUpdate = await incrementTokenUsage(userId, chargedTokens);
+
+        if (usageUpdate.allowed) {
+          await sendProgress({
+            type: 'usage',
+            tokens: actualTokens,
+            chargedTokens,
+            inputTokens,
+            outputTokens,
+            estimated: estimatedTokens !== actualTokens ? estimatedTokens : undefined,
+            used: usageUpdate.usage.generationsUsed,
+            limit: usageUpdate.usage.generationsLimit,
+            remaining: Math.max(0, usageUpdate.remaining),
+            unit: 'tokens',
+            period: 'month',
+          });
+        }
         
         // Validate generated code for truncation issues
         const truncationWarnings: string[] = [];
@@ -1818,6 +1974,15 @@ Provide the complete file content without any truncation. Include all necessary 
           components: componentCount,
           model,
           packagesToInstall: packagesToInstall.length > 0 ? packagesToInstall : undefined,
+          usage: usageUpdate.allowed ? {
+            tokens: actualTokens,
+            chargedTokens,
+            used: usageUpdate.usage.generationsUsed,
+            limit: usageUpdate.usage.generationsLimit,
+            remaining: Math.max(0, usageUpdate.remaining),
+            unit: 'tokens',
+            period: 'month',
+          } : undefined,
           warnings: truncationWarnings.length > 0 ? truncationWarnings : undefined
         });
         

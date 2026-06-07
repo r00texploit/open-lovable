@@ -1,20 +1,7 @@
-import { NextResponse } from 'next/server';
 import { withAuth } from 'next-auth/middleware';
 
 export default withAuth(
-  function middleware(req) {
-    // Check subscription for protected routes
-    if (req.nextUrl.pathname.startsWith('/generation')) {
-      const token = req.nextauth.token;
-
-      // Allow if user has active subscription or is within free tier
-      if (token?.subscription?.tier === 'free' && token?.usage?.generationsUsed >= token?.usage?.generationsLimit) {
-        return NextResponse.redirect(new URL('/pricing', req.url));
-      }
-    }
-
-    return NextResponse.next();
-  },
+  function middleware() {},
   {
     callbacks: {
       authorized({ req, token }) {

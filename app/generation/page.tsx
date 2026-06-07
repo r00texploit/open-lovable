@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { appConfig } from '@/config/app.config';
 import HeroInput from '@/components/HeroInput';
@@ -11,17 +12,17 @@ import { HeaderProvider } from '@/components/shared/header/HeaderContext';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 // Import icons from centralized module to avoid Turbopack chunk issues
-import { 
-  FiFile, 
-  FiChevronRight, 
+import {
+  FiFile,
+  FiChevronRight,
   FiChevronDown,
   FiGithub,
-  BsFolderFill, 
+  BsFolderFill,
   BsFolder2Open,
-  SiJavascript, 
-  SiReact, 
-  SiCss3, 
-  SiJson 
+  SiJavascript,
+  SiReact,
+  SiCss3,
+  SiJson
 } from '@/lib/icons';
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
@@ -76,6 +77,7 @@ function AISandboxPage() {
   ]);
   const [aiChatInput, setAiChatInput] = useState('');
   const [aiEnabled] = useState(true);
+  const [chatUploadedImage, setChatUploadedImage] = useState<{ base64: string; type: string; name: string } | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const [aiModel, setAiModel] = useState(() => {
@@ -101,6 +103,7 @@ function AISandboxPage() {
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
   const [isPreparingDesign, setIsPreparingDesign] = useState(false);
   const [targetUrl, setTargetUrl] = useState<string>('');
+  const [uploadedImage, setUploadedImage] = useState<{ base64: string; type: string; name: string } | null>(null);
   const [sidebarScrolled, setSidebarScrolled] = useState(false);
   const [screenshotCollapsed, setScreenshotCollapsed] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'gathering' | 'planning' | 'generating' | null>(null);
@@ -179,20 +182,37 @@ function AISandboxPage() {
       const storedStyle = templateParam || sessionStorage.getItem('selectedStyle');
       const storedModel = sessionStorage.getItem('selectedModel');
       const storedInstructions = sessionStorage.getItem('additionalInstructions');
-      
-      if (storedUrl) {
+      const uploadedImageBase64 = sessionStorage.getItem('uploadedImageBase64');
+      const uploadedImageType = sessionStorage.getItem('uploadedImageType');
+      const uploadedImageName = sessionStorage.getItem('uploadedImageName');
+
+      // Store uploaded image in state if present
+      if (uploadedImageBase64) {
+        setUploadedImage({
+          base64: uploadedImageBase64,
+          type: uploadedImageType || 'image/png',
+          name: uploadedImageName || 'uploaded-image'
+        });
+      }
+
+      if (storedUrl || uploadedImageBase64) {
         // Mark that we have an initial submission since we're loading with a URL
         setHasInitialSubmission(true);
         
-        // Clear sessionStorage after reading  
+        // Clear sessionStorage after reading
         sessionStorage.removeItem('targetUrl');
         sessionStorage.removeItem('selectedStyle');
         sessionStorage.removeItem('selectedModel');
         sessionStorage.removeItem('additionalInstructions');
+        sessionStorage.removeItem('uploadedImageBase64');
+        sessionStorage.removeItem('uploadedImageType');
+        sessionStorage.removeItem('uploadedImageName');
         // Note: Don't clear siteMarkdown here, it will be cleared when used
         
         // Set the values in the component state
-        setHomeUrlInput(storedUrl);
+        if (storedUrl) {
+          setHomeUrlInput(storedUrl);
+        }
         setSelectedStyle(storedStyle || 'modern');
         
         // Add details to context if provided
@@ -1643,7 +1663,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               ref={iframeRef}
               src={sandboxData.url}
               className="w-full h-full border-none"
-              title="Open Lovable Sandbox"
+              title="Sparkable Sandbox"
               allow="clipboard-write"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
               onLoad={() => {
@@ -1780,7 +1800,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     
     addChatMessage(message, 'user');
     setAiChatInput('');
-    
+
+    // Clear uploaded image after sending
+    const imageToSend = chatUploadedImage;
+    setChatUploadedImage(null);
+
     // Check for special commands
     const lowerMessage = message.toLowerCase().trim();
     if (lowerMessage === 'check packages' || lowerMessage === 'install packages' || lowerMessage === 'npm install') {
@@ -1855,12 +1879,17 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           prompt: message,
           model: aiModel,
           context: fullContext,
-          isEdit: conversationContext.appliedCode.length > 0
+          isEdit: conversationContext.appliedCode.length > 0,
+          uploadedImage: imageToSend || undefined
         })
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        if (errorData?.limitReached) {
+          router.push(errorData.upgradeUrl || '/pricing');
+        }
+        throw new Error(errorData?.error || `HTTP error! status: ${response.status}`);
       }
       
       const reader = response.body?.getReader();
@@ -2088,7 +2117,12 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     // Keep the files that were already parsed during streaming
                     files: prev.files.length > 0 ? prev.files : parsedFiles
                   }));
+                } else if (data.type === 'usage') {
+                  console.log('[chat] Token usage:', data);
                 } else if (data.type === 'error') {
+                  if (data.limitReached) {
+                    router.push(data.upgradeUrl || '/pricing');
+                  }
                   throw new Error(data.error);
                 }
               } catch (e) {
@@ -2236,7 +2270,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           '1. Unzip the file\n' +
           '2. Run: npm install\n' +
           '3. Run: npm run dev\n' +
-          '4. Open http://localhost:5173',
+          '4. Open http://localhost:3000',
           'system'
         );
       } else {
@@ -2685,7 +2719,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   };
 
   const startGeneration = async () => {
-    if (!homeUrlInput.trim()) return;
+    // Allow generation from URL or uploaded image
+    if (!homeUrlInput.trim() && !uploadedImage) return;
     
     setHomeScreenFading(true);
     
@@ -3070,19 +3105,28 @@ Focus on the key sections and content, making it clean and modern.`;
         const aiResponse = await fetch('/api/generate-ai-code-stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             prompt,
             model: aiModel,
             context: {
               sandboxId: sandboxData?.sandboxId,
               structure: structureContent,
               conversationContext: conversationContext
-            }
+            },
+            uploadedImage: uploadedImage ? {
+              base64: uploadedImage.base64,
+              type: uploadedImage.type,
+              name: uploadedImage.name
+            } : undefined
           })
         });
         
         if (!aiResponse.ok || !aiResponse.body) {
-          throw new Error('Failed to generate code');
+          const errorData = await aiResponse.json().catch(() => null);
+          if (errorData?.limitReached) {
+            router.push(errorData.upgradeUrl || '/pricing');
+          }
+          throw new Error(errorData?.error || 'Failed to generate code');
         }
         
         const reader = aiResponse.body.getReader();
@@ -3377,7 +3421,7 @@ Focus on the key sections and content, making it clean and modern.`;
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
-          <button 
+          <button
             onClick={downloadZip}
             disabled={!sandboxData}
             className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -3387,7 +3431,19 @@ Focus on the key sections and content, making it clean and modern.`;
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
             </svg>
           </button>
-       
+
+          {/* Settings Button */}
+          <Link href="/settings">
+            <button
+              className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100"
+              title="Settings & Subscription"
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          </Link>
         </div>
       </div>
 
@@ -3905,6 +3961,7 @@ Focus on the key sections and content, making it clean and modern.`;
               onSubmit={sendChatMessage}
               placeholder="Describe what you want to build..."
               showSearchFeatures={false}
+              onImageUpload={(image) => setChatUploadedImage(image)}
             />
           </div>
         </div>

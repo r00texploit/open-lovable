@@ -352,7 +352,7 @@ export async function POST(request: NextRequest) {
       console.log(`[apply-ai-code-stream] No active provider found, creating new sandbox...`);
       try {
         const { SandboxFactory } = await import('@/lib/sandbox/factory');
-        provider = SandboxFactory.create();
+        provider = await SandboxFactory.create();
         const sandboxInfo = await provider.createSandbox();
         await provider.setupViteApp();
 
@@ -613,11 +613,8 @@ export async function POST(request: NextRequest) {
 
             const isUpdate = global.existingFiles.has(normalizedPath);
 
-            // Remove any CSS imports from JSX/JS files (we're using Tailwind)
+            // Keep CSS imports - they are needed for custom styles alongside Tailwind
             let fileContent = file.content;
-            if (file.path.endsWith('.jsx') || file.path.endsWith('.js') || file.path.endsWith('.tsx') || file.path.endsWith('.ts')) {
-              fileContent = fileContent.replace(/import\s+['"]\.\/[^'"]+\.css['"];?\s*\n?/g, '');
-            }
 
             // Fix common Tailwind CSS errors in CSS files
             if (file.path.endsWith('.css')) {

@@ -27,8 +27,12 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Open Lovable v3",
-  description: "Re-imagine any website in seconds with AI-powered website builder.",
+  title: "Sparkable",
+  description: "The open-source AI app builder.",
+  icons: {
+    icon: "/brand/sparkable-app-icon-512.png",
+    apple: "/brand/sparkable-app-icon-512.png",
+  },
 };
 
 export default function RootLayout({

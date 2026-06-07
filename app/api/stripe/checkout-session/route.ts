@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { stripe } from '@/lib/stripe/stripe';
+import { getPriceIdForTier, stripe } from '@/lib/stripe/stripe';
 import { prisma } from '@/lib/db/prisma';
 
 export async function POST(req: Request) {
@@ -12,10 +12,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { priceId, tier } = await req.json();
+    const { tier } = await req.json();
+    const priceId = getPriceIdForTier(tier);
 
-    if (!priceId) {
-      return NextResponse.json({ error: 'Price ID required' }, { status: 400 });
+    if (!tier || !priceId) {
+      return NextResponse.json({ error: 'Invalid subscription tier' }, { status: 400 });
     }
 
     // Get or create Stripe customer
@@ -23,6 +24,10 @@ export async function POST(req: Request) {
       where: { email: session.user.email! },
       include: { subscription: true },
     });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
     let customerId = user?.subscription?.stripeCustomerId;
 
@@ -37,7 +42,7 @@ export async function POST(req: Request) {
       await prisma.subscription.upsert({
         where: { userId: user!.id },
         create: {
-          userId: user!.id,
+          userId: user.id,
           stripeCustomerId: customerId,
           tier: 'free',
         },
@@ -47,9 +52,12 @@ export async function POST(req: Request) {
       });
     }
 
+    const origin = process.env.NEXTAUTH_URL || new URL(req.url).origin;
+
     // Create checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
+      client_reference_id: user.id,
       line_items: [
         {
           price: priceId,
@@ -57,12 +65,19 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXTAUTH_URL}/generation?success=true`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/pricing?canceled=true`,
+      success_url: `${origin}/generation?success=true`,
+      cancel_url: `${origin}/pricing?canceled=true`,
       metadata: {
-        userId: user!.id,
+        userId: user.id,
         tier,
       },
+      subscription_data: {
+        metadata: {
+          userId: user.id,
+          tier,
+        },
+      },
+      allow_promotion_codes: true,
     });
 
     return NextResponse.json({ sessionId: checkoutSession.id, url: checkoutSession.url });

@@ -1,20 +1,21 @@
 import { SandboxProvider, SandboxProviderConfig } from './types';
-import { E2BProvider } from './providers/e2b-provider';
-import { VercelProvider } from './providers/vercel-provider';
 
 export class SandboxFactory {
-  static create(provider?: string, config?: SandboxProviderConfig): SandboxProvider {
+  static async create(provider?: string, config?: SandboxProviderConfig): Promise<SandboxProvider> {
     // Use environment variable if provider not specified
-    const selectedProvider = provider || process.env.SANDBOX_PROVIDER || 'e2b';
-    
-    
+    const selectedProvider = provider || process.env.SANDBOX_PROVIDER || 'vercel';
+
     switch (selectedProvider.toLowerCase()) {
-      case 'e2b':
+      case 'e2b': {
+        const { E2BProvider } = await import('./providers/e2b-provider');
         return new E2BProvider(config || {});
-      
-      case 'vercel':
+      }
+
+      case 'vercel': {
+        const { VercelProvider } = await import('./providers/vercel-provider');
         return new VercelProvider(config || {});
-      
+      }
+
       default:
         throw new Error(`Unknown sandbox provider: ${selectedProvider}. Supported providers: e2b, vercel`);
     }
@@ -31,11 +32,16 @@ export class SandboxFactory {
       
       case 'vercel':
         // Vercel can use OIDC (automatic) or PAT
-        return !!process.env.VERCEL_OIDC_TOKEN || 
+        return hasUsableVercelOidcToken() ||
                (!!process.env.VERCEL_TOKEN && !!process.env.VERCEL_TEAM_ID && !!process.env.VERCEL_PROJECT_ID);
       
       default:
         return false;
     }
   }
+}
+
+function hasUsableVercelOidcToken(): boolean {
+  const token = process.env.VERCEL_OIDC_TOKEN;
+  return !!token && token !== 'auto_generated_by_vercel_env_pull';
 }

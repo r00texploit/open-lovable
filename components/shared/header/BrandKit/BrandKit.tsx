@@ -6,8 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import FirecrawlIcon from "@/components/shared/firecrawl-icon/firecrawl-icon";
-import Logo from "@/components/shared/header/_svg/Logo";
+import { SparkableLogo } from "@/components/brand/sparkable-logo";
 import { useHeaderContext } from "@/components/shared/header/HeaderContext";
 import { cn } from "@/utils/cn";
 
@@ -45,8 +44,10 @@ export default function HeaderBrandKit() {
           }
         }}
       >
-        <FirecrawlIcon className="size-28 -top-2 relative" />
-        <Logo />
+        <SparkableLogo
+          iconClassName="h-[34px] w-[34px] rounded-[10px]"
+          textClassName="text-[19px] font-bold text-[#14100c]"
+        />
       </Link>
 
       <AnimatePresence initial={false} mode="popLayout">

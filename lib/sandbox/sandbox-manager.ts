@@ -26,8 +26,8 @@ class SandboxManager {
     // Try to reconnect to existing sandbox
     
     try {
-      const provider = SandboxFactory.create();
-      
+      const provider = await SandboxFactory.create();
+
       // For E2B provider, try to reconnect
       if (provider.constructor.name === 'E2BProvider') {
         // E2B sandboxes can be reconnected using the sandbox ID
