@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { appConfig } from '@/config/app.config';
@@ -61,7 +62,47 @@ interface ScrapeData {
   error?: string;
 }
 
+interface SiteSummary {
+  id: string;
+  name: string;
+  slug: string;
+  subdomain: string;
+  customDomain: string | null;
+  customDomainVerified: boolean;
+  domainStatus: string;
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+  lastPublishedAt: string | null;
+  liveUrl: string;
+}
+
+function suggestSiteDetailsFromUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return { name: 'My Site', slug: 'my-site' };
+  }
+
+  try {
+    const normalized = trimmed.match(/^https?:\/\//i) ? trimmed : `https://${trimmed}`;
+    const { hostname } = new URL(normalized);
+    const rootLabel = hostname.replace(/^www\./, '').split('.')[0] || 'site';
+    const words = rootLabel
+      .split(/[-_]+/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1));
+
+    return {
+      name: words.join(' ') || 'My Site',
+      slug: rootLabel.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 50) || 'my-site',
+    };
+  } catch {
+    return { name: 'My Site', slug: 'my-site' };
+  }
+}
+
 function AISandboxPage() {
+  const { data: session } = useSession();
   const [sandboxData, setSandboxData] = useState<SandboxData | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ text: 'Not connected', active: false });
@@ -111,6 +152,14 @@ function AISandboxPage() {
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
   const [hasInitialSubmission, setHasInitialSubmission] = useState<boolean>(false);
   const [fileStructure, setFileStructure] = useState<string>('');
+  const [sites, setSites] = useState<SiteSummary[]>([]);
+  const [sitesLoading, setSitesLoading] = useState(true);
+  const [activeSiteId, setActiveSiteId] = useState('');
+  const [newSiteName, setNewSiteName] = useState('');
+  const [newSiteSlug, setNewSiteSlug] = useState('');
+  const [siteError, setSiteError] = useState<string | null>(null);
+  const [siteActionLoading, setSiteActionLoading] = useState<'create' | 'publish' | 'unpublish' | null>(null);
+  const [siteStatusMessage, setSiteStatusMessage] = useState<string | null>(null);
   
   const [conversationContext, setConversationContext] = useState<{
     scrapedWebsites: Array<{ url: string; content: any; timestamp: Date }>;
@@ -162,6 +211,7 @@ function AISandboxPage() {
 
   // Store flag to trigger generation after component mounts
   const [shouldAutoGenerate, setShouldAutoGenerate] = useState(false);
+  const activeSite = sites.find((site) => site.id === activeSiteId) || null;
 
   // Clear old conversation data on component mount and create/restore sandbox
   useEffect(() => {
@@ -324,6 +374,20 @@ function AISandboxPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
+
+  useEffect(() => {
+    if (!session?.user?.id) {
+      return;
+    }
+
+    fetchSites();
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (!activeSiteId && sites.length > 0) {
+      setActiveSiteId(sites[0].id);
+    }
+  }, [activeSiteId, sites]);
   
   useEffect(() => {
     // Handle Escape key for home screen
@@ -1152,6 +1216,120 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       }
     } catch (error) {
       console.error('[fetchSandboxFiles] Error fetching files:', error);
+    }
+  };
+
+  const fetchSites = async () => {
+    try {
+      setSitesLoading(true);
+      const response = await fetch('/api/sites');
+      const data = await response.json();
+      if (response.ok) {
+        setSites(data.sites || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sites:', error);
+    } finally {
+      setSitesLoading(false);
+    }
+  };
+
+  const createSite = async () => {
+    setSiteError(null);
+    setSiteStatusMessage(null);
+
+    try {
+      setSiteActionLoading('create');
+      const response = await fetch('/api/sites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newSiteName, slug: newSiteSlug }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create site');
+      }
+
+      setSites((prev) => [data.site, ...prev]);
+      setActiveSiteId(data.site.id);
+      setSiteStatusMessage(`Created ${data.site.name}. Publish your current build when you are ready.`);
+    } catch (error: any) {
+      setSiteError(error.message);
+    } finally {
+      setSiteActionLoading(null);
+    }
+  };
+
+  const publishActiveSite = async () => {
+    if (!activeSiteId || !sandboxData?.sandboxId) {
+      setSiteError('Create a site and generate a build before publishing.');
+      return;
+    }
+
+    setSiteError(null);
+    setSiteStatusMessage(null);
+
+    try {
+      setSiteActionLoading('publish');
+      const response = await fetch(`/api/sites/${activeSiteId}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sandboxId: sandboxData.sandboxId }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to publish site');
+      }
+
+      setSites((prev) => prev.map((site) => (site.id === data.site.id ? data.site : site)));
+      setSiteStatusMessage(`Published ${data.site.name} at ${data.site.liveUrl}`);
+    } catch (error: any) {
+      setSiteError(error.message);
+    } finally {
+      setSiteActionLoading(null);
+    }
+  };
+
+  const unpublishActiveSite = async () => {
+    if (!activeSiteId) {
+      return;
+    }
+
+    setSiteError(null);
+    setSiteStatusMessage(null);
+
+    try {
+      setSiteActionLoading('unpublish');
+      const response = await fetch(`/api/sites/${activeSiteId}/unpublish`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to unpublish site');
+      }
+
+      setSites((prev) => prev.map((site) => (site.id === data.site.id ? data.site : site)));
+      setSiteStatusMessage(`Unpublished ${data.site.name}. The public URL now returns 404.`);
+    } catch (error: any) {
+      setSiteError(error.message);
+    } finally {
+      setSiteActionLoading(null);
+    }
+  };
+
+  const copyLiveUrl = async () => {
+    if (!activeSite?.liveUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(activeSite.liveUrl);
+      setSiteStatusMessage(`Copied ${activeSite.liveUrl}`);
+    } catch {
+      setSiteError('Failed to copy URL');
     }
   };
   
@@ -3326,6 +3504,13 @@ Focus on the key sections and content, making it clean and modern.`;
               timestamp: new Date()
             }]
           }));
+
+          if (sites.length === 0 && !activeSiteId) {
+            const suggestion = suggestSiteDetailsFromUrl(cleanUrl);
+            setNewSiteName(suggestion.name);
+            setNewSiteSlug(suggestion.slug);
+            setSiteStatusMessage('Your build is ready. Create a site record to attach it to a live tenant URL.');
+          }
         } else {
           throw new Error('Failed to generate recreation');
         }
@@ -3445,6 +3630,112 @@ Focus on the key sections and content, making it clean and modern.`;
             </button>
           </Link>
         </div>
+      </div>
+
+      <div className="border-b border-border bg-white px-4 py-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <select
+              value={activeSiteId}
+              onChange={(e) => setActiveSiteId(e.target.value)}
+              className="min-w-[220px] rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900"
+              disabled={sitesLoading || sites.length === 0}
+            >
+              <option value="">
+                {sitesLoading ? 'Loading sites...' : sites.length > 0 ? 'Select a site' : 'No sites yet'}
+              </option>
+              {sites.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.name} ({site.slug})
+                </option>
+              ))}
+            </select>
+
+            {activeSite ? (
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className={`rounded-full px-2.5 py-1 font-medium ${
+                  activeSite.published ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {activeSite.published ? 'Published' : 'Draft'}
+                </span>
+                <button
+                  onClick={copyLiveUrl}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                >
+                  Copy URL
+                </button>
+                <Link
+                  href={`/site-preview/${activeSite.slug}`}
+                  target="_blank"
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                >
+                  Preview Snapshot
+                </Link>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500">
+                Create a site record to attach this build to a live tenant URL.
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {activeSite ? (
+              <>
+                <button
+                  onClick={publishActiveSite}
+                  disabled={siteActionLoading !== null || !sandboxData}
+                  className="rounded-lg bg-[#17130f] px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {siteActionLoading === 'publish' ? 'Publishing...' : 'Publish current build'}
+                </button>
+                <button
+                  onClick={unpublishActiveSite}
+                  disabled={siteActionLoading !== null || !activeSite.published}
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {siteActionLoading === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
+                </button>
+              </>
+            ) : (
+              <>
+                <input
+                  value={newSiteName}
+                  onChange={(e) => setNewSiteName(e.target.value)}
+                  placeholder="Site name"
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                />
+                <input
+                  value={newSiteSlug}
+                  onChange={(e) => setNewSiteSlug(e.target.value.toLowerCase())}
+                  placeholder="site-slug"
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                />
+                <button
+                  onClick={createSite}
+                  disabled={siteActionLoading !== null || !newSiteName.trim() || !newSiteSlug.trim()}
+                  className="rounded-lg bg-[#17130f] px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {siteActionLoading === 'create' ? 'Creating...' : 'Create site'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {activeSite && (
+          <p className="mt-2 text-xs text-gray-500">
+            Default URL: {activeSite.liveUrl}
+            {activeSite.customDomain ? ` • Custom domain: ${activeSite.customDomain}` : ''}
+          </p>
+        )}
+        {!activeSite && newSiteSlug && (
+          <p className="mt-2 text-xs text-gray-500">
+            Default URL: https://{newSiteSlug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'mydomain.com'}
+          </p>
+        )}
+        {siteStatusMessage && <p className="mt-2 text-sm text-green-700">{siteStatusMessage}</p>}
+        {siteError && <p className="mt-2 text-sm text-red-600">{siteError}</p>}
       </div>
 
       <div className="flex-1 flex overflow-hidden">
