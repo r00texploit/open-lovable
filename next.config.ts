@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Prevent server-only SDKs from being bundled in client-side code
+  serverExternalPackages: [
+    '@vercel/sandbox',
+    '@e2b/code-interpreter',
+    'stripe',
+  ],
   env: {
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_STRIPE_PRICE_PRO: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO,

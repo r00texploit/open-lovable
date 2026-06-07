@@ -1,13 +1,24 @@
-import { Sandbox } from '@vercel/sandbox';
 import { SandboxProvider, SandboxInfo, CommandResult } from '../types';
 import { appConfig } from '@/config/app.config';
 // SandboxProviderConfig available through parent class
+
+// Dynamic import for Vercel Sandbox SDK to avoid client-side bundling
+async function getVercelSandbox() {
+  const { Sandbox } = await import('@vercel/sandbox');
+  return Sandbox;
+}
+
+function hasUsableOidcToken(): boolean {
+  const token = process.env.VERCEL_OIDC_TOKEN;
+  return !!token && token !== 'auto_generated_by_vercel_env_pull';
+}
 
 export class VercelProvider extends SandboxProvider {
   private existingFiles: Set<string> = new Set();
 
   async createSandbox(): Promise<SandboxInfo> {
     try {
+      const Sandbox = await getVercelSandbox();
 
       // Kill existing sandbox if any
       if (this.sandbox) {
@@ -35,7 +46,7 @@ export class VercelProvider extends SandboxProvider {
         sandboxConfig.teamId = process.env.VERCEL_TEAM_ID;
         sandboxConfig.projectId = process.env.VERCEL_PROJECT_ID;
         sandboxConfig.token = process.env.VERCEL_TOKEN;
-      } else if (process.env.VERCEL_OIDC_TOKEN) {
+      } else if (hasUsableOidcToken()) {
         sandboxConfig.oidcToken = process.env.VERCEL_OIDC_TOKEN;
       }
 
@@ -45,7 +56,7 @@ export class VercelProvider extends SandboxProvider {
       // Sandbox created successfully
       
       // Get the sandbox URL using the correct Vercel Sandbox API
-      const sandboxUrl = this.sandbox.domain(5173);
+      const sandboxUrl = this.sandbox.domain(appConfig.vercelSandbox.devPort);
 
       this.sandboxInfo = {
         sandboxId,
@@ -343,7 +354,7 @@ export class VercelProvider extends SandboxProvider {
       version: "1.0.0",
       type: "module",
       scripts: {
-        dev: "vite --host",
+        dev: `vite --host --port ${appConfig.vercelSandbox.devPort}`,
         build: "vite build",
         preview: "vite preview"
       },
@@ -370,7 +381,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    port: 5173,
+    port: ${appConfig.vercelSandbox.devPort},
     strictPort: true,
     allowedHosts: [
       '.vercel.run',  // Allow all Vercel sandbox domains

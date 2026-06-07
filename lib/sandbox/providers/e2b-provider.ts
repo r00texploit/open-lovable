@@ -1,7 +1,12 @@
-import { Sandbox } from '@e2b/code-interpreter';
 import { SandboxProvider, SandboxInfo, CommandResult } from '../types';
 // SandboxProviderConfig available through parent class
 import { appConfig } from '@/config/app.config';
+
+// Dynamic import for E2B SDK to avoid client-side bundling
+async function getE2BSandbox() {
+  const { Sandbox } = await import('@e2b/code-interpreter');
+  return Sandbox;
+}
 
 export class E2BProvider extends SandboxProvider {
   private existingFiles: Set<string> = new Set();
@@ -11,12 +16,12 @@ export class E2BProvider extends SandboxProvider {
    */
   async reconnect(sandboxId: string): Promise<boolean> {
     try {
-      
+
       // Try to connect to existing sandbox
       // Note: E2B SDK doesn't directly support reconnection, but we can try to recreate
       // For now, return false to indicate reconnection isn't supported
       // In the future, E2B may add this capability
-      
+
       return false;
     } catch (error) {
       console.error(`[E2BProvider] Failed to reconnect to sandbox ${sandboxId}:`, error);
@@ -26,7 +31,8 @@ export class E2BProvider extends SandboxProvider {
 
   async createSandbox(): Promise<SandboxInfo> {
     try {
-      
+      const Sandbox = await getE2BSandbox();
+
       // Kill existing sandbox if any
       if (this.sandbox) {
         try {
@@ -36,12 +42,12 @@ export class E2BProvider extends SandboxProvider {
         }
         this.sandbox = null;
       }
-      
+
       // Clear existing files tracking
       this.existingFiles.clear();
 
       // Create base sandbox
-      this.sandbox = await Sandbox.create({ 
+      this.sandbox = await Sandbox.create({
         apiKey: this.config.e2b?.apiKey || process.env.E2B_API_KEY,
         timeoutMs: this.config.e2b?.timeoutMs || appConfig.e2b.timeoutMs
       });

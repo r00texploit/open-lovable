@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { prisma } from '@/lib/db/prisma';
+import { getNormalizedSubscriptionState, incrementTokenUsage } from '@/lib/usage/token-usage';
 
 // Get current usage
 export async function GET() {
@@ -21,26 +22,15 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Check if daily limit should reset
-    const now = new Date();
-    const resetDate = user.usage?.resetDate || now;
-    const shouldReset = now.getDate() !== new Date(resetDate).getDate();
-
-    if (shouldReset && user.usage) {
-      await prisma.usage.update({
-        where: { userId: user.id },
-        data: {
-          generationsUsed: 0,
-          resetDate: now,
-        },
-      });
-    }
+    const { subscription, usage } = await getNormalizedSubscriptionState(user.id);
 
     return NextResponse.json({
-      used: shouldReset ? 0 : user.usage?.generationsUsed || 0,
-      limit: user.usage?.generationsLimit || 3,
-      tier: user.subscription?.tier || 'free',
-      resetDate: shouldReset ? now : resetDate,
+      used: usage.generationsUsed,
+      limit: usage.generationsLimit,
+      tier: subscription.tier,
+      unit: 'tokens',
+      period: 'month',
+      resetDate: usage.resetDate,
     });
   } catch (error) {
     console.error('[usage]', error);
@@ -49,7 +39,7 @@ export async function GET() {
 }
 
 // Increment usage
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -66,28 +56,23 @@ export async function POST() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (!user.usage) {
-      return NextResponse.json({ error: 'No usage record' }, { status: 500 });
-    }
+    const body = await req.json().catch(() => ({}));
+    const tokens = Math.max(1, Math.ceil(Number(body.tokens) || 1000));
+    const result = await incrementTokenUsage(user.id, tokens);
 
-    // Check if limit reached
-    if (user.usage.generationsUsed >= user.usage.generationsLimit) {
+    if (!result.allowed) {
       return NextResponse.json(
-        { error: 'Daily limit reached', limitReached: true },
+        { error: 'Monthly token limit reached', limitReached: true, upgradeUrl: '/pricing' },
         { status: 429 }
       );
     }
 
-    // Increment usage
-    const updatedUsage = await prisma.usage.update({
-      where: { userId: user.id },
-      data: { generationsUsed: { increment: 1 } },
-    });
-
     return NextResponse.json({
-      used: updatedUsage.generationsUsed,
-      limit: updatedUsage.generationsLimit,
-      remaining: updatedUsage.generationsLimit - updatedUsage.generationsUsed,
+      used: result.usage.generationsUsed,
+      limit: result.usage.generationsLimit,
+      remaining: result.remaining,
+      unit: 'tokens',
+      period: 'month',
     });
   } catch (error) {
     console.error('[usage]', error);

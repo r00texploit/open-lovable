@@ -9,6 +9,13 @@ interface UsageData {
   tier: string;
 }
 
+function formatTokens(value: number) {
+  return new Intl.NumberFormat('en', {
+    notation: value >= 10000 ? 'compact' : 'standard',
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 export function UsageIndicator() {
   const { data: session } = useSession();
   const [usage, setUsage] = useState<UsageData | null>(null);
@@ -39,14 +46,14 @@ export function UsageIndicator() {
   return (
     <div className="bg-gray-800 rounded-lg p-4">
       <div className="flex justify-between items-center mb-2">
-        <span className="text-sm text-gray-400">Daily Usage</span>
+        <span className="text-sm text-gray-400">Monthly Tokens</span>
         <span className="text-sm font-medium text-white">
           {usage.tier === 'free' ? 'Free Plan' : `${usage.tier.charAt(0).toUpperCase() + usage.tier.slice(1)} Plan`}
         </span>
       </div>
       <div className="flex justify-between items-center mb-2">
-        <span className="text-2xl font-bold text-white">{usage.used}</span>
-        <span className="text-sm text-gray-400">/ {usage.limit} generations</span>
+        <span className="text-2xl font-bold text-white">{formatTokens(usage.used)}</span>
+        <span className="text-sm text-gray-400">/ {formatTokens(usage.limit)} tokens</span>
       </div>
       <div className="w-full bg-gray-700 rounded-full h-2">
         <div
@@ -58,7 +65,7 @@ export function UsageIndicator() {
       </div>
       {remaining === 0 && usage.tier === 'free' && (
         <p className="text-xs text-red-400 mt-2">
-          Daily limit reached. Upgrade to Pro for more generations.
+          Monthly token limit reached. Upgrade to Pro for more tokens.
         </p>
       )}
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, KeyboardEvent, useEffect, useRef } from "react";
+import { useState, KeyboardEvent, useEffect, useRef, ChangeEvent } from "react";
+import { ImageIcon, X } from "lucide-react";
 
 interface HeroInputProps {
   value: string;
@@ -9,6 +10,7 @@ interface HeroInputProps {
   placeholder?: string;
   className?: string;
   showSearchFeatures?: boolean;
+  onImageUpload?: (image: { base64: string; type: string; name: string } | null) => void;
 }
 
 function isURL(str: string): boolean {
@@ -17,25 +19,36 @@ function isURL(str: string): boolean {
   return urlPattern.test(str.trim());
 }
 
-export default function HeroInput({ 
-  value, 
-  onChange, 
-  onSubmit, 
+export default function HeroInput({
+  value,
+  onChange,
+  onSubmit,
   placeholder = "Describe what you want to build...",
   className = "",
-  showSearchFeatures = true
+  showSearchFeatures = true,
+  onImageUpload
 }: HeroInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [showTiles, setShowTiles] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<{ base64: string; type: string; name: string; preview: string; size: number } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isURLInput = showSearchFeatures ? isURL(value) : false;
+  const maxTextareaHeight = 220;
+
+  const resizeTextarea = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = 'auto';
+    const nextHeight = Math.min(textarea.scrollHeight, maxTextareaHeight);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > maxTextareaHeight ? 'auto' : 'hidden';
+  };
 
   // Reset textarea height when value changes (especially when cleared)
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-    }
+    resizeTextarea();
     
     // Show tiles animation for search terms (only if search features are enabled)
     if (showSearchFeatures && value.trim() && !isURL(value) && isFocused) {
@@ -48,7 +61,60 @@ export default function HeroInput({
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      onSubmit();
+      handleSubmit();
+    }
+  };
+
+  const handleImageSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processImageFile(file);
+    }
+  };
+
+  const processImageFile = (file: File) => {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64Full = e.target?.result as string;
+      const base64 = base64Full.split(',')[1];
+      const imageData = {
+        size: file.size,
+        preview: base64Full,
+        base64,
+        type: file.type,
+        name: file.name
+      };
+      setUploadedImage(imageData);
+      onImageUpload?.({ base64, type: file.type, name: file.name });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setUploadedImage(null);
+    onImageUpload?.(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!value.trim() && !uploadedImage) return;
+
+    onSubmit();
+
+    if (uploadedImage) {
+      removeImage();
     }
   };
 
@@ -111,7 +177,7 @@ export default function HeroInput({
 
           <textarea
             ref={textareaRef}
-            className="w-full bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 resize-none outline-none min-h-[24px] leading-6"
+            className="w-full bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 resize-none outline-none min-h-[24px] max-h-[220px] leading-6 pr-2 scrollbar-thin scrollbar-thumb-black-alpha-12 scrollbar-track-transparent"
             placeholder={placeholder}
             value={value}
             onChange={(e) => onChange(e.target.value)}
@@ -121,31 +187,79 @@ export default function HeroInput({
             rows={1}
             style={{
               height: 'auto',
-              overflow: 'hidden'
+              overflowY: 'hidden'
             }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = target.scrollHeight + 'px';
-            }}
+            onInput={resizeTextarea}
           />
         </label>
 
-        <div className="p-10 flex justify-end items-center relative">
+        {/* Image Preview */}
+        {uploadedImage && (
+          <div className="px-16 pb-10">
+            <div className="flex items-center gap-3 rounded-12 bg-black-alpha-4 p-10">
+              <div className="relative h-48 w-48 shrink-0 overflow-hidden rounded-8">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={uploadedImage.preview}
+                  alt="Uploaded"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-accent-black">
+                  {uploadedImage.name}
+                </p>
+                <p className="text-xs text-black-alpha-48">
+                  {(uploadedImage.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={removeImage}
+                className="flex h-32 w-32 shrink-0 items-center justify-center rounded-full bg-black-alpha-4 text-black-alpha-48 transition-colors hover:bg-black-alpha-8 hover:text-accent-black"
+              >
+                <X className="h-16 w-16" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="p-10 flex justify-between items-center relative bg-white/80 backdrop-blur-sm">
+          {/* Image Upload Button */}
           <button
-            onClick={onSubmit}
-            disabled={!value.trim()}
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className={`flex items-center gap-6 rounded-10 px-8 py-8 text-label-medium font-medium transition-colors ${
+              uploadedImage
+                ? 'bg-orange-50 text-orange-600'
+                : 'bg-black-alpha-4 text-black-alpha-48 hover:bg-black-alpha-8 hover:text-accent-black'
+            }`}
+          >
+            <ImageIcon className="h-16 w-16" />
+            <span className="hidden sm:inline">{uploadedImage ? 'Image added' : 'Add image'}</span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+
+          <button
+            onClick={handleSubmit}
+            disabled={!value.trim() && !uploadedImage}
             className={`
               button relative rounded-10 px-8 py-8 text-label-medium font-medium
               flex items-center justify-center gap-6
-              ${value.trim() 
-                ? 'button-primary text-accent-white active:scale-[0.995]' 
+              ${value.trim() || uploadedImage
+                ? 'button-primary text-accent-white active:scale-[0.995]'
                 : 'bg-black-alpha-4 text-black-alpha-24 cursor-not-allowed'
               }
             `}
           >
-            {value.trim() && <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />}
-            {value.trim() ? (
+            {(value.trim() || uploadedImage) && <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />}
+            {value.trim() || uploadedImage ? (
               <>
                 <span className="px-6 relative">Re-imagine Site</span>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">

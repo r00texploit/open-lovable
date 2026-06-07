@@ -1,892 +1,354 @@
-"use client";
-
 import Link from "next/link";
-import Image from "next/image";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { appConfig } from '@/config/app.config';
-import { toast } from "sonner";
+import { SparkableLogo } from "@/components/brand/sparkable-logo";
+import { BuildLauncher } from "@/components/saas-landing/build-launcher";
+import { formatTokenAmount, TIERS, type SubscriptionTier } from "@/lib/stripe/stripe";
 
-// Import shared components
-import { Connector } from "@/components/shared/layout/curvy-rect";
-import HeroFlame from "@/components/shared/effects/flame/hero-flame";
-import AsciiExplosion from "@/components/shared/effects/flame/ascii-explosion";
-import { HeaderProvider } from "@/components/shared/header/HeaderContext";
+const navItems = [
+  { label: "Studio", href: "#studio" },
+  { label: "Workflow", href: "#workflow" },
+  { label: "Pricing", href: "#pricing" },
+  { label: "FAQ", href: "#faq" },
+];
 
-// Import hero section components
-import HomeHeroBackground from "@/components/app/(home)/sections/hero/Background/Background";
-import { BackgroundOuterPiece } from "@/components/app/(home)/sections/hero/Background/BackgroundOuterPiece";
-import HomeHeroBadge from "@/components/app/(home)/sections/hero/Badge/Badge";
-import HomeHeroPixi from "@/components/app/(home)/sections/hero/Pixi/Pixi";
-import HomeHeroTitle from "@/components/app/(home)/sections/hero/Title/Title";
-import HeroInputSubmitButton from "@/components/app/(home)/sections/hero-input/Button/Button";
-// import Globe from "@/components/app/(home)/sections/hero-input/_svg/Globe";
+const featureCards = [
+  {
+    title: "Scrape the real site",
+    text: "Bring in a URL and keep the useful structure, content, colors, and tone instead of starting from a blank prompt.",
+    meta: "01",
+  },
+  {
+    title: "Generate editable React",
+    text: "The builder writes a Vite + React + Tailwind app into a live sandbox, then keeps the files available for revision.",
+    meta: "02",
+  },
+  {
+    title: "Tune with chat",
+    text: "Ask for layout, copy, or code changes in plain language and preview the result as the app updates.",
+    meta: "03",
+  },
+];
 
-// Import header components
-import HeaderBrandKit from "@/components/shared/header/BrandKit/BrandKit";
-import HeaderWrapper from "@/components/shared/header/Wrapper/Wrapper";
-import HeaderDropdownWrapper from "@/components/shared/header/Dropdown/Wrapper/Wrapper";
-import GithubIcon from "@/components/shared/header/Github/_svg/GithubIcon";
-import ButtonUI from "@/components/ui/shadcn/button"
+const timeline = [
+  "Paste a site or describe the build",
+  "Sparkable reads brand and page intent",
+  "A React app appears in the sandbox",
+  "You edit, preview, and export the code",
+];
 
-interface SearchResult {
-  url: string;
-  title: string;
-  description: string;
-  screenshot: string | null;
-  markdown: string;
+const faq = [
+  {
+    q: "Is this just a landing-page generator?",
+    a: "No. The output is a working React project in a sandbox, with files you can inspect, edit, and keep shaping.",
+  },
+  {
+    q: "Can I use an existing website as the source?",
+    a: "Yes. Paste a URL and Sparkable can use the page as context for layout, copy, and visual direction.",
+  },
+  {
+    q: "Do I need to connect every AI provider?",
+    a: "No. Add at least one supported provider key, then choose models from the builder when you need them.",
+  },
+];
+
+const planOrder: SubscriptionTier[] = ["free", "pro", "plus", "team"];
+
+const planDescriptions: Record<SubscriptionTier, string> = {
+  free: "Try the builder and validate the flow.",
+  pro: "For regular builders shipping client or product work.",
+  plus: "For power users needing more tokens and API access.",
+  team: "A larger token pool for studios and small teams.",
+};
+
+function BrandMark() {
+  return (
+    <SparkableLogo iconClassName="h-[40px] w-[40px]" textClassName="text-[#17130f]" />
+  );
+}
+
+function ArrowPuck() {
+  return (
+    <span className="ml-[4px] flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#25170e] text-[#fff7e8] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-[4px]">
+      -&gt;
+    </span>
+  );
 }
 
 export default function HomePage() {
-  const [url, setUrl] = useState<string>("");
-  const [selectedStyle, setSelectedStyle] = useState<string>("1");
-  const [selectedModel, setSelectedModel] = useState<string>(appConfig.ai.defaultModel);
-  const [isValidUrl, setIsValidUrl] = useState<boolean>(false);
-  const [showSearchTiles, setShowSearchTiles] = useState<boolean>(false);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [hasSearched, setHasSearched] = useState<boolean>(false);
-  const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
-  const [showSelectMessage, setShowSelectMessage] = useState<boolean>(false);
-  const [showInstructionsForIndex, setShowInstructionsForIndex] = useState<number | null>(null);
-  const [additionalInstructions, setAdditionalInstructions] = useState<string>('');
-  const [extendBrandStyles, setExtendBrandStyles] = useState<boolean>(false);
-  const router = useRouter();
-  
-  // Simple URL validation
-  const validateUrl = (urlString: string) => {
-    if (!urlString) return false;
-    // Basic URL pattern - accepts domains with or without protocol
-    const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
-    return urlPattern.test(urlString.toLowerCase());
-  };
-
-  // Check if input is a URL (contains a dot)
-  const isURL = (str: string): boolean => {
-    const urlPattern = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
-    return urlPattern.test(str.trim());
-  };
-
-  const styles = [
-    { id: "1", name: "Glassmorphism", description: "Frosted glass effect" },
-    { id: "2", name: "Neumorphism", description: "Soft 3D shadows" },
-    { id: "3", name: "Brutalism", description: "Bold and raw" },
-    { id: "4", name: "Minimalist", description: "Clean and simple" },
-    { id: "5", name: "Dark Mode", description: "Dark theme design" },
-    { id: "6", name: "Gradient Rich", description: "Vibrant gradients" },
-    { id: "7", name: "3D Depth", description: "Dimensional layers" },
-    { id: "8", name: "Retro Wave", description: "80s inspired" },
-  ];
-
-  const models = appConfig.ai.availableModels.map(model => ({
-    id: model,
-    name: appConfig.ai.modelDisplayNames[model] || model,
-  }));
-
-  const handleSubmit = async (selectedResult?: SearchResult) => {
-    const inputValue = url.trim();
-
-    if (!inputValue) {
-      toast.error("Please enter a URL or search term");
-      return;
-    }
-
-    // Validate brand extension mode requirements
-    if (extendBrandStyles && isURL(inputValue) && !additionalInstructions.trim()) {
-      toast.error("Please describe what you want to build with this brand's styles");
-      return;
-    }
-    
-    // If it's a search result being selected, fade out and redirect
-    if (selectedResult) {
-      setIsFadingOut(true);
-      
-      // Wait for fade animation
-      setTimeout(() => {
-        sessionStorage.setItem('targetUrl', selectedResult.url);
-        sessionStorage.setItem('selectedStyle', selectedStyle);
-        sessionStorage.setItem('selectedModel', selectedModel);
-        sessionStorage.setItem('autoStart', 'true');
-        if (selectedResult.markdown) {
-          sessionStorage.setItem('siteMarkdown', selectedResult.markdown);
-        }
-        router.push('/generation');
-      }, 500);
-      return;
-    }
-    
-    // If it's a URL, check if we're extending brand styles or cloning
-    if (isURL(inputValue)) {
-      if (extendBrandStyles) {
-        // Brand extension mode - extract brand styles and use them with the prompt
-        sessionStorage.setItem('targetUrl', inputValue);
-        sessionStorage.setItem('selectedModel', selectedModel);
-        sessionStorage.setItem('autoStart', 'true');
-        sessionStorage.setItem('brandExtensionMode', 'true');
-        sessionStorage.setItem('brandExtensionPrompt', additionalInstructions || '');
-        router.push('/generation');
-      } else {
-        // Normal clone mode
-        sessionStorage.setItem('targetUrl', inputValue);
-        sessionStorage.setItem('selectedStyle', selectedStyle);
-        sessionStorage.setItem('selectedModel', selectedModel);
-        sessionStorage.setItem('autoStart', 'true');
-        router.push('/generation');
-      }
-    } else {
-      // It's a search term, fade out if results exist, then search
-      if (hasSearched && searchResults.length > 0) {
-        setIsFadingOut(true);
-        
-        setTimeout(async () => {
-          setSearchResults([]);
-          setIsFadingOut(false);
-          setShowSelectMessage(true);
-          
-          // Perform new search
-          await performSearch(inputValue);
-          setHasSearched(true);
-          setShowSearchTiles(true);
-          setShowSelectMessage(false);
-          
-          // Smooth scroll to carousel
-          setTimeout(() => {
-            const carouselSection = document.querySelector('.carousel-section');
-            if (carouselSection) {
-              carouselSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          }, 300);
-        }, 500);
-      } else {
-        // First search, no fade needed
-        setShowSelectMessage(true);
-        setIsSearching(true);
-        setHasSearched(true);
-        setShowSearchTiles(true);
-        
-        // Scroll to carousel area immediately
-        setTimeout(() => {
-          const carouselSection = document.querySelector('.carousel-section');
-          if (carouselSection) {
-            carouselSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 100);
-        
-        await performSearch(inputValue);
-        setShowSelectMessage(false);
-        setIsSearching(false);
-        
-        // Smooth scroll to carousel
-        setTimeout(() => {
-          const carouselSection = document.querySelector('.carousel-section');
-          if (carouselSection) {
-            carouselSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 300);
-      }
-    }
-  };
-
-  // Perform search when user types
-  const performSearch = async (searchQuery: string) => {
-    if (!searchQuery.trim() || isURL(searchQuery)) {
-      setSearchResults([]);
-      setShowSearchTiles(false);
-      return;
-    }
-
-    setIsSearching(true);
-    setShowSearchTiles(true);
-    try {
-      const response = await fetch('/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data.results || []);
-        setShowSearchTiles(true);
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
   return (
-    <HeaderProvider>
-      <div className="min-h-screen bg-background-base">
-        {/* Header/Navigation Section */}
-        <HeaderDropdownWrapper />
+    <main className="ol-shell min-h-screen overflow-hidden font-sans">
+      <div className="ol-noise" />
 
-        <div className="sticky top-0 left-0 w-full z-[101] bg-background-base header">
-          <div className="absolute top-0 cmw-container border-x border-border-faint h-full pointer-events-none" />
-          <div className="h-1 bg-border-faint w-full left-0 -bottom-1 absolute" />
-          <div className="cmw-container absolute h-full pointer-events-none top-0">
-            <Connector className="absolute -left-[10.5px] -bottom-11" />
-            <Connector className="absolute -right-[10.5px] -bottom-11" />
+      <header className="relative z-10 mx-auto flex w-full max-w-[1280px] items-center justify-between px-[24px] py-[24px] sm:px-[40px]">
+        <Link href="/" aria-label="Sparkable home" className="text-[15px] text-[#17130f]">
+          <BrandMark />
+        </Link>
+
+        <nav className="hidden items-center gap-[4px] rounded-full border border-[#261e151f] bg-[#fff9ee99] p-[4px] text-sm text-[#5f5343] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] md:flex">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-full px-[16px] py-[8px] transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[#17130f] hover:text-[#fff7e8]"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <Link href="/auth/signin" className="ol-primary-button group px-[16px] py-[8px] text-sm">
+          Sign in
+          <ArrowPuck />
+        </Link>
+      </header>
+
+      <section className="relative z-10 mx-auto grid w-full max-w-[1280px] items-center gap-[52px] px-[24px] pb-[72px] pt-[36px] sm:px-[40px] lg:grid-cols-[0.84fr_1.16fr] lg:pb-[80px] lg:pt-[44px]">
+        <div>
+          <div className="mb-[20px] inline-flex items-center gap-[8px] rounded-full border border-[#2b21161a] bg-[#fff9ecb8] px-[14px] py-[7px] text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7a4a25]">
+            <span className="h-[8px] w-[8px] rounded-full bg-[#ff6728]" />
+            Site to sandbox
           </div>
 
-          <HeaderWrapper>
-            <div className="max-w-[900px] mx-auto w-full flex justify-between items-center">
-              <div className="flex gap-24 items-center">
-                <HeaderBrandKit />
-              </div>
-              <div className="flex gap-8">
-                <a
-                  className="contents"
-                  href="https://github.com/mendableai/open-lovable"
-                  target="_blank"
-                >
-                  <ButtonUI variant="tertiary">
-                    <GithubIcon />
-                    Use this Template
-                  </ButtonUI>
-                </a>
-              </div>
-            </div>
-          </HeaderWrapper>
+          <SparkableLogo
+            iconClassName="h-[56px] w-[56px] sm:h-[64px] sm:w-[64px]"
+            textClassName="bg-gradient-to-r from-[#101524] via-[#6f45ff] to-[#10cbe0] bg-clip-text text-[clamp(2.35rem,4.2vw,4rem)] font-black leading-none text-transparent"
+            className="mb-[24px] gap-[14px]"
+          />
+
+          <h1 className="max-w-[610px] text-[clamp(3.05rem,5.7vw,5.25rem)] font-black leading-[0.91] tracking-[-0.065em] text-[#17130f]">
+            Build from the web.
+            <span className="block pl-[0.06em] text-[#8c4b26]">Keep the code.</span>
+          </h1>
+
+          <p className="mt-[22px] max-w-[540px] text-balance text-base leading-[1.55] text-[#5b4d3d] sm:text-xl">
+            Sparkable turns a URL or a rough idea into a live React app, then gives you the files, preview, and chat loop to keep shaping it.
+          </p>
+
+          <BuildLauncher />
+
+          <div className="mt-[16px] flex flex-col gap-[12px] sm:flex-row">
+            <Link href="#studio" className="ol-secondary-button px-[24px] py-[12px]">
+              See the studio
+            </Link>
+          </div>
         </div>
 
-        {/* Hero Section */}
-        <section className="overflow-x-clip" id="home-hero">
-          <div className="pt-28 lg:pt-254 lg:-mt-100 pb-115 relative" id="hero-content">
-            <HomeHeroPixi />
-            <HeroFlame />
-            <BackgroundOuterPiece />
-            <HomeHeroBackground />
+        <div id="studio" className="relative">
+          <div className="ol-bezel rounded-[32px] p-[8px]">
+            <div className="ol-ink-panel rounded-[24px] p-[18px] sm:p-[24px]">
+              <div className="mb-[20px] flex items-center justify-between border-b border-[#fff7e81a] pb-[16px]">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-[#d2bfa3]">Generation run</p>
+                  <p className="mt-[4px] text-lg font-semibold">sparkable-site-remix</p>
+                </div>
+                <span className="rounded-full bg-[#ff6728] px-[12px] py-[4px] text-xs font-bold text-[#20130a]">
+                  live
+                </span>
+              </div>
 
-            <div className="relative container px-16">
-              <HomeHeroBadge />
-              <HomeHeroTitle />
-              <p className="text-center text-body-large">
-                Clone brand format or re-imagine any website, in seconds.
-              </p>
-              <Link
-                className="bg-black-alpha-4 hover:bg-black-alpha-6 rounded-6 px-8 lg:px-6 text-label-large h-30 lg:h-24 block mt-8 mx-auto w-max gap-4 transition-all"
-                href="#"
-                onClick={(e) => e.preventDefault()}
+              <div className="grid gap-[16px] lg:grid-cols-[0.76fr_1.24fr]">
+                <div className="rounded-[22px] bg-[#fff7e80d] p-[18px]">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[#cdbb9f]">Prompt</p>
+                  <p className="mt-[14px] text-[clamp(1.4rem,2.4vw,2rem)] font-semibold leading-[1.1] tracking-[-0.04em]">
+                    Rebuild this launch page as a sharper React app.
+                  </p>
+                  <div className="mt-[24px] space-y-[10px] text-sm text-[#d7c9b5]">
+                    <p className="rounded-[16px] bg-[#fff7e80d] px-[12px] py-[8px]">Extract brand palette</p>
+                    <p className="rounded-[16px] bg-[#fff7e80d] px-[12px] py-[8px]">Create responsive sections</p>
+                    <p className="rounded-[16px] bg-[#fff7e80d] px-[12px] py-[8px]">Keep components editable</p>
+                  </div>
+                </div>
+
+                <div className="overflow-hidden rounded-[24px] bg-[#f5ead8] text-[#17130f] shadow-[0_24px_54px_rgba(0,0,0,0.24)]">
+                  <div className="flex items-center gap-[8px] border-b border-[#2d21151a] bg-[#fff9ee] px-[16px] py-[12px]">
+                    <span className="h-[12px] w-[12px] rounded-full bg-[#ff6728]" />
+                    <span className="h-[12px] w-[12px] rounded-full bg-[#d2b179]" />
+                    <span className="h-[12px] w-[12px] rounded-full bg-[#7d8a58]" />
+                    <span className="ml-auto font-mono text-xs text-[#786953]">localhost:3000</span>
+                  </div>
+                  <div className="grid min-h-[300px] grid-rows-[1fr_auto] p-[20px]">
+                    <div>
+                      <div className="mb-[28px] flex items-center justify-between">
+                        <SparkableLogo variant="light" iconClassName="h-[32px] w-[32px]" textClassName="text-[#17130f]" />
+                        <span className="rounded-full border border-[#2d211526] px-[12px] py-[4px] text-xs">Preview</span>
+                      </div>
+                      <p className="max-w-[360px] text-[clamp(2.45rem,3.5vw,3.5rem)] font-black leading-[0.92] tracking-[-0.06em]">
+                        Furniture with a slower pulse.
+                      </p>
+                      <div className="mt-[28px] grid grid-cols-3 gap-[8px]">
+                        <span className="h-[24px] rounded-[18px] bg-[#1a1510]" />
+                        <span className="h-[24px] rounded-[18px] bg-[#b45e2d]" />
+                        <span className="h-[24px] rounded-[18px] bg-[#dfc39b]" />
+                      </div>
+                    </div>
+                    <div className="mt-[24px] rounded-[18px] bg-[#17130f] p-[12px] font-mono text-xs text-[#ffe7c6]">
+                      <p>src/App.jsx</p>
+                      <p className="mt-[8px] text-[#ff9b65]">+ 11 files updated</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto w-full max-w-[1280px] px-[24px] py-[68px] sm:px-[40px] lg:py-[76px]">
+        <div className="grid gap-[24px] md:grid-cols-3">
+          {featureCards.map((feature) => (
+            <article
+              key={feature.title}
+              className="ol-bezel min-h-[220px] rounded-[28px] p-[28px]"
+            >
+              <p className="font-mono text-xs text-[#a15a2d]">{feature.meta}</p>
+              <h2 className="mt-[34px] text-[clamp(1.8rem,2.3vw,2.4rem)] font-black leading-[0.98] tracking-[-0.045em] text-[#17130f]">
+                {feature.title}
+              </h2>
+              <p className="mt-[18px] leading-[1.55] text-[#655847]">{feature.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="workflow" className="relative z-10 mx-auto w-full max-w-[1280px] px-[24px] py-[68px] sm:px-[40px] lg:pb-[72px] lg:pt-[84px]">
+        <div className="grid items-center gap-[56px] lg:grid-cols-[0.72fr_1.28fr]">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8c4b26]">Workflow</p>
+            <h2 className="mt-[18px] text-[clamp(3.2rem,5.1vw,5.35rem)] font-black leading-[0.92] tracking-[-0.06em] text-[#17130f]">
+              The shortest path from reference to repo.
+            </h2>
+          </div>
+          <div className="ol-ink-panel rounded-[32px] p-[10px]">
+            <div className="rounded-[24px] border border-[#fff7e817] bg-[#fff7e80a] p-[24px]">
+              {timeline.map((item, index) => (
+                <div key={item} className="grid grid-cols-[42px_1fr] gap-[16px] border-b border-[#fff7e814] py-[16px] first:pt-[4px] last:border-b-0 last:pb-[4px]">
+                  <span className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#ff6728] font-mono text-sm font-bold text-[#20130a]">
+                    {index + 1}
+                  </span>
+                  <p className="text-[clamp(1.15rem,1.65vw,1.45rem)] font-semibold leading-[1.25] tracking-[-0.025em] text-[#fff7e8]">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" className="relative z-10 mx-auto w-full max-w-[1280px] px-[24px] py-[68px] sm:px-[40px] lg:py-[76px]">
+        <div className="mb-[28px] flex flex-col gap-[16px] lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8c4b26]">Pricing</p>
+            <h2 className="mt-[18px] max-w-[760px] text-[clamp(3rem,4.6vw,5rem)] font-black leading-[0.92] tracking-[-0.06em] text-[#17130f]">
+              Start free. Upgrade when builds become daily work.
+            </h2>
+          </div>
+          <Link href="/pricing" className="ol-secondary-button w-max px-[22px] py-[12px]">
+            Compare all plans
+          </Link>
+        </div>
+
+        <div className="grid gap-[18px] lg:grid-cols-3">
+          {planOrder.map((tier) => {
+            const plan = TIERS[tier];
+            const isPaid = tier !== "free";
+
+            return (
+              <article
+                key={tier}
+                className={`flex min-h-[430px] flex-col rounded-[30px] border p-[28px] ${
+                  tier === "pro"
+                    ? "border-[#ff6728a8] bg-[#17130f] text-[#fff7e8] shadow-[0_32px_90px_rgba(47,31,17,0.22)]"
+                    : "ol-bezel text-[#17130f]"
+                }`}
               >
-                Powered by Firecrawl.
-              </Link>
-            </div>
-          </div>
+                <div className="flex items-start justify-between gap-[16px]">
+                  <div>
+                    <p className={`text-[13px] font-bold uppercase tracking-[0.18em] ${
+                      tier === "pro" ? "text-[#ff9b65]" : "text-[#8c4b26]"
+                    }`}>
+                      {plan.name}
+                    </p>
+                    <p className={`mt-[14px] text-sm leading-[1.5] ${
+                      tier === "pro" ? "text-[#d7c9b5]" : "text-[#655847]"
+                    }`}>
+                      {planDescriptions[tier]}
+                    </p>
+                  </div>
+                  {tier === "pro" ? (
+                    <span className="rounded-full bg-[#ff6728] px-[10px] py-[5px] text-xs font-black uppercase tracking-[0.08em] text-[#20130a]">
+                      Popular
+                    </span>
+                  ) : null}
+                </div>
 
-          {/* Mini Playground Input */}
-          <div className="container lg:contents !p-16 relative -mt-90">
-            <div className="absolute top-0 left-[calc(50%-50vw)] w-screen h-1 bg-border-faint lg:hidden" />
-            <div className="absolute bottom-0 left-[calc(50%-50vw)] w-screen h-1 bg-border-faint lg:hidden" />
-            <Connector className="-top-10 -left-[10.5px] lg:hidden" />
-            <Connector className="-top-10 -right-[10.5px] lg:hidden" />
-            <Connector className="-bottom-10 -left-[10.5px] lg:hidden" />
-            <Connector className="-bottom-10 -right-[10.5px] lg:hidden" />
+                <div className="mt-[30px] flex items-end gap-[6px]">
+                  <span className="text-[clamp(3.4rem,5vw,5rem)] font-black leading-none tracking-[-0.06em]">
+                    ${plan.price}
+                  </span>
+                  <span className={`pb-[8px] text-sm ${tier === "pro" ? "text-[#d7c9b5]" : "text-[#655847]"}`}>
+                    /month
+                  </span>
+                </div>
 
-            {/* Hero Input Component */}
-            <div className="max-w-552 mx-auto z-[11] lg:z-[2]">
-              <div className="rounded-20 -mt-30 lg:-mt-30">
-                <div
-                  className="bg-white rounded-20 relative z-10"
-                  style={{
-                    boxShadow:
-                      "0px 0px 44px 0px rgba(0, 0, 0, 0.02), 0px 88px 56px -20px rgba(0, 0, 0, 0.03), 0px 56px 56px -20px rgba(0, 0, 0, 0.02), 0px 32px 32px -20px rgba(0, 0, 0, 0.03), 0px 16px 24px -12px rgba(0, 0, 0, 0.03), 0px 0px 0px 1px rgba(0, 0, 0, 0.05), 0px 0px 0px 10px #F9F9F9",
-                  }}
+                <p className={`mt-[10px] text-sm ${tier === "pro" ? "text-[#d7c9b5]" : "text-[#655847]"}`}>
+                  {formatTokenAmount(plan.tokens)} tokens per month
+                </p>
+
+                <ul className="mt-[28px] flex-1 space-y-[12px]">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex gap-[10px] text-sm leading-[1.45]">
+                      <span className={`mt-[3px] h-[8px] w-[8px] shrink-0 rounded-full ${
+                        tier === "pro" ? "bg-[#ff6728]" : "bg-[#8c4b26]"
+                      }`} />
+                      <span className={tier === "pro" ? "text-[#f1e2c9]" : "text-[#514637]"}>
+                        {feature}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  href={isPaid ? "/pricing" : "/auth/signin?callbackUrl=/generation"}
+                  className={`${tier === "pro" ? "ol-primary-button" : "ol-secondary-button"} mt-[30px] px-[20px] py-[12px]`}
                 >
+                  {isPaid ? "Subscribe" : "Start free"}
+                  <ArrowPuck />
+                </Link>
+              </article>
+            );
+          })}
+        </div>
 
-                <div className="p-[28px] flex gap-12 items-center w-full relative bg-white rounded-20">
-                  {/* Show different UI when search results are displayed */}
-                  {hasSearched && searchResults.length > 0 && !isFadingOut ? (
-                    <>
-                      {/* Selection mode icon */}
-                      <svg 
-                        width="20" 
-                        height="20" 
-                        viewBox="0 0 20 20" 
-                        fill="none" 
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="opacity-40 flex-shrink-0"
-                      >
-                        <rect x="2" y="4" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                        <rect x="11" y="4" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                        <rect x="2" y="11" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                        <rect x="11" y="11" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                      </svg>
-                      
-                      {/* Selection message */}
-                      <div className="flex-1 text-body-input text-accent-black">
-                        Select which site to clone from the results below
-                      </div>
-                      
-                      {/* Search again button */}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setIsFadingOut(true);
-                          setTimeout(() => {
-                            setSearchResults([]);
-                            setHasSearched(false);
-                            setShowSearchTiles(false);
-                            setIsFadingOut(false);
-                            setUrl('');
-                          }, 500);
-                        }}
-                        className="button relative rounded-10 px-12 py-8 text-label-medium font-medium flex items-center justify-center gap-6 bg-gray-100 hover:bg-gray-200 text-gray-700 active:scale-[0.995] transition-all"
-                      >
-                        <svg 
-                          width="16" 
-                          height="16" 
-                          viewBox="0 0 16 16" 
-                          fill="none" 
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="opacity-60"
-                        >
-                          <path d="M14 14L10 10M11 6.5C11 9 9 11 6.5 11C4 11 2 9 2 6.5C2 4 4 2 6.5 2C9 2 11 4 11 6.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                        </svg>
-                        <span>Search Again</span>
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {isURL(url) ? (
-                        // Scrape icon for URLs
-                        <svg 
-                          width="20" 
-                          height="20" 
-                          viewBox="0 0 20 20" 
-                          fill="none" 
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="opacity-40 flex-shrink-0"
-                        >
-                          <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                          <path d="M7 10L9 12L13 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      ) : (
-                        // Search icon for search terms
-                        <svg 
-                          width="20" 
-                          height="20" 
-                          viewBox="0 0 20 20" 
-                          fill="none" 
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="opacity-40 flex-shrink-0"
-                        >
-                          <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.5"/>
-                          <path d="M12.5 12.5L16.5 16.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                        </svg>
-                      )}
-                      <input
-                        className="flex-1 bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent"
-                        placeholder="Enter URL or search term..."
-                        type="text"
-                        value={url}
-                        disabled={isSearching}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setUrl(value);
-                          setIsValidUrl(validateUrl(value));
-                          // Reset search state when input changes
-                          if (value.trim() === "") {
-                            setShowSearchTiles(false);
-                            setHasSearched(false);
-                            setSearchResults([]);
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !isSearching) {
-                            e.preventDefault();
-                            handleSubmit();
-                          }
-                        }}
-                        onFocus={() => {
-                          if (url.trim() && !isURL(url) && searchResults.length > 0) {
-                            setShowSearchTiles(true);
-                          }
-                        }}
-                      />
-                      <div
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (!isSearching) {
-                            handleSubmit();
-                          }
-                        }}
-                        className={isSearching ? 'pointer-events-none' : ''}
-                      >
-                        <HeroInputSubmitButton 
-                          dirty={url.length > 0} 
-                          buttonText={isURL(url) ? 'Scrape Site' : 'Search'} 
-                          disabled={isSearching}
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
+        <div className="mt-[18px] rounded-[24px] border border-[#2d21151a] bg-[#fff9ef8a] px-[22px] py-[16px] text-sm leading-[1.55] text-[#655847]">
+          Paid subscriptions are handled by Stripe. Sign in first, then choose Pro or Team on the full pricing page.
+        </div>
+      </section>
 
-                {/* Options Section - Only show when valid URL */}
-                <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                  isValidUrl ? (extendBrandStyles ? 'max-h-[400px]' : 'max-h-[300px]') + ' opacity-100' : 'max-h-0 opacity-0'
-                }`}>
-                  <div className="px-[28px] pt-0 pb-[28px]">
-                    <div className="border-t border-gray-100 bg-white">
-                      {/* Extend Brand Styles Toggle */}
-                      <div className={`transition-all duration-300 transform ${
-                        isValidUrl ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
-                      }`} style={{ transitionDelay: '50ms' }}>
-                        <div className="py-8 grid grid-cols-2 items-center gap-12 group cursor-pointer" onClick={() => setExtendBrandStyles(!extendBrandStyles)}>
-                          <div className="flex select-none">
-                            <div className="flex lg-max:flex-col whitespace-nowrap flex-wrap min-w-0 gap-8 lg:justify-between flex-1">
-                              <div className="text-xs font-medium text-black-alpha-72 transition-all group-hover:text-accent-black relative">
-                                Extend brand styles
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex justify-end">
-                            <button
-                              className="transition-all relative rounded-full group bg-black-alpha-10"
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExtendBrandStyles(!extendBrandStyles);
-                              }}
-                              style={{
-                                width: '50px',
-                                height: '20px',
-                                boxShadow: 'rgba(0, 0, 0, 0.02) 0px 6px 12px 0px inset, rgba(0, 0, 0, 0.02) 0px 0.75px 0.75px 0px inset, rgba(0, 0, 0, 0.04) 0px 0.25px 0.25px 0px inset'
-                              }}
-                            >
-                              <div
-                                className={`overlay transition-opacity ${extendBrandStyles ? 'opacity-100' : 'opacity-0'}`}
-                                style={{ background: 'color(display-p3 0.9059 0.3294 0.0784)', backgroundColor: '#FA4500' }}
-                              />
-                              <div
-                                className="top-[2px] left-[2px] transition-all absolute rounded-full bg-accent-white"
-                                style={{
-                                  width: '28px',
-                                  height: '16px',
-                                  boxShadow: 'rgba(0, 0, 0, 0.06) 0px 6px 12px -3px, rgba(0, 0, 0, 0.06) 0px 3px 6px -1px, rgba(0, 0, 0, 0.04) 0px 1px 2px 0px, rgba(0, 0, 0, 0.08) 0px 0.5px 0.5px 0px',
-                                  transform: extendBrandStyles ? 'translateX(16px)' : 'none'
-                                }}
-                              />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Brand Extension Prompt - Show when toggle is enabled */}
-                      {extendBrandStyles && (
-                        <div className="pb-10 transition-all duration-300 opacity-100">
-                          <textarea
-                            value={additionalInstructions}
-                            onChange={(e) => setAdditionalInstructions(e.target.value)}
-                            placeholder="Describe the new functionality you want to build using this brand's styles..."
-                            className="w-full px-4 py-10 text-xs font-medium text-gray-700 bg-gray-50 rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 placeholder:text-gray-400 min-h-[80px] resize-none"
-                          />
-                        </div>
-                      )}
-
-                      {/* Style Selector - Hide when brand extension mode is enabled */}
-                      {!extendBrandStyles && (
-                        <div className={`mb-2 transition-all duration-300 transform ${
-                          isValidUrl ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
-                        }`} style={{ transitionDelay: '100ms' }}>
-                          <div className="grid grid-cols-4 gap-2">
-                            {styles.map((style, index) => (
-                              <button
-                                key={style.id}
-                                onClick={() => setSelectedStyle(style.id)}
-                                className={`
-                                  ${selectedStyle === style.id
-                                    ? 'bg-heat-100 hover:bg-heat-200 flex items-center justify-center button relative text-label-medium button-primary group/button rounded-10 p-8 text-accent-white active:scale-[0.995] border-0'
-                                    : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700 py-3.5 px-4 rounded text-xs font-medium border text-center'
-                                  }
-                                  transition-all
-                                  ${isValidUrl ? 'opacity-100' : 'opacity-0'}
-                                `}
-                                style={{
-                                  transitionDelay: `${150 + index * 30}ms`,
-                                  transition: 'all 0.3s ease-in-out'
-                                }}
-                              >
-                                {selectedStyle === style.id && (
-                                  <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />
-                                )}
-                                <span className={selectedStyle === style.id ? 'relative' : ''}>
-                                  {style.name}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Model Selector Dropdown and Additional Instructions */}
-                      <div className={`flex items-center gap-3 mt-2 pb-4 transition-all duration-300 transform ${
-                        isValidUrl ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
-                      }`} style={{ transitionDelay: '400ms' }}>
-                        {/* Model Dropdown */}
-                        <select
-                          value={selectedModel}
-                          onChange={(e) => setSelectedModel(e.target.value)}
-                          className={`px-3 py-2.5 text-xs font-medium text-gray-700 bg-white rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 ${extendBrandStyles ? 'flex-1' : ''}`}
-                        >
-                          {models.map((model) => (
-                            <option key={model.id} value={model.id}>
-                              {model.name}
-                            </option>
-                          ))}
-                        </select>
-
-                        {/* Additional Instructions - Hidden when extend brand styles is enabled */}
-                        {!extendBrandStyles && (
-                          <input
-                            type="text"
-                            className="flex-1 px-3 py-2.5 text-xs font-medium text-gray-700 bg-gray-50 rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 placeholder:text-gray-400"
-                            placeholder="Additional instructions (optional)"
-                            onChange={(e) => sessionStorage.setItem('additionalInstructions', e.target.value)}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                </div>
-
-                <div className="h-248 top-84 cw-768 pointer-events-none absolute overflow-clip -z-10">
-                  <AsciiExplosion className="-top-200" />
-                </div>
-              </div>
-            </div>
+      <section id="faq" className="relative z-10 mx-auto w-full max-w-[1280px] px-[24px] py-[68px] sm:px-[40px] lg:py-[76px]">
+        <div className="grid gap-[56px] lg:grid-cols-[0.62fr_1fr]">
+          <h2 className="text-[clamp(2.8rem,4.3vw,4.8rem)] font-black leading-[0.95] tracking-[-0.06em] text-[#17130f]">
+            Plain answers.
+          </h2>
+          <div className="space-y-[16px]">
+            {faq.map((item) => (
+              <article key={item.q} className="ol-bezel rounded-[24px] p-[24px]">
+                <h3 className="text-[clamp(1.25rem,1.7vw,1.6rem)] font-bold leading-[1.15] tracking-[-0.025em]">{item.q}</h3>
+                <p className="mt-[10px] leading-[1.6] text-[#655847]">{item.a}</p>
+              </article>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Full-width oval carousel section */}
-        {showSearchTiles && hasSearched && (
-          <section className={`carousel-section relative w-full overflow-hidden mt-32 mb-32 transition-opacity duration-500 ${
-            isFadingOut ? 'opacity-0' : 'opacity-100'
-          }`}>
-            <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white rounded-[50%] transform scale-x-150 -translate-y-24" />
-            
-            {isSearching ? (
-              // Loading state with animated scrolling skeletons
-              <div className="relative h-[250px] overflow-hidden">
-                {/* Edge fade overlays */}
-                <div className="absolute left-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to right, white 0%, white 20%, transparent 100%)'}} />
-                <div className="absolute right-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to left, white 0%, white 20%, transparent 100%)'}} />
-                
-                <div className="carousel-container absolute left-0 flex gap-12 py-4">
-                  {/* Duplicate skeleton tiles for continuous scroll */}
-                  {[...Array(10), ...Array(10)].map((_, index) => (
-                    <div
-                      key={`loading-${index}`}
-                      className="flex-shrink-0 w-[400px] h-[240px] rounded-lg overflow-hidden border-2 border-gray-200/30 bg-white relative"
-                    >
-                      <div className="absolute inset-0 skeleton-shimmer">
-                        <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 skeleton-gradient" />
-                      </div>
-                      
-                      {/* Fake browser UI - 5x bigger */}
-                      <div className="absolute top-0 left-0 right-0 h-40 bg-gray-100 border-b border-gray-200/50 flex items-center px-6 gap-4">
-                        <div className="flex gap-3">
-                          <div className="w-5 h-5 rounded-full bg-gray-300 animate-pulse" />
-                          <div className="w-5 h-5 rounded-full bg-gray-300 animate-pulse" style={{ animationDelay: '0.1s' }} />
-                          <div className="w-5 h-5 rounded-full bg-gray-300 animate-pulse" style={{ animationDelay: '0.2s' }} />
-                        </div>
-                        <div className="flex-1 h-8 bg-gray-200 rounded-md mx-6 animate-pulse" />
-                      </div>
-                      
-                      {/* Content skeleton - positioned just below nav bar */}
-                      <div className="absolute top-44 left-4 right-4">
-                        <div className="h-3 bg-gray-200 rounded w-3/4 mb-2 animate-pulse" />
-                        <div className="h-3 bg-gray-150 rounded w-1/2 mb-2 animate-pulse" style={{ animationDelay: '0.2s' }} />
-                        <div className="h-3 bg-gray-150 rounded w-2/3 animate-pulse" style={{ animationDelay: '0.3s' }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : searchResults.length > 0 ? (
-              // Actual results
-              <div className="relative h-[250px] overflow-hidden">
-                {/* Edge fade overlays */}
-                <div className="absolute left-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to right, white 0%, white 20%, transparent 100%)'}} />
-                <div className="absolute right-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to left, white 0%, white 20%, transparent 100%)'}} />
-                
-                <div className="carousel-container absolute left-0 flex gap-12 py-4">
-                  {/* Duplicate results for infinite scroll */}
-                  {[...searchResults, ...searchResults].map((result, index) => (
-                    <div
-                      key={`${result.url}-${index}`}
-                      className="group flex-shrink-0 w-[400px] h-[240px] rounded-lg overflow-hidden border-2 border-gray-200/50 transition-all duration-300 hover:shadow-2xl bg-white relative"
-                      onMouseLeave={() => {
-                        if (showInstructionsForIndex === index) {
-                          setShowInstructionsForIndex(null);
-                          setAdditionalInstructions('');
-                        }
-                      }}
-                    >
-                      {/* Hover overlay with clone buttons or instructions input */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col items-center justify-center p-6">
-                        {showInstructionsForIndex === index ? (
-                          /* Instructions input view - matching main input style exactly */
-                          <div className="w-full max-w-[380px]">
-                            <div className="bg-white rounded-20" style={{
-                              boxShadow: "0px 0px 44px 0px rgba(0, 0, 0, 0.02), 0px 88px 56px -20px rgba(0, 0, 0, 0.03), 0px 56px 56px -20px rgba(0, 0, 0, 0.02), 0px 32px 32px -20px rgba(0, 0, 0, 0.03), 0px 16px 24px -12px rgba(0, 0, 0, 0.03), 0px 0px 0px 1px rgba(0, 0, 0, 0.05)"
-                            }}>
-                              {/* Input area matching main search */}
-                              <div className="p-16 flex gap-12 items-start w-full relative">
-                                {/* Instructions icon */}
-                                <div className="mt-2 flex-shrink-0">
-                                  <svg 
-                                    width="20" 
-                                    height="20" 
-                                    viewBox="0 0 20 20" 
-                                    fill="none" 
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="opacity-40"
-                                  >
-                                    <path d="M5 5H15M5 10H15M5 15H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                                  </svg>
-                                </div>
-                                
-                                <textarea
-                                  value={additionalInstructions}
-                                  onChange={(e) => setAdditionalInstructions(e.target.value)}
-                                  placeholder="Describe your customizations..."
-                                  className="flex-1 bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent resize-none min-h-[60px]"
-                                  autoFocus
-                                  onClick={(e) => e.stopPropagation()}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Escape') {
-                                      e.stopPropagation();
-                                      setShowInstructionsForIndex(null);
-                                      setAdditionalInstructions('');
-                                    }
-                                  }}
-                                />
-                              </div>
-                              
-                              {/* Divider */}
-                              <div className="border-t border-black-alpha-5" />
-                              
-                              {/* Buttons area matching main style */}
-                              <div className="p-10 flex justify-between items-center">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowInstructionsForIndex(null);
-                                    setAdditionalInstructions('');
-                                  }}
-                                  className="button relative rounded-10 px-8 py-8 text-label-medium font-medium flex items-center justify-center bg-black-alpha-4 hover:bg-black-alpha-6 text-black-alpha-48 active:scale-[0.995] transition-all"
-                                >
-                                  <svg 
-                                    width="20" 
-                                    height="20" 
-                                    viewBox="0 0 20 20" 
-                                    fill="none" 
-                                    xmlns="http://www.w3.org/2000/svg"
-                                  >
-                                    <path d="M12 5L7 10L12 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                </button>
-                                
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (additionalInstructions.trim()) {
-                                      sessionStorage.setItem('additionalInstructions', additionalInstructions);
-                                      handleSubmit(result);
-                                    }
-                                  }}
-                                  disabled={!additionalInstructions.trim()}
-                                  className={`
-                                    button relative rounded-10 px-8 py-8 text-label-medium font-medium
-                                    flex items-center justify-center gap-6
-                                    ${additionalInstructions.trim() 
-                                      ? 'button-primary text-accent-white active:scale-[0.995]' 
-                                      : 'bg-black-alpha-4 text-black-alpha-24 cursor-not-allowed'
-                                    }
-                                  `}
-                                >
-                                  {additionalInstructions.trim() && <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />}
-                                  <span className="px-6 relative">Apply & Clone</span>
-                                  <svg 
-                                    width="20" 
-                                    height="20" 
-                                    viewBox="0 0 20 20" 
-                                    fill="none" 
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="relative"
-                                  >
-                                    <path d="M11.6667 4.79163L16.875 9.99994M16.875 9.99994L11.6667 15.2083M16.875 9.99994H3.125" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"/>
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          /* Default buttons view */
-                          <>
-                            <div className="text-white text-center mb-3">
-                              <p className="text-base font-semibold mb-0.5">{result.title}</p>
-                              <p className="text-[11px] opacity-80">Choose how to clone this site</p>
-                            </div>
-                            
-                            <div className="flex gap-3 justify-center">
-                              {/* Instant Clone Button - Orange/Heat style */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSubmit(result);
-                                }}
-                                className="bg-orange-500 hover:bg-orange-600 flex items-center justify-center button relative text-label-medium button-primary group/button rounded-10 p-8 gap-2 text-white active:scale-[0.995]"
-                              >
-                                <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />
-                                <svg 
-                                  width="20" 
-                                  height="20" 
-                                  viewBox="0 0 20 20" 
-                                  fill="none" 
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="relative"
-                                >
-                                  <path d="M11.6667 4.79163L16.875 9.99994M16.875 9.99994L11.6667 15.2083M16.875 9.99994H3.125" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"/>
-                                </svg>
-                                <span className="px-6 relative">Instant Clone</span>
-                              </button>
-                              
-                              {/* Instructions Button - Gray style */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setShowInstructionsForIndex(index);
-                                  setAdditionalInstructions('');
-                                }}
-                                className="bg-gray-100 hover:bg-gray-200 flex items-center justify-center button relative text-label-medium rounded-10 p-8 gap-2 text-gray-700 active:scale-[0.995]"
-                              >
-                                <svg 
-                                  width="20" 
-                                  height="20" 
-                                  viewBox="0 0 20 20" 
-                                  fill="none" 
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="opacity-60"
-                                >
-                                  <path d="M5 5H15M5 10H15M5 15H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                                  <path d="M14 14L16 16L14 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <span className="px-6">Add Instructions</span>
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                      
-                      {result.screenshot ? (
-                        <div className="relative w-full h-full">
-                          <Image 
-                            src={result.screenshot} 
-                            alt={result.title}
-                            fill
-                            className="object-cover object-top"
-                            loading="lazy"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="w-16 h-16 rounded-full bg-gray-200 mx-auto mb-3 flex items-center justify-center">
-                              <svg 
-                                width="32" 
-                                height="32" 
-                                viewBox="0 0 24 24" 
-                                fill="none" 
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="text-gray-400"
-                              >
-                                <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                                <path d="M3 9H21" stroke="currentColor" strokeWidth="1.5"/>
-                                <circle cx="6" cy="6" r="1" fill="currentColor"/>
-                                <circle cx="9" cy="6" r="1" fill="currentColor"/>
-                                <circle cx="12" cy="6" r="1" fill="currentColor"/>
-                              </svg>
-                            </div>
-                            <p className="text-gray-500 text-sm font-medium">{result.title}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              // No results state
-              <div className="relative h-[250px] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="mb-4">
-                    <svg className="w-16 h-16 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-500 text-lg">No results found</p>
-                  <p className="text-gray-400 text-sm mt-1">Try a different search term</p>
-                </div>
-              </div>
-            )}
-          </section>
-        )}
-
-      </div>
-
-      <style jsx>{`
-        @keyframes infiniteScroll {
-          from {
-            transform: translateX(0);
-          }
-          to {
-            transform: translateX(-50%);
-          }
-        }
-
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .carousel-container {
-          animation: infiniteScroll 30s linear infinite;
-        }
-
-        .carousel-container:hover {
-          animation-play-state: paused;
-        }
-
-        .skeleton-shimmer {
-          position: relative;
-          overflow: hidden;
-        }
-
-        .skeleton-gradient {
-          animation: shimmer 2s infinite;
-        }
-      `}</style>
-    </HeaderProvider>
+      <footer className="relative z-10 mx-auto flex w-full max-w-[1280px] flex-col gap-[20px] px-[24px] py-[48px] text-sm text-[#665745] sm:px-[40px] md:flex-row md:items-center md:justify-between">
+        <BrandMark />
+        <div className="flex gap-[20px]">
+          <Link href="/auth/signin">Sign in</Link>
+          <Link href="https://github.com/mendableai/open-lovable" target="_blank">
+            GitHub
+          </Link>
+        </div>
+      </footer>
+    </main>
   );
 }

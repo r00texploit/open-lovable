@@ -271,7 +271,144 @@
   }
 }
 
+@layer components {
+  .ol-noise {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    opacity: 0.055;
+    mix-blend-mode: multiply;
+    background-image:
+      linear-gradient(90deg, rgba(19, 17, 13, 0.06) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(19, 17, 13, 0.05) 1px, transparent 1px);
+    background-size: 42px 42px;
+  }
+
+  .ol-shell {
+    background:
+      radial-gradient(circle at 10% 0%, rgba(255, 111, 43, 0.16), transparent 30%),
+      radial-gradient(circle at 88% 16%, rgba(132, 111, 67, 0.18), transparent 26%),
+      linear-gradient(135deg, #fff7e8 0%, #efe3cf 48%, #d7c6ab 100%);
+    color: #17130f;
+  }
+
+  .ol-ink-panel {
+    background:
+      radial-gradient(circle at 20% 0%, rgba(255, 112, 43, 0.18), transparent 38%),
+      linear-gradient(145deg, #19140f 0%, #0f0e0c 62%, #241b12 100%);
+    color: #fff7e8;
+    box-shadow: 0 36px 90px rgba(55, 36, 18, 0.22);
+  }
+
+  .ol-bezel {
+    border: 1px solid rgba(38, 30, 21, 0.1);
+    background: rgba(255, 252, 244, 0.46);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.48),
+      0 24px 60px rgba(74, 54, 28, 0.12);
+  }
+
+  .ol-auth-bg {
+    background:
+      radial-gradient(circle at 16% 12%, rgba(255, 116, 43, 0.22), transparent 31%),
+      radial-gradient(circle at 90% 80%, rgba(162, 133, 82, 0.2), transparent 34%),
+      linear-gradient(135deg, #fff5e3 0%, #eadac1 42%, #17120d 42.2%, #0e0d0b 100%);
+  }
+
+  .ol-auth-card {
+    border: 1px solid rgba(255, 247, 232, 0.16);
+    background:
+      linear-gradient(145deg, rgba(27, 22, 17, 0.96), rgba(13, 12, 10, 0.98)),
+      radial-gradient(circle at 0% 0%, rgba(255, 111, 43, 0.15), transparent 35%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 34px 84px rgba(22, 15, 8, 0.34);
+  }
+
+  .ol-input {
+    width: 100%;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 247, 232, 0.14);
+    background: rgba(255, 247, 232, 0.075);
+    color: #fff7e8;
+    transition:
+      border-color 320ms cubic-bezier(0.32, 0.72, 0, 1),
+      background-color 320ms cubic-bezier(0.32, 0.72, 0, 1),
+      box-shadow 320ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .ol-input::placeholder {
+    color: rgba(255, 247, 232, 0.42);
+  }
+
+  .ol-input:focus {
+    outline: none;
+    border-color: rgba(255, 111, 43, 0.72);
+    background: rgba(255, 247, 232, 0.105);
+    box-shadow: 0 0 0 4px rgba(255, 111, 43, 0.16);
+  }
+
+  .ol-primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 999px;
+    background: #ff6728;
+    color: #20130a;
+    font-weight: 700;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.36),
+      0 16px 38px rgba(255, 103, 40, 0.28);
+    transition:
+      transform 360ms cubic-bezier(0.32, 0.72, 0, 1),
+      box-shadow 360ms cubic-bezier(0.32, 0.72, 0, 1),
+      background-color 360ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .ol-primary-button:hover {
+    transform: translateY(-2px);
+    background: #ff7b3d;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.42),
+      0 22px 48px rgba(255, 103, 40, 0.34);
+  }
+
+  .ol-primary-button:active {
+    transform: translateY(0) scale(0.985);
+  }
+
+  .ol-secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(33, 25, 17, 0.14);
+    background: rgba(255, 252, 244, 0.58);
+    color: #17130f;
+    font-weight: 650;
+    transition:
+      transform 360ms cubic-bezier(0.32, 0.72, 0, 1),
+      background-color 360ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .ol-secondary-button:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 252, 244, 0.88);
+  }
+}
+
 .grecaptcha-badge { visibility: hidden; }
+
+/* Hide Next.js dev overlay in development */
+[data-nextjs-error-overlay] {
+  display: none !important;
+}
+nextjs-portal {
+  display: none !important;
+}
 
 /* Remove all focus styles from hero input */
 input[type="text"]:focus,
