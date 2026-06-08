@@ -208,9 +208,13 @@ function AISandboxPage() {
     };
 
     // Always persist to localStorage so session survives a refresh on the same device
+    // Also save file contents separately so they can be restored to a fresh sandbox
     try {
       localStorage.setItem(`noeron_session_${sd.sandboxId}`, JSON.stringify(payload));
       localStorage.setItem('noeron_last_sandbox', sd.sandboxId);
+      if (Object.keys(sandboxFiles).length > 0) {
+        localStorage.setItem(`noeron_files_${sd.sandboxId}`, JSON.stringify(sandboxFiles));
+      }
     } catch { /* quota exceeded — ignore */ }
 
     // Also persist to DB if user is logged in (for cross-device restore)
@@ -224,7 +228,7 @@ function AISandboxPage() {
     } catch {
       // non-blocking — DB save failed, localStorage fallback already done
     }
-  }, [sandboxData, chatMessages, aiModel, activeSiteId, session?.user?.id]);
+  }, [sandboxData, sandboxFiles, chatMessages, aiModel, activeSiteId, session?.user?.id]);
 
   const debouncedSave = useCallback((
     overrideSandbox?: typeof sandboxData,
@@ -447,7 +451,40 @@ function AISandboxPage() {
           } else {
             if (savedUrl) console.log('[home] Saved sandbox expired — creating fresh sandbox, chat history preserved');
             sandboxCreated = true;
-            await createSandbox(true);
+            const freshSandbox = await createSandbox(true);
+
+            // Re-apply saved files to the fresh sandbox
+            if (freshSandbox?.sandboxId) {
+              let savedFiles: Record<string, string> | null = null;
+              try {
+                const raw = localStorage.getItem(`noeron_files_${sandboxIdParam}`);
+                if (raw) savedFiles = JSON.parse(raw);
+              } catch { /* parse error */ }
+
+              if (savedFiles && Object.keys(savedFiles).length > 0) {
+                addChatMessage('♻️ Restoring your code files...', 'system');
+                try {
+                  const res = await fetch('/api/restore-files', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sandboxId: freshSandbox.sandboxId, files: savedFiles }),
+                  });
+                  const result = await res.json();
+                  if (result.success) {
+                    addChatMessage(`✅ Restored ${result.written} file${result.written === 1 ? '' : 's'}.`, 'system');
+                    setSandboxFiles(savedFiles);
+                    // Refresh iframe to show restored files
+                    setTimeout(() => {
+                      if (iframeRef.current && freshSandbox.url) {
+                        iframeRef.current.src = `${freshSandbox.url}?t=${Date.now()}`;
+                      }
+                    }, 2000);
+                  }
+                } catch (restoreErr) {
+                  console.warn('[home] Failed to restore files:', restoreErr);
+                }
+              }
+            }
           }
         } else {
           console.log('[home] No sandbox in URL, creating new sandbox automatically...');
