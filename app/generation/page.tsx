@@ -179,6 +179,7 @@ function AISandboxPage() {
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const codeDisplayRef = useRef<HTMLDivElement>(null);
   const saveSessionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sandboxJustCreatedAt = useRef<number>(0);
 
   const [codeApplicationState, setCodeApplicationState] = useState<CodeApplicationState>({
     stage: null
@@ -807,12 +808,27 @@ function AISandboxPage() {
 Tip: I automatically detect and install npm packages from your code imports (like react-router-dom, axios, etc.)`, 'system');
         }
         
-        setTimeout(() => {
+        // Mark sandbox as just created so onError doesn't trigger a premature recreation
+        sandboxJustCreatedAt.current = Date.now();
+
+        // Poll until the sandbox URL responds before loading the iframe
+        (async () => {
+          const deadline = Date.now() + 30_000; // 30s max wait
+          while (Date.now() < deadline) {
+            try {
+              const probe = await fetch(data.url, { method: 'HEAD', mode: 'no-cors' });
+              // no-cors fetch doesn't throw on 2xx/3xx, only on network errors
+              break;
+            } catch {
+              // network error — sandbox not ready yet
+            }
+            await new Promise(r => setTimeout(r, 1500));
+          }
           if (iframeRef.current) {
             iframeRef.current.src = data.url;
           }
-        }, 100);
-        
+        })();
+
         // Return the sandbox data so it can be used immediately
         return data;
       } else {
@@ -1934,7 +1950,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               }}
               onError={() => {
                 console.error('[iframe] Failed to load - sandbox may have timed out');
-                // Trigger health check which will detect 502 and recreate
+                // Don't trigger recreation if sandbox was just created (allow warm-up time)
+                if (Date.now() - sandboxJustCreatedAt.current < 30_000) {
+                  console.log('[iframe] Ignoring onError — sandbox was just created, still warming up');
+                  return;
+                }
                 checkSandboxStatus(true);
               }}
             />
