@@ -13,8 +13,27 @@ function hasUsableOidcToken(): boolean {
   return !!token && token !== 'auto_generated_by_vercel_env_pull';
 }
 
+function buildCredentials(): Record<string, string> {
+  if (process.env.VERCEL_TOKEN && process.env.VERCEL_TEAM_ID && process.env.VERCEL_PROJECT_ID) {
+    return { teamId: process.env.VERCEL_TEAM_ID, projectId: process.env.VERCEL_PROJECT_ID, token: process.env.VERCEL_TOKEN };
+  }
+  if (hasUsableOidcToken()) {
+    return { oidcToken: process.env.VERCEL_OIDC_TOKEN! };
+  }
+  return {};
+}
+
 export class VercelProvider extends SandboxProvider {
   private existingFiles: Set<string> = new Set();
+
+  async reconnect(sandboxId: string): Promise<SandboxInfo> {
+    const Sandbox = await getVercelSandbox();
+    const credentials = buildCredentials();
+    this.sandbox = await Sandbox.get({ sandboxId, ...credentials });
+    const sandboxUrl = this.sandbox.domain(appConfig.vercelSandbox.devPort);
+    this.sandboxInfo = { sandboxId, url: sandboxUrl, provider: 'vercel', createdAt: new Date() };
+    return this.sandboxInfo;
+  }
 
   async createSandbox(): Promise<SandboxInfo> {
     try {
@@ -41,14 +60,7 @@ export class VercelProvider extends SandboxProvider {
         ports: [appConfig.vercelSandbox.devPort] // Use config port
       };
 
-      // Add authentication based on environment variables
-      if (process.env.VERCEL_TOKEN && process.env.VERCEL_TEAM_ID && process.env.VERCEL_PROJECT_ID) {
-        sandboxConfig.teamId = process.env.VERCEL_TEAM_ID;
-        sandboxConfig.projectId = process.env.VERCEL_PROJECT_ID;
-        sandboxConfig.token = process.env.VERCEL_TOKEN;
-      } else if (hasUsableOidcToken()) {
-        sandboxConfig.oidcToken = process.env.VERCEL_OIDC_TOKEN;
-      }
+      Object.assign(sandboxConfig, buildCredentials());
 
       this.sandbox = await Sandbox.create(sandboxConfig);
       

@@ -23,29 +23,22 @@ class SandboxManager {
       return existing.provider;
     }
 
-    // Try to reconnect to existing sandbox
-    
+    // Try to reconnect to the existing sandbox
     try {
       const provider = await SandboxFactory.create();
-
-      // For E2B provider, try to reconnect
-      if (provider.constructor.name === 'E2BProvider') {
-        // E2B sandboxes can be reconnected using the sandbox ID
-        const reconnected = await (provider as any).reconnect(sandboxId);
-        if (reconnected) {
-          this.sandboxes.set(sandboxId, {
-            sandboxId,
-            provider,
-            createdAt: new Date(),
-            lastAccessed: new Date()
-          });
-          this.activeSandboxId = sandboxId;
-          return provider;
-        }
+      // Both VercelProvider and E2BProvider expose a reconnect(sandboxId) method
+      if (typeof (provider as any).reconnect === 'function') {
+        await (provider as any).reconnect(sandboxId);
+        this.sandboxes.set(sandboxId, {
+          sandboxId,
+          provider,
+          createdAt: new Date(),
+          lastAccessed: new Date(),
+        });
+        this.activeSandboxId = sandboxId;
+        console.log(`[SandboxManager] Reconnected to sandbox ${sandboxId}`);
+        return provider;
       }
-      
-      // For Vercel or if reconnection failed, return the new provider
-      // The caller will need to handle creating a new sandbox
       return provider;
     } catch (error) {
       console.error(`[SandboxManager] Error reconnecting to sandbox ${sandboxId}:`, error);

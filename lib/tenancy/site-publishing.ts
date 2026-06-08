@@ -116,89 +116,35 @@ export async function getPublishedAsset(site: Site, assetPath?: string[] | strin
 }
 
 async function readDistFiles(provider: SandboxProvider) {
-  const rawSandbox = (provider as any).sandbox;
-  if (!rawSandbox) {
-    throw new Error('No sandbox available for publishing');
+  const listResult = await provider.runCommand('bash -c "cd /vercel/sandbox && find dist -type f | sort"');
+  if (!listResult.success && listResult.exitCode !== 0) {
+    throw new Error(listResult.stderr || 'Failed to list dist files');
   }
 
-  if (typeof rawSandbox.runCommand === 'function') {
-    const listResult = await rawSandbox.runCommand({
-      cmd: 'bash',
-      args: ['-lc', 'cd /vercel/sandbox && find dist -type f | sort'],
-    });
+  const fileList = listResult.stdout
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
 
-    if (listResult.exitCode !== 0) {
-      throw new Error(await readCommandOutput(listResult.stderr));
-    }
-
-    const fileList = (await readCommandOutput(listResult.stdout))
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean);
-
-    const files: Array<{ path: string; content: Buffer; size: number }> = [];
-    for (const filePath of fileList) {
-      const fileResult = await rawSandbox.runCommand({
-        cmd: 'bash',
-        args: [
-          '-lc',
-          `cd /vercel/sandbox && base64 "${filePath}" | tr -d "\\n" && printf "\\n" && wc -c < "${filePath}"`,
-        ],
-      });
-
-      if (fileResult.exitCode !== 0) {
-        throw new Error(await readCommandOutput(fileResult.stderr));
-      }
-
-      const output = (await readCommandOutput(fileResult.stdout)).trim().split('\n');
-      const size = Number(output.pop() || '0');
-      const base64 = output.join('');
-      files.push({
-        path: filePath,
-        content: Buffer.from(base64, 'base64'),
-        size,
-      });
-    }
-
-    return rewriteIndexHtml(files);
+  if (!fileList.length) {
+    throw new Error('No files found in dist directory');
   }
 
-  if (typeof rawSandbox.runCode === 'function') {
-    const result = await rawSandbox.runCode(`
-import os
-import json
-import base64
-
-files = []
-root = "/home/user/app/dist"
-for current_root, dirs, filenames in os.walk(root):
-    dirs[:] = sorted(dirs)
-    for filename in sorted(filenames):
-        full_path = os.path.join(current_root, filename)
-        rel_path = os.path.relpath(full_path, "/home/user/app")
-        with open(full_path, "rb") as fh:
-            content = fh.read()
-        files.append({
-            "path": rel_path,
-            "content": base64.b64encode(content).decode(),
-            "size": len(content),
-        })
-
-print(json.dumps(files))
-`);
-
-    const payload = result.logs.stdout.join('');
-    const parsed = JSON.parse(payload) as Array<{ path: string; content: string; size: number }>;
-    return rewriteIndexHtml(
-      parsed.map((file) => ({
-        path: file.path,
-        content: Buffer.from(file.content, 'base64'),
-        size: file.size,
-      }))
+  const files: Array<{ path: string; content: Buffer; size: number }> = [];
+  for (const filePath of fileList) {
+    const fileResult = await provider.runCommand(
+      `bash -c "cd /vercel/sandbox && base64 \\"${filePath}\\" | tr -d '\\n' && printf '\\n' && wc -c < \\"${filePath}\\""`
     );
+    if (!fileResult.success && fileResult.exitCode !== 0) {
+      throw new Error(fileResult.stderr || `Failed to read ${filePath}`);
+    }
+    const lines = fileResult.stdout.trim().split('\n');
+    const size = Number(lines.pop() || '0');
+    const base64 = lines.join('');
+    files.push({ path: filePath, content: Buffer.from(base64, 'base64'), size });
   }
 
-  throw new Error('Unsupported sandbox provider for publishing');
+  return rewriteIndexHtml(files);
 }
 
 function rewriteIndexHtml(files: Array<{ path: string; content: Buffer; size: number }>) {
@@ -219,14 +165,4 @@ function rewriteIndexHtml(files: Array<{ path: string; content: Buffer; size: nu
   });
 }
 
-async function readCommandOutput(output: unknown): Promise<string> {
-  if (typeof output === 'function') {
-    return await output();
-  }
 
-  if (typeof output === 'string') {
-    return output;
-  }
-
-  return output == null ? '' : String(output);
-}
