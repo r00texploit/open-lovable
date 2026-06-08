@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { SparkableLogo } from "@/components/brand/sparkable-logo";
+import { NoeronLogo } from "@/components/brand/noeron-logo";
 import { useHeaderContext } from "@/components/shared/header/HeaderContext";
 import { cn } from "@/utils/cn";
 
@@ -44,7 +44,7 @@ export default function HeaderBrandKit() {
           }
         }}
       >
-        <SparkableLogo
+        <NoeronLogo
           iconClassName="h-[34px] w-[34px] rounded-[10px]"
           textClassName="text-[19px] font-bold text-[#14100c]"
         />

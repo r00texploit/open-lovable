@@ -507,7 +507,7 @@ export function SiteSettingsPanel() {
                   <p>1. Add the domain here.</p>
                   <p>2. Apply the DNS records Vercel asks for.</p>
                   <p>3. Refresh status and verify once propagation completes.</p>
-                  <p>4. Keep the default Sparkable URL as your fallback path.</p>
+                  <p>4. Keep the default Noeron URL as your fallback path.</p>
                 </div>
               </div>
             </div>

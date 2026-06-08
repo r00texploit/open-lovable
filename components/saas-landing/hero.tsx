@@ -20,7 +20,7 @@ import {
   Bot,
 } from "lucide-react";
 import { useSplitText, useTyping } from "@/lib/effects";
-import { SparkableLogo } from "@/components/brand/sparkable-logo";
+import { NoeronLogo } from "@/components/brand/noeron-logo";
 
 // Spring config for premium feel
 const SPRING = { stiffness: 100, damping: 15 };
@@ -155,7 +155,7 @@ export function Hero() {
                 whileHover={{ scale: 1.04 }}
                 transition={{ type: "spring", stiffness: 400 }}
               >
-                <SparkableLogo iconClassName="h-[32px] w-[32px]" textClassName="text-xl text-white" />
+                <NoeronLogo iconClassName="h-[32px] w-[32px]" textClassName="text-xl text-white" />
               </motion.span>
             </Link>
 

@@ -21,7 +21,7 @@ import {
   Settings,
   Globe,
 } from 'lucide-react';
-import { SparkableLogo } from '@/components/brand/sparkable-logo';
+import { NoeronLogo } from '@/components/brand/noeron-logo';
 import { UsageBar } from '@/components/subscription/usage-bar';
 import { ManageSubscriptionButton } from '@/components/subscription/manage-button';
 import { SiteSettingsPanel } from '@/components/site/site-settings-panel';
@@ -153,7 +153,7 @@ export default function SettingsPage() {
       <header className="border-b border-[#261e151f] bg-[#fff7e8]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-[1280px] mx-auto px-6 sm:px-10 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-[#17130f] hover:text-[#8c4b26] transition-colors">
-            <SparkableLogo iconClassName="h-[32px] w-[32px]" textClassName="text-[#17130f]" />
+            <NoeronLogo iconClassName="h-[32px] w-[32px]" textClassName="text-[#17130f]" />
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/generation">

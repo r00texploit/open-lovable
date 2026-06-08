@@ -7,7 +7,7 @@ import { Star, Quote } from "lucide-react";
 const testimonials = [
   {
     quote:
-      "Sparkable saved us weeks of development time. We built our entire landing page in under 10 minutes. The AI truly understands design patterns.",
+      "Noeron saved us weeks of development time. We built our entire landing page in under 10 minutes. The AI truly understands design patterns.",
     author: "Sarah Chen",
     role: "CEO at TechStart",
     initials: "SC",

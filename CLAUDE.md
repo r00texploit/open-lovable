@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Open Lovable is an AI-powered website builder that scrapes websites and rebuilds them as React applications. Users input a URL or describe what they want to build, and the AI generates a complete Vite + React + Tailwind CSS application running in a sandboxed environment.
+Noeron is an AI-powered website builder that scrapes websites and rebuilds them as React applications. Users input a URL or describe what they want to build, and the AI generates a complete Vite + React + Tailwind CSS application running in a sandboxed environment.
 
 **Tech Stack**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Vercel Sandbox/E2B
 
