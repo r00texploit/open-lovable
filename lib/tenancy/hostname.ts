@@ -51,8 +51,15 @@ export function isTenantSubdomainHost(hostname: string) {
   return !!subdomain;
 }
 
+// Hostnames that belong to the platform itself, not tenant custom domains
+const PLATFORM_HOSTNAME_SUFFIXES = ['.vercel.app', '.vercel-dns.com'];
+
 export function isCustomDomainHost(hostname: string) {
   if (isRootDomainHost(hostname) || isPlatformAppHost(hostname) || isLocalDevelopmentHost(hostname)) {
+    return false;
+  }
+
+  if (PLATFORM_HOSTNAME_SUFFIXES.some((suffix) => hostname.endsWith(suffix))) {
     return false;
   }
 
