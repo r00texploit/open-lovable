@@ -116,7 +116,7 @@ export async function getPublishedAsset(site: Site, assetPath?: string[] | strin
 }
 
 async function readDistFiles(provider: SandboxProvider) {
-  const listResult = await provider.runCommand('bash -c "cd /vercel/sandbox && find dist -type f | sort"');
+  const listResult = await provider.runCommand('cd /vercel/sandbox && find dist -type f | sort');
   if (!listResult.success && listResult.exitCode !== 0) {
     throw new Error(listResult.stderr || 'Failed to list dist files');
   }
@@ -133,7 +133,7 @@ async function readDistFiles(provider: SandboxProvider) {
   const files: Array<{ path: string; content: Buffer; size: number }> = [];
   for (const filePath of fileList) {
     const fileResult = await provider.runCommand(
-      `bash -c "cd /vercel/sandbox && base64 \\"${filePath}\\" | tr -d '\\n' && printf '\\n' && wc -c < \\"${filePath}\\""`
+      `cd /vercel/sandbox && base64 "${filePath}" | tr -d '\\n' && printf '\\n' && wc -c < "${filePath}"`
     );
     if (!fileResult.success && fileResult.exitCode !== 0) {
       throw new Error(fileResult.stderr || `Failed to read ${filePath}`);
