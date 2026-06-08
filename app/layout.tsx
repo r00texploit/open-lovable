@@ -27,11 +27,11 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sparkable",
-  description: "The open-source AI app builder.",
+  title: "Noeron",
+  description: "AI-powered website builder. Turn any URL or idea into a live React app.",
   icons: {
-    icon: "/brand/sparkable-app-icon-512.png",
-    apple: "/brand/sparkable-app-icon-512.png",
+    icon: "/brand/noeron-app-icon-512.png",
+    apple: "/brand/noeron-app-icon-512.png",
   },
 };
 

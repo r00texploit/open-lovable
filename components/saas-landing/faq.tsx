@@ -6,8 +6,8 @@ import { ChevronDown } from "lucide-react";
 
 const faqs = [
   {
-    question: "What is Sparkable?",
-    answer: "Sparkable is an open-source AI app builder that generates production-ready React code from natural language descriptions.",
+    question: "What is Noeron?",
+    answer: "Noeron is an open-source AI app builder that generates production-ready React code from natural language descriptions.",
   },
   {
     question: "How does AI code generation work?",
@@ -115,7 +115,7 @@ export function FAQ() {
           className="mt-8 text-center"
         >
           <p className="text-sm text-white/60">
-            Have more questions? <a href="mailto:support@openlovable.dev" className="text-violet-400 hover:underline font-medium">Get in touch</a>
+            Have more questions? <a href="mailto:support@noeron.ai" className="text-violet-400 hover:underline font-medium">Get in touch</a>
           </p>
         </motion.div>
       </div>

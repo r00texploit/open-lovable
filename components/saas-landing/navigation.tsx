@@ -6,7 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SparkableLogo } from "@/components/brand/sparkable-logo";
+import { NoeronLogo } from "@/components/brand/noeron-logo";
 
 const navLinks = [
   { name: "Features", href: "#features" },
@@ -42,7 +42,7 @@ export function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
             <motion.span whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <SparkableLogo iconClassName="h-[40px] w-[40px]" textClassName="text-slate-900 text-lg" />
+              <NoeronLogo iconClassName="h-[40px] w-[40px]" textClassName="text-slate-900 text-lg" />
             </motion.span>
           </Link>
 

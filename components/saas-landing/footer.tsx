@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { SparkableLogo } from "@/components/brand/sparkable-logo";
+import { NoeronLogo } from "@/components/brand/noeron-logo";
 
 const footerLinks = {
   product: [
@@ -74,7 +74,7 @@ export function Footer() {
           {/* Brand column */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1 mb-8 lg:mb-0">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <SparkableLogo iconClassName="h-[32px] w-[32px]" textClassName="text-lg text-white" />
+              <NoeronLogo iconClassName="h-[32px] w-[32px]" textClassName="text-lg text-white" />
             </Link>
             <p className="text-sm text-white/40 mb-4 max-w-xs">
               Building the future of web development with AI. Create stunning websites in minutes.
@@ -152,7 +152,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="pt-8 border-t border-white/[0.08] flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-white/40">
-            &copy; {new Date().getFullYear()} Sparkable. All rights reserved.
+            &copy; {new Date().getFullYear()} Noeron. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-sm text-white/40">
             <Link href="#" className="hover:text-white transition-colors">

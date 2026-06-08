@@ -23,7 +23,7 @@ import {
   Github,
 } from 'lucide-react';
 import Button from '@/components/ui/shadcn/button';
-import { SparkableLogo } from '@/components/brand/sparkable-logo';
+import { NoeronLogo } from '@/components/brand/noeron-logo';
 import { formatTokenAmount, TIERS, type SubscriptionTier } from '@/lib/stripe/stripe';
 import { getTierColor } from '@/lib/stripe/subscription-display';
 
@@ -42,7 +42,7 @@ const faqs = [
   },
   {
     question: 'Is Free available without a card?',
-    answer: 'The Free tier lets you try Sparkable with 50K tokens per month. No credit card required.',
+    answer: 'The Free tier lets you try Noeron with 50K tokens per month. No credit card required.',
   },
   {
     question: 'What\'s included in Team plan?',
@@ -118,7 +118,7 @@ export default function PricingPage() {
       <header className="relative border-b border-white/10 bg-black/50 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-white hover:text-violet-400 transition-colors">
-            <SparkableLogo iconClassName="h-[32px] w-[32px]" textClassName="text-white" />
+            <NoeronLogo iconClassName="h-[32px] w-[32px]" textClassName="text-white" />
           </Link>
           <div className="flex items-center gap-4">
             {session ? (
@@ -292,7 +292,7 @@ export default function PricingPage() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-gray-400">
             <Sparkles className="w-4 h-4" />
-            <span className="text-sm">© 2024 Sparkable. All rights reserved.</span>
+            <span className="text-sm">© 2024 Noeron. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-6">
             <Link href="/settings" className="text-sm text-gray-400 hover:text-white transition-colors">
@@ -370,7 +370,7 @@ function PricingCard({
             <span className="text-gray-400">/month</span>
           </div>
           <p className="text-gray-400 mt-2 text-sm">
-            {tier === 'free' && 'Perfect for trying out Sparkable'}
+            {tier === 'free' && 'Perfect for trying out Noeron'}
             {tier === 'pro' && 'Best for individual developers'}
             {tier === 'team' && 'For teams and agencies'}
           </p>

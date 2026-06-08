@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SparkableLogo } from "@/components/brand/sparkable-logo";
+import { NoeronLogo } from "@/components/brand/noeron-logo";
 import { BuildLauncher } from "@/components/saas-landing/build-launcher";
 import { formatTokenAmount, TIERS, type SubscriptionTier } from "@/lib/stripe/stripe";
 
@@ -30,7 +30,7 @@ const featureCards = [
 
 const timeline = [
   "Paste a site or describe the build",
-  "Sparkable reads brand and page intent",
+  "Noeron reads brand and page intent",
   "A React app appears in the sandbox",
   "You edit, preview, and export the code",
 ];
@@ -42,7 +42,7 @@ const faq = [
   },
   {
     q: "Can I use an existing website as the source?",
-    a: "Yes. Paste a URL and Sparkable can use the page as context for layout, copy, and visual direction.",
+    a: "Yes. Paste a URL and Noeron can use the page as context for layout, copy, and visual direction.",
   },
   {
     q: "Do I need to connect every AI provider?",
@@ -61,7 +61,7 @@ const planDescriptions: Record<SubscriptionTier, string> = {
 
 function BrandMark() {
   return (
-    <SparkableLogo iconClassName="h-[40px] w-[40px]" textClassName="text-[#17130f]" />
+    <NoeronLogo iconClassName="h-[40px] w-[40px]" textClassName="text-[#17130f]" />
   );
 }
 
@@ -79,7 +79,7 @@ export default function HomePage() {
       <div className="ol-noise" />
 
       <header className="relative z-10 mx-auto flex w-full max-w-[1280px] items-center justify-between px-[24px] py-[24px] sm:px-[40px]">
-        <Link href="/" aria-label="Sparkable home" className="text-[15px] text-[#17130f]">
+        <Link href="/" aria-label="Noeron home" className="text-[15px] text-[#17130f]">
           <BrandMark />
         </Link>
 
@@ -108,7 +108,7 @@ export default function HomePage() {
             Site to sandbox
           </div>
 
-          <SparkableLogo
+          <NoeronLogo
             iconClassName="h-[56px] w-[56px] sm:h-[64px] sm:w-[64px]"
             textClassName="bg-gradient-to-r from-[#101524] via-[#6f45ff] to-[#10cbe0] bg-clip-text text-[clamp(2.35rem,4.2vw,4rem)] font-black leading-none text-transparent"
             className="mb-[24px] gap-[14px]"
@@ -120,7 +120,7 @@ export default function HomePage() {
           </h1>
 
           <p className="mt-[22px] max-w-[540px] text-balance text-base leading-[1.55] text-[#5b4d3d] sm:text-xl">
-            Sparkable turns a URL or a rough idea into a live React app, then gives you the files, preview, and chat loop to keep shaping it.
+            Noeron turns a URL or a rough idea into a live React app, then gives you the files, preview, and chat loop to keep shaping it.
           </p>
 
           <BuildLauncher />
@@ -138,7 +138,7 @@ export default function HomePage() {
               <div className="mb-[20px] flex items-center justify-between border-b border-[#fff7e81a] pb-[16px]">
                 <div>
                   <p className="text-xs uppercase tracking-[0.22em] text-[#d2bfa3]">Generation run</p>
-                  <p className="mt-[4px] text-lg font-semibold">sparkable-site-remix</p>
+                  <p className="mt-[4px] text-lg font-semibold">noeron-site-remix</p>
                 </div>
                 <span className="rounded-full bg-[#ff6728] px-[12px] py-[4px] text-xs font-bold text-[#20130a]">
                   live
@@ -168,7 +168,7 @@ export default function HomePage() {
                   <div className="grid min-h-[300px] grid-rows-[1fr_auto] p-[20px]">
                     <div>
                       <div className="mb-[28px] flex items-center justify-between">
-                        <SparkableLogo variant="light" iconClassName="h-[32px] w-[32px]" textClassName="text-[#17130f]" />
+                        <NoeronLogo variant="light" iconClassName="h-[32px] w-[32px]" textClassName="text-[#17130f]" />
                         <span className="rounded-full border border-[#2d211526] px-[12px] py-[4px] text-xs">Preview</span>
                       </div>
                       <p className="max-w-[360px] text-[clamp(2.45rem,3.5vw,3.5rem)] font-black leading-[0.92] tracking-[-0.06em]">
@@ -344,7 +344,7 @@ export default function HomePage() {
         <BrandMark />
         <div className="flex gap-[20px]">
           <Link href="/auth/signin">Sign in</Link>
-          <Link href="https://github.com/mendableai/open-lovable" target="_blank">
+          <Link href="https://github.com/mendableai/noeron" target="_blank">
             GitHub
           </Link>
         </div>
