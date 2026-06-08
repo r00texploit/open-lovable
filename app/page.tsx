@@ -108,12 +108,6 @@ export default function HomePage() {
             Site to sandbox
           </div>
 
-          <NoeronLogo
-            iconClassName="h-[56px] w-[56px] sm:h-[64px] sm:w-[64px]"
-            textClassName="bg-gradient-to-r from-[#101524] via-[#6f45ff] to-[#10cbe0] bg-clip-text text-[clamp(2.35rem,4.2vw,4rem)] font-black leading-none text-transparent"
-            className="mb-[24px] gap-[14px]"
-          />
-
           <h1 className="max-w-[610px] text-[clamp(3.05rem,5.7vw,5.25rem)] font-black leading-[0.91] tracking-[-0.065em] text-[#17130f]">
             Build from the web.
             <span className="block pl-[0.06em] text-[#8c4b26]">Keep the code.</span>
