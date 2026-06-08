@@ -30,8 +30,7 @@ export const metadata: Metadata = {
   title: "Noeron",
   description: "AI-powered website builder. Turn any URL or idea into a live React app.",
   icons: {
-    icon: "/brand/noeron-app-icon-512.png",
-    apple: "/brand/noeron-app-icon-512.png",
+    icon: "/favicon.ico",
   },
 };
 
