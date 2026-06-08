@@ -147,9 +147,9 @@ export async function POST(request: NextRequest) {
     global.conversationState.context.messages.push(userMessage);
     
     // Clean up old messages to prevent unbounded growth
-    if (global.conversationState.context.messages.length > 20) {
-      // Keep only the last 15 messages
-      global.conversationState.context.messages = global.conversationState.context.messages.slice(-15);
+    const maxMsgs = appConfig.ui.maxRecentMessagesContext;
+    if (global.conversationState.context.messages.length > maxMsgs) {
+      global.conversationState.context.messages = global.conversationState.context.messages.slice(-Math.floor(maxMsgs * 0.75));
       console.log('[generate-ai-code-stream] Trimmed conversation history to prevent context overflow');
     }
     
@@ -1408,7 +1408,7 @@ REMEMBER: It's better to generate fewer COMPLETE files than many INCOMPLETE file
               content: userMessageContent
             }
           ],
-          maxTokens: 8192, // Reduce to ensure completion
+          maxTokens: appConfig.ai.maxTokens,
           stopSequences: [] // Don't stop early
           // Note: Neither Groq nor Anthropic models support tool/function calling in this context
           // We use XML tags for package detection instead

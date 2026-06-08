@@ -81,10 +81,10 @@ export const appConfig = {
     defaultTemperature: 0.7,
     
     // Max tokens for code generation
-    maxTokens: 8000,
-    
+    maxTokens: 32000,
+
     // Max tokens for truncation recovery
-    truncationRecoveryMaxTokens: 4000,
+    truncationRecoveryMaxTokens: 8000,
   },
   
   // Code Application Configuration
@@ -115,10 +115,10 @@ export const appConfig = {
     toastDuration: 3000,
     
     // Maximum chat messages to keep in memory
-    maxChatMessages: 100,
-    
+    maxChatMessages: 200,
+
     // Maximum recent messages to send as context
-    maxRecentMessagesContext: 20,
+    maxRecentMessagesContext: 40,
   },
   
   // Development Configuration
