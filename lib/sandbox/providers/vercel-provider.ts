@@ -92,17 +92,12 @@ export class VercelProvider extends SandboxProvider {
 
     
     try {
-      // Parse command into cmd and args (matching PR syntax)
-      const parts = command.split(' ');
-      const cmd = parts[0];
-      const args = parts.slice(1);
-      
-      // Vercel uses runCommand with cmd and args object (based on PR)
+      // Always run through bash -c so shell operators (;, &&, |, $, etc.) work correctly
       const result = await this.sandbox.runCommand({
-        cmd: cmd,
-        args: args,
+        cmd: 'bash',
+        args: ['-c', command],
         cwd: '/vercel/sandbox',
-        env: {}
+        env: {},
       });
       
       // Handle stdout and stderr - they might be functions in Vercel SDK
@@ -198,8 +193,8 @@ export class VercelProvider extends SandboxProvider {
         .replace(/\n/g, '\\n');
       
       const writeResult = await this.sandbox.runCommand({
-        cmd: 'sh',
-        args: ['-c', `echo "${escapedContent}" > "${fullPath}"`]
+        cmd: 'bash',
+        args: ['-c', `printf '%s' "${escapedContent}" > "${fullPath}"`],
       });
       
       // File written
