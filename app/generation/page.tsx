@@ -192,26 +192,37 @@ function AISandboxPage() {
     overrideSiteId?: string,
   ) => {
     const sd = overrideSandbox ?? sandboxData;
-    if (!sd?.sandboxId || !session?.user?.id) return;
+    if (!sd?.sandboxId) return;
+
+    const payload = {
+      sandboxId: sd.sandboxId,
+      sandboxProvider: sd.provider ?? 'vercel',
+      sandboxUrl: sd.url ?? null,
+      chatMessages: (overrideMessages ?? chatMessages).map(m => ({
+        content: m.content,
+        type: m.type,
+        timestamp: m.timestamp,
+      })),
+      aiModel,
+      siteId: overrideSiteId ?? activeSiteId ?? null,
+    };
+
+    // Always persist to localStorage so session survives a refresh on the same device
+    try {
+      localStorage.setItem(`noeron_session_${sd.sandboxId}`, JSON.stringify(payload));
+      localStorage.setItem('noeron_last_sandbox', sd.sandboxId);
+    } catch { /* quota exceeded — ignore */ }
+
+    // Also persist to DB if user is logged in (for cross-device restore)
+    if (!session?.user?.id) return;
     try {
       await fetch('/api/generation-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sandboxId: sd.sandboxId,
-          sandboxProvider: sd.provider ?? 'vercel',
-          sandboxUrl: sd.url ?? null,
-          chatMessages: (overrideMessages ?? chatMessages).map(m => ({
-            content: m.content,
-            type: m.type,
-            timestamp: m.timestamp,
-          })),
-          aiModel,
-          siteId: overrideSiteId ?? activeSiteId ?? null,
-        }),
+        body: JSON.stringify(payload),
       });
     } catch {
-      // non-blocking — ignore save errors
+      // non-blocking — DB save failed, localStorage fallback already done
     }
   }, [sandboxData, chatMessages, aiModel, activeSiteId, session?.user?.id]);
 
@@ -381,40 +392,58 @@ function AISandboxPage() {
       try {
         if (sandboxIdParam) {
           console.log('[home] Restoring session for sandbox:', sandboxIdParam);
-          // Try to load persisted session from DB first
+          // Helper to apply a saved session payload
+          const applySession = (savedSession: any) => {
+            if (!savedSession || !isMounted) return false;
+            if (Array.isArray(savedSession.chatMessages) && savedSession.chatMessages.length > 0) {
+              setChatMessages(savedSession.chatMessages.map((m: any) => ({
+                ...m,
+                timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
+              })));
+            }
+            if (savedSession.siteId) setActiveSiteId(savedSession.siteId);
+            if (savedSession.aiModel) setAiModel(savedSession.aiModel);
+            if (savedSession.sandboxUrl) {
+              sandboxJustCreatedAt.current = Date.now();
+              setSandboxData({
+                sandboxId: savedSession.sandboxId,
+                url: savedSession.sandboxUrl,
+                provider: savedSession.sandboxProvider ?? 'vercel',
+                success: true,
+              } as any);
+              updateStatus('Sandbox active', true);
+              setShowHomeScreen(false);
+              return true;
+            }
+            return false;
+          };
+
+          // 1. Try DB first
           try {
             const sessionRes = await fetch(`/api/generation-session/${sandboxIdParam}`);
             if (sessionRes.ok) {
               const { session: savedSession } = await sessionRes.json();
-              if (savedSession && isMounted) {
-                // Restore chat history
-                if (Array.isArray(savedSession.chatMessages) && savedSession.chatMessages.length > 0) {
-                  setChatMessages(savedSession.chatMessages.map((m: any) => ({
-                    ...m,
-                    timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
-                  })));
-                }
-                // Restore site selection
-                if (savedSession.siteId) setActiveSiteId(savedSession.siteId);
-                // Restore model
-                if (savedSession.aiModel) setAiModel(savedSession.aiModel);
-                // Restore sandbox data so the iframe reconnects
-                if (savedSession.sandboxUrl) {
-                  setSandboxData({
-                    sandboxId: savedSession.sandboxId,
-                    url: savedSession.sandboxUrl,
-                    provider: savedSession.sandboxProvider,
-                    success: true,
-                  } as any);
-                  updateStatus('Sandbox active', true);
-                  setShowHomeScreen(false);
-                  sandboxCreated = true;
-                  console.log('[home] Session restored from DB:', sandboxIdParam);
-                }
+              if (applySession(savedSession)) {
+                sandboxCreated = true;
+                console.log('[home] Session restored from DB:', sandboxIdParam);
               }
             }
           } catch (sessionErr) {
             console.warn('[home] Could not load session from DB:', sessionErr);
+          }
+
+          // 2. Fall back to localStorage if DB failed
+          if (!sandboxCreated) {
+            try {
+              const raw = localStorage.getItem(`noeron_session_${sandboxIdParam}`);
+              if (raw) {
+                const localSession = JSON.parse(raw);
+                if (applySession(localSession)) {
+                  sandboxCreated = true;
+                  console.log('[home] Session restored from localStorage:', sandboxIdParam);
+                }
+              }
+            } catch { /* ignore parse errors */ }
           }
 
           // If sandbox wasn't restored from DB (e.g. first load or expired), create new
