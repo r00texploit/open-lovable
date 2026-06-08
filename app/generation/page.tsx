@@ -392,9 +392,25 @@ function AISandboxPage() {
       try {
         if (sandboxIdParam) {
           console.log('[home] Restoring session for sandbox:', sandboxIdParam);
-          // Helper to apply a saved session payload
-          const applySession = (savedSession: any) => {
-            if (!savedSession || !isMounted) return false;
+
+          // Load saved session — DB first, localStorage fallback
+          let savedSession: any = null;
+          try {
+            const sessionRes = await fetch(`/api/generation-session/${sandboxIdParam}`);
+            if (sessionRes.ok) {
+              const body = await sessionRes.json();
+              if (body.session) savedSession = body.session;
+            }
+          } catch { /* DB unavailable */ }
+          if (!savedSession) {
+            try {
+              const raw = localStorage.getItem(`noeron_session_${sandboxIdParam}`);
+              if (raw) savedSession = JSON.parse(raw);
+            } catch { /* parse error */ }
+          }
+
+          // Restore non-sandbox state immediately (chat, model, site)
+          if (savedSession && isMounted) {
             if (Array.isArray(savedSession.chatMessages) && savedSession.chatMessages.length > 0) {
               setChatMessages(savedSession.chatMessages.map((m: any) => ({
                 ...m,
@@ -403,51 +419,33 @@ function AISandboxPage() {
             }
             if (savedSession.siteId) setActiveSiteId(savedSession.siteId);
             if (savedSession.aiModel) setAiModel(savedSession.aiModel);
-            if (savedSession.sandboxUrl) {
-              sandboxJustCreatedAt.current = Date.now();
-              setSandboxData({
-                sandboxId: savedSession.sandboxId,
-                url: savedSession.sandboxUrl,
-                provider: savedSession.sandboxProvider ?? 'vercel',
-                success: true,
-              } as any);
-              updateStatus('Sandbox active', true);
-              setShowHomeScreen(false);
-              return true;
-            }
-            return false;
-          };
-
-          // 1. Try DB first
-          try {
-            const sessionRes = await fetch(`/api/generation-session/${sandboxIdParam}`);
-            if (sessionRes.ok) {
-              const { session: savedSession } = await sessionRes.json();
-              if (applySession(savedSession)) {
-                sandboxCreated = true;
-                console.log('[home] Session restored from DB:', sandboxIdParam);
-              }
-            }
-          } catch (sessionErr) {
-            console.warn('[home] Could not load session from DB:', sessionErr);
           }
 
-          // 2. Fall back to localStorage if DB failed
-          if (!sandboxCreated) {
+          // Probe the saved sandbox URL before loading it — Vercel sandboxes expire after 15 min
+          const savedUrl: string | null = savedSession?.sandboxUrl ?? null;
+          let sandboxAlive = false;
+          if (savedUrl) {
             try {
-              const raw = localStorage.getItem(`noeron_session_${sandboxIdParam}`);
-              if (raw) {
-                const localSession = JSON.parse(raw);
-                if (applySession(localSession)) {
-                  sandboxCreated = true;
-                  console.log('[home] Session restored from localStorage:', sandboxIdParam);
-                }
-              }
-            } catch { /* ignore parse errors */ }
+              // no-cors: won't throw on 2xx/4xx, only on network error or timeout
+              await fetch(savedUrl, { method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout(5000) });
+              sandboxAlive = true;
+            } catch { sandboxAlive = false; }
           }
 
-          // If sandbox wasn't restored from DB (e.g. first load or expired), create new
-          if (!sandboxCreated) {
+          if (sandboxAlive && savedUrl && savedSession) {
+            sandboxJustCreatedAt.current = Date.now();
+            setSandboxData({
+              sandboxId: savedSession.sandboxId,
+              url: savedUrl,
+              provider: savedSession.sandboxProvider ?? 'vercel',
+              success: true,
+            } as any);
+            updateStatus('Sandbox active', true);
+            setShowHomeScreen(false);
+            sandboxCreated = true;
+            console.log('[home] Session restored (sandbox alive):', sandboxIdParam);
+          } else {
+            if (savedUrl) console.log('[home] Saved sandbox expired — creating fresh sandbox, chat history preserved');
             sandboxCreated = true;
             await createSandbox(true);
           }
