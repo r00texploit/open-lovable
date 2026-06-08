@@ -15,7 +15,18 @@ import {
   Circle,
   Copy,
   Check,
+  Zap,
 } from "lucide-react";
+
+interface GenerationSession {
+  id: string;
+  sandboxId: string;
+  sandboxUrl: string | null;
+  aiModel: string | null;
+  lastActiveAt: string;
+  chatMessages: Array<{ content: string; type: string }>;
+  site: { id: string; name: string; slug: string } | null;
+}
 
 interface Site {
   id: string;
@@ -154,6 +165,7 @@ export default function SitesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [sites, setSites] = useState<Site[]>([]);
+  const [sessions, setSessions] = useState<GenerationSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -165,14 +177,17 @@ export default function SitesPage() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    fetch("/api/sites")
-      .then((r) => r.json())
-      .then((data) => {
-        setSites(data.sites ?? []);
+    Promise.all([
+      fetch("/api/sites").then((r) => r.json()),
+      fetch("/api/generation-session").then((r) => r.json()),
+    ])
+      .then(([sitesData, sessionsData]) => {
+        setSites(sitesData.sites ?? []);
+        setSessions(sessionsData.sessions ?? []);
         setLoading(false);
       })
       .catch(() => {
-        setError("Failed to load your sites.");
+        setError("Failed to load your data.");
         setLoading(false);
       });
   }, [status]);
@@ -239,6 +254,50 @@ export default function SitesPage() {
         {error && (
           <div className="mb-6 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
             {error}
+          </div>
+        )}
+
+        {/* Recent sessions — continue where you left off */}
+        {sessions.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              Continue editing
+            </h2>
+            <div className="flex flex-col gap-2">
+              {sessions.slice(0, 5).map((s) => {
+                const lastMsg = [...(s.chatMessages ?? [])].reverse().find(
+                  (m) => m.type === "user"
+                );
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() =>
+                      router.push(`/generation?sandbox=${s.sandboxId}`)
+                    }
+                    className="flex items-center gap-4 bg-white border border-gray-100 rounded-xl px-4 py-3 text-left hover:border-gray-300 hover:shadow-sm transition-all group"
+                  >
+                    <div className="shrink-0 w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                      <Zap size={14} className="text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {s.site?.name ?? "Untitled session"}
+                      </p>
+                      {lastMsg && (
+                        <p className="text-xs text-gray-400 truncate mt-0.5">
+                          {lastMsg.content.slice(0, 80)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-xs text-gray-400">{timeAgo(s.lastActiveAt)}</p>
+                      <p className="text-xs text-gray-300 mt-0.5">{s.aiModel?.split("/").pop() ?? ""}</p>
+                    </div>
+                    <Edit3 size={14} className="shrink-0 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 

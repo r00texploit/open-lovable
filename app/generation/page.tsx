@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -178,10 +178,51 @@ function AISandboxPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const codeDisplayRef = useRef<HTMLDivElement>(null);
-  
+  const saveSessionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [codeApplicationState, setCodeApplicationState] = useState<CodeApplicationState>({
     stage: null
   });
+
+  // ── Session persistence ─────────────────────────────────────────────────
+  const saveSession = useCallback(async (
+    overrideSandbox?: typeof sandboxData,
+    overrideMessages?: typeof chatMessages,
+    overrideSiteId?: string,
+  ) => {
+    const sd = overrideSandbox ?? sandboxData;
+    if (!sd?.sandboxId || !session?.user?.id) return;
+    try {
+      await fetch('/api/generation-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sandboxId: sd.sandboxId,
+          sandboxProvider: sd.provider ?? 'vercel',
+          sandboxUrl: sd.url ?? null,
+          chatMessages: (overrideMessages ?? chatMessages).map(m => ({
+            content: m.content,
+            type: m.type,
+            timestamp: m.timestamp,
+          })),
+          aiModel,
+          siteId: overrideSiteId ?? activeSiteId ?? null,
+        }),
+      });
+    } catch {
+      // non-blocking — ignore save errors
+    }
+  }, [sandboxData, chatMessages, aiModel, activeSiteId, session?.user?.id]);
+
+  const debouncedSave = useCallback((
+    overrideSandbox?: typeof sandboxData,
+    overrideMessages?: typeof chatMessages,
+    overrideSiteId?: string,
+  ) => {
+    if (saveSessionTimer.current) clearTimeout(saveSessionTimer.current);
+    saveSessionTimer.current = setTimeout(() => saveSession(overrideSandbox, overrideMessages, overrideSiteId), 1500);
+  }, [saveSession]);
+  // ────────────────────────────────────────────────────────────────────────
   
   const [generationProgress, setGenerationProgress] = useState<{
     isGenerating: boolean;
@@ -334,15 +375,52 @@ function AISandboxPage() {
 
       // Check if sandbox ID is in URL
       const sandboxIdParam = searchParams.get('sandbox');
-      
+
       setLoading(true);
       try {
         if (sandboxIdParam) {
-          console.log('[home] Attempting to restore sandbox:', sandboxIdParam);
-          // For now, just create a new sandbox - you could enhance this to actually restore
-          // the specific sandbox if your backend supports it
-          sandboxCreated = true;
-          await createSandbox(true);
+          console.log('[home] Restoring session for sandbox:', sandboxIdParam);
+          // Try to load persisted session from DB first
+          try {
+            const sessionRes = await fetch(`/api/generation-session/${sandboxIdParam}`);
+            if (sessionRes.ok) {
+              const { session: savedSession } = await sessionRes.json();
+              if (savedSession && isMounted) {
+                // Restore chat history
+                if (Array.isArray(savedSession.chatMessages) && savedSession.chatMessages.length > 0) {
+                  setChatMessages(savedSession.chatMessages.map((m: any) => ({
+                    ...m,
+                    timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
+                  })));
+                }
+                // Restore site selection
+                if (savedSession.siteId) setActiveSiteId(savedSession.siteId);
+                // Restore model
+                if (savedSession.aiModel) setAiModel(savedSession.aiModel);
+                // Restore sandbox data so the iframe reconnects
+                if (savedSession.sandboxUrl) {
+                  setSandboxData({
+                    sandboxId: savedSession.sandboxId,
+                    url: savedSession.sandboxUrl,
+                    provider: savedSession.sandboxProvider,
+                    success: true,
+                  } as any);
+                  updateStatus('Sandbox active', true);
+                  setShowHomeScreen(false);
+                  sandboxCreated = true;
+                  console.log('[home] Session restored from DB:', sandboxIdParam);
+                }
+              }
+            }
+          } catch (sessionErr) {
+            console.warn('[home] Could not load session from DB:', sessionErr);
+          }
+
+          // If sandbox wasn't restored from DB (e.g. first load or expired), create new
+          if (!sandboxCreated) {
+            sandboxCreated = true;
+            await createSandbox(true);
+          }
         } else {
           console.log('[home] No sandbox in URL, creating new sandbox automatically...');
           sandboxCreated = true;
@@ -443,7 +521,11 @@ function AISandboxPage() {
     if (chatMessagesRef.current) {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
     }
-  }, [chatMessages]);
+    // Auto-save session whenever chat changes (debounced)
+    if (sandboxData?.sandboxId) {
+      debouncedSave(sandboxData, chatMessages, activeSiteId);
+    }
+  }, [chatMessages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-trigger generation when flag is set (from home page navigation)
   useEffect(() => {
@@ -691,6 +773,9 @@ function AISandboxPage() {
         log('Sandbox created successfully!');
         log(`Sandbox ID: ${data.sandboxId}`);
         log(`URL: ${data.url}`);
+
+        // Persist session to DB so it can be resumed on any device
+        debouncedSave(data, chatMessages, activeSiteId);
         
         // Update URL with sandbox ID
         const newParams = new URLSearchParams(searchParams.toString());
@@ -3650,7 +3735,10 @@ Focus on the key sections and content, making it clean and modern.`;
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <select
               value={activeSiteId}
-              onChange={(e) => setActiveSiteId(e.target.value)}
+              onChange={(e) => {
+                setActiveSiteId(e.target.value);
+                debouncedSave(sandboxData, chatMessages, e.target.value);
+              }}
               className="min-w-[220px] rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900"
               disabled={sitesLoading || sites.length === 0}
             >
