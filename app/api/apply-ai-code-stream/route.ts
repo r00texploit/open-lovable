@@ -623,6 +623,11 @@ export async function POST(request: NextRequest) {
               // Replace any other non-existent shadow utilities
               fileContent = fileContent.replace(/shadow-4xl/g, 'shadow-2xl');
               fileContent = fileContent.replace(/shadow-5xl/g, 'shadow-2xl');
+
+              // Ensure src/index.css always has Tailwind directives at the top
+              if (normalizedPath === 'src/index.css' && !fileContent.includes('@tailwind')) {
+                fileContent = `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n` + fileContent;
+              }
             }
 
             // Create directory if needed
