@@ -68,6 +68,7 @@
     "framer-motion": "^12.40.0",
     "groq-sdk": "^0.29.0",
     "jotai": "^2.14.0",
+    "jszip": "^3.10.1",
     "lodash-es": "^4.17.21",
     "lucide-react": "^0.532.0",
     "motion": "^12.23.12",

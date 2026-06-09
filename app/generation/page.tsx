@@ -2592,47 +2592,35 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       addChatMessage('Please wait for the sandbox to be created before downloading.', 'system');
       return;
     }
-    
-    setLoading(true);
-    log('Creating zip file...');
-    addChatMessage('Creating ZIP file of your Vite app...', 'system');
-    
+
+    const files = Object.entries(sandboxFiles);
+    if (files.length === 0) {
+      addChatMessage('No files to download yet. Generate some code first.', 'system');
+      return;
+    }
+
+    addChatMessage('Creating ZIP file...', 'system');
     try {
-      const response = await fetch('/api/create-zip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sandboxId: sandboxData?.sandboxId })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        log('Zip file created!');
-        addChatMessage('ZIP file created! Download starting...', 'system');
-        
-        const link = document.createElement('a');
-        link.href = data.dataUrl;
-        link.download = data.fileName || 'e2b-project.zip';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        addChatMessage(
-          'Your Vite app has been downloaded! To run it locally:\n' +
-          '1. Unzip the file\n' +
-          '2. Run: npm install\n' +
-          '3. Run: npm run dev\n' +
-          '4. Open http://localhost:3000',
-          'system'
-        );
-      } else {
-        throw new Error(data.error);
+      const { default: JSZip } = await import('jszip');
+      const zip = new JSZip();
+      for (const [path, content] of files) {
+        zip.file(path, content);
       }
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'noeron-project.zip';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      addChatMessage(
+        'Downloaded! To run locally:\n1. Unzip\n2. npm install\n3. npm run dev',
+        'system'
+      );
     } catch (error: any) {
-      log(`Failed to create zip: ${error.message}`, 'error');
       addChatMessage(`Failed to create ZIP: ${error.message}`, 'system');
-    } finally {
-      setLoading(false);
     }
   };
 
