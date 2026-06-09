@@ -872,24 +872,23 @@ function AISandboxPage() {
 Tip: I automatically detect and install npm packages from your code imports (like react-router-dom, axios, etc.)`, 'system');
         }
         
-        // Mark sandbox as just created so onError doesn't trigger a premature recreation
+        // Mark sandbox as just created so onError retries instead of triggering recreation
         sandboxJustCreatedAt.current = Date.now();
 
-        // Poll until the sandbox URL responds before loading the iframe
+        // Poll via server-side probe (client no-cors can't see status codes like 410)
+        // Wait until the sandbox URL returns HTTP 2xx/3xx before loading the iframe
         (async () => {
-          const deadline = Date.now() + 30_000; // 30s max wait
+          const deadline = Date.now() + 60_000; // 60s max wait
           while (Date.now() < deadline) {
             try {
-              const probe = await fetch(data.url, { method: 'HEAD', mode: 'no-cors' });
-              // no-cors fetch doesn't throw on 2xx/3xx, only on network errors
-              break;
-            } catch {
-              // network error — sandbox not ready yet
-            }
-            await new Promise(r => setTimeout(r, 1500));
+              const probe = await fetch(`/api/probe-url?url=${encodeURIComponent(data.url)}`);
+              const result = await probe.json();
+              if (result.ok) break; // HTTP 2xx/3xx — Vite is up
+            } catch { /* ignore, retry */ }
+            await new Promise(r => setTimeout(r, 2000));
           }
           if (iframeRef.current) {
-            iframeRef.current.src = data.url;
+            iframeRef.current.src = `${data.url}?t=${Date.now()}`;
           }
         })();
 
@@ -2014,9 +2013,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               }}
               onError={() => {
                 console.error('[iframe] Failed to load - sandbox may have timed out');
-                // Don't trigger recreation if sandbox was just created (allow warm-up time)
-                if (Date.now() - sandboxJustCreatedAt.current < 30_000) {
-                  console.log('[iframe] Ignoring onError — sandbox was just created, still warming up');
+                // During warm-up window: retry loading instead of triggering full recreation
+                if (Date.now() - sandboxJustCreatedAt.current < 60_000) {
+                  console.log('[iframe] Sandbox warming up, retrying in 3s...');
+                  setTimeout(() => {
+                    if (iframeRef.current && sandboxData?.url) {
+                      iframeRef.current.src = `${sandboxData.url}?t=${Date.now()}`;
+                    }
+                  }, 3000);
                   return;
                 }
                 checkSandboxStatus(true);
