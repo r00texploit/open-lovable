@@ -8,6 +8,8 @@ import { signInSchema } from '@/lib/validations/auth';
 import { ensureFreeEntitlements, getNormalizedSubscriptionState } from '@/lib/usage/token-usage';
 
 export const authOptions: NextAuthOptions = {
+  // Required in production — without it every /api/auth/* route 500s with NO_SECRET
+  secret: process.env.NEXTAUTH_SECRET,
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
