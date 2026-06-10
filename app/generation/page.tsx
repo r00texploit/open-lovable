@@ -751,7 +751,7 @@ function AISandboxPage() {
 
       if (data.needsRecreation && autoRecreate) {
         console.log('[checkSandboxStatus] Sandbox needs recreation, auto-recreating...');
-        addChatMessage('⚠️ Sandbox timed out (15 min limit). Creating a new sandbox...', 'system');
+        addChatMessage(`⚠️ Sandbox timed out (${appConfig.vercelSandbox.timeoutMinutes} min limit). Creating a new sandbox...`, 'system');
         setSandboxData(null);
         updateStatus('Recreating sandbox...', false);
 
