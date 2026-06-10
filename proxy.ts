@@ -27,7 +27,16 @@ export default async function middleware(request: NextRequest) {
   }
 
   const hostname = getRequestHostname(request.headers);
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  // Derive the cookie name from the actual request protocol instead of
+  // NEXTAUTH_URL — a stale/localhost NEXTAUTH_URL otherwise makes getToken
+  // look for the non-__Secure cookie and treat logged-in users as guests.
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+    secureCookie:
+      request.nextUrl.protocol === 'https:' ||
+      request.headers.get('x-forwarded-proto') === 'https',
+  });
   const isProtectedPath =
     pathname.startsWith('/generation') ||
     pathname.startsWith('/settings') ||
