@@ -4,8 +4,9 @@
 export const appConfig = {
   // Vercel Sandbox Configuration
   vercelSandbox: {
-    // Sandbox timeout in minutes
-    timeoutMinutes: 15,
+    // Sandbox timeout in minutes. Override with SANDBOX_TIMEOUT_MINUTES.
+    // Plan caps: Hobby allows up to 45 minutes, Pro/Enterprise up to 5 hours.
+    timeoutMinutes: Number(process.env.SANDBOX_TIMEOUT_MINUTES) || 45,
 
     // Convert to milliseconds for Vercel Sandbox API
     get timeoutMs() {
