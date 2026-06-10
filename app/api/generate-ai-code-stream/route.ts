@@ -1356,14 +1356,22 @@ It's better to have 3 complete files than 10 incomplete files.`
             {
               type: 'image',
               image: uploadedImage.base64,
-              mimeType: uploadedImage.type || 'image/png'
+              mediaType: uploadedImage.type || 'image/png'
             }
           ];
         }
 
-        // Make streaming API call with appropriate provider
+        // Make streaming API call with appropriate provider.
+        // AI SDK v5: provider errors do NOT throw from textStream — they only
+        // reach onError. Capture them so we can report instead of silently
+        // ending with an empty generation.
+        let capturedStreamError: unknown = null;
         const streamOptions: any = {
           model: modelProvider(actualModel),
+          onError: ({ error }: { error: unknown }) => {
+            capturedStreamError = error;
+            console.error('[generate-ai-code-stream] Stream error from provider:', error);
+          },
           messages: [
             {
               role: 'system',
@@ -1408,7 +1416,7 @@ REMEMBER: It's better to generate fewer COMPLETE files than many INCOMPLETE file
               content: userMessageContent
             }
           ],
-          maxTokens: appConfig.ai.maxTokens,
+          maxOutputTokens: appConfig.ai.maxTokens,
           stopSequences: [] // Don't stop early
           // Note: Neither Groq nor Anthropic models support tool/function calling in this context
           // We use XML tags for package detection instead
@@ -1419,9 +1427,9 @@ REMEMBER: It's better to generate fewer COMPLETE files than many INCOMPLETE file
           streamOptions.temperature = 0.7;
         }
         
-        // Add reasoning effort for GPT-5 models
+        // Add reasoning effort for GPT-5 models (AI SDK v5: providerOptions)
         if (isOpenAI) {
-          streamOptions.experimental_providerMetadata = {
+          streamOptions.providerOptions = {
             openai: {
               reasoningEffort: 'high'
             }
@@ -1606,6 +1614,19 @@ REMEMBER: It's better to generate fewer COMPLETE files than many INCOMPLETE file
           }
         }
         
+        // Surface provider errors that AI SDK v5 only delivers via onError
+        if (capturedStreamError) {
+          const errMessage =
+            (capturedStreamError as any)?.message || String(capturedStreamError);
+          await sendProgress({
+            type: 'error',
+            message: `AI provider error (${actualModel}): ${errMessage}`,
+          });
+          throw capturedStreamError instanceof Error
+            ? capturedStreamError
+            : new Error(errMessage);
+        }
+
         console.log('\n\n[generate-ai-code-stream] Streaming complete.');
         
         // Send any remaining conversational text
