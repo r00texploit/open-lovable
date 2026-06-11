@@ -46,9 +46,9 @@ export function ManageSubscriptionButton({
   };
 
   const variantClasses = {
-    default: 'bg-violet-600 hover:bg-violet-500 text-white',
-    outline: 'bg-transparent border border-violet-500 text-violet-400 hover:bg-violet-500/10',
-    ghost: 'bg-transparent text-violet-400 hover:text-violet-300 hover:bg-violet-500/10',
+    default: 'bg-[#ff6728] hover:bg-[#ff7b3d] text-[#20130a]',
+    outline: 'bg-transparent border border-[#261e151f] text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f]',
+    ghost: 'bg-transparent text-[#8c4b26] hover:text-[#17130f] hover:bg-[#17130f]/5',
   };
 
   return (
@@ -57,7 +57,7 @@ export function ManageSubscriptionButton({
       whileTap={{ scale: loading ? 1 : 0.98 }}
       onClick={handleManage}
       disabled={loading}
-      className={`inline-flex items-center gap-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${variantClasses[variant]}`}
+      className={`inline-flex items-center gap-2 rounded-full font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${variantClasses[variant]}`}
     >
       {loading ? (
         <Loader2 className="w-4 h-4 animate-spin" />

@@ -34,14 +34,6 @@ import {
 } from '@/lib/stripe/subscription-display';
 import { formatTokenAmount, TIERS, type SubscriptionTier } from '@/lib/stripe/stripe';
 
-interface BillingHistoryItem {
-  id: string;
-  date: string;
-  amount: number;
-  status: 'paid' | 'pending' | 'failed';
-  description: string;
-}
-
 interface SubscriptionData {
   tier: SubscriptionTier;
   status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'unpaid' | 'paused';
@@ -57,22 +49,6 @@ interface SubscriptionData {
   stripeCustomerId?: string | null;
 }
 
-const mockBillingHistory: BillingHistoryItem[] = [
-  {
-    id: 'inv_001',
-    date: '2024-01-15',
-    amount: 29,
-    status: 'paid',
-    description: 'Pro Plan - Monthly',
-  },
-  {
-    id: 'inv_002',
-    date: '2023-12-15',
-    amount: 29,
-    status: 'paid',
-    description: 'Pro Plan - Monthly',
-  },
-];
 
 const planOrder: SubscriptionTier[] = ['free', 'pro', 'plus', 'team'];
 
@@ -414,31 +390,14 @@ export default function SettingsPage() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    {mockBillingHistory.map((invoice) => (
-                      <div
-                        key={invoice.id}
-                        className="flex items-center justify-between p-4 bg-[#17130f]/5 rounded-lg hover:bg-[#17130f]/10 transition-colors"
-                      >
-                        <div>
-                          <p className="text-[#17130f] font-medium">{invoice.description}</p>
-                          <p className="text-[#5f5343] text-sm">{invoice.date}</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-[#17130f] font-medium">${invoice.amount}</span>
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            invoice.status === 'paid'
-                              ? 'bg-green-500/20 text-green-700'
-                              : invoice.status === 'failed'
-                              ? 'bg-red-500/20 text-red-700'
-                              : 'bg-yellow-500/20 text-yellow-700'
-                          }`}>
-                            {invoice.status}
-                          </span>
-                          <ExternalLink className="w-4 h-4 text-[#5f5343] cursor-pointer hover:text-[#17130f]" />
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex flex-col items-start gap-4 rounded-xl bg-[#17130f]/5 p-6">
+                    <p className="text-[#5f5343]">
+                      Your invoices and receipts are managed securely by Stripe. Open the
+                      billing portal to view, download, or update payment details.
+                    </p>
+                    <ManageSubscriptionButton size="md">
+                      View invoices in Stripe
+                    </ManageSubscriptionButton>
                   </div>
                 )}
               </FireCard>
@@ -505,12 +464,12 @@ function TierBadge({ tier }: { tier: SubscriptionTier }) {
     <div
       className={`px-4 py-2 rounded-full font-medium border ${
         isFree
-          ? 'bg-gray-100 text-gray-700 border-gray-200'
+          ? 'bg-[#17130f]/5 text-[#5f5343] border-[#261e151f]'
           : isPro
           ? 'bg-[#8c4b26]/10 text-[#8c4b26] border-[#8c4b26]/20'
           : isPlus
-          ? 'bg-[#fa5d19]/10 text-[#fa5d19] border-[#fa5d19]/20'
-          : 'bg-[#9061ff]/10 text-[#9061ff] border-[#9061ff]/20'
+          ? 'bg-[#ff6728]/10 text-[#c14914] border-[#ff6728]/25'
+          : 'bg-[#17130f]/10 text-[#17130f] border-[#17130f]/20'
       }`}
     >
       {getTierDisplayName(tier)}

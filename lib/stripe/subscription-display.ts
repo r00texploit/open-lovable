@@ -18,43 +18,44 @@ export function getTierColor(tier: SubscriptionTier): {
 } {
   const colors: Record<SubscriptionTier, { bg: string; border: string; text: string; gradient: string }> = {
     free: {
-      bg: 'bg-gray-500/20',
-      border: 'border-gray-500/30',
-      text: 'text-gray-300',
-      gradient: 'from-gray-500 to-gray-600',
+      bg: 'bg-[#17130f]/5',
+      border: 'border-[#261e151f]',
+      text: 'text-[#5f5343]',
+      gradient: 'from-[#8a7a64] to-[#5f5343]',
     },
     pro: {
-      bg: 'bg-violet-500/20',
-      border: 'border-violet-500/30',
-      text: 'text-violet-300',
-      gradient: 'from-violet-500 to-violet-600',
+      bg: 'bg-[#ff6728]/10',
+      border: 'border-[#ff6728]/25',
+      text: 'text-[#c14914]',
+      gradient: 'from-[#ff6728] to-[#e0490f]',
     },
     plus: {
-      bg: 'bg-orange-500/20',
-      border: 'border-orange-500/30',
-      text: 'text-orange-300',
-      gradient: 'from-orange-500 to-orange-600',
+      bg: 'bg-[#8c4b26]/10',
+      border: 'border-[#8c4b26]/20',
+      text: 'text-[#8c4b26]',
+      gradient: 'from-[#a85a2e] to-[#8c4b26]',
     },
     team: {
-      bg: 'bg-fuchsia-500/20',
-      border: 'border-fuchsia-500/30',
-      text: 'text-fuchsia-300',
-      gradient: 'from-fuchsia-500 to-fuchsia-600',
+      bg: 'bg-[#17130f]/10',
+      border: 'border-[#17130f]/20',
+      text: 'text-[#17130f]',
+      gradient: 'from-[#2a221a] to-[#17130f]',
     },
   };
   return colors[tier] || colors.free;
 }
 
 export function getStatusColor(status: string): string {
+  // Shades dark enough to stay readable on the cream backgrounds
   const colors: Record<string, string> = {
-    active: 'text-green-400',
-    trialing: 'text-blue-400',
-    past_due: 'text-yellow-400',
-    canceled: 'text-red-400',
-    unpaid: 'text-red-400',
-    paused: 'text-orange-400',
+    active: 'text-green-700',
+    trialing: 'text-blue-700',
+    past_due: 'text-yellow-700',
+    canceled: 'text-red-700',
+    unpaid: 'text-red-700',
+    paused: 'text-orange-700',
   };
-  return colors[status] || 'text-gray-400';
+  return colors[status] || 'text-[#5f5343]';
 }
 
 export function formatSubscriptionStatus(status: string): string {
