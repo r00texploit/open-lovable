@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import {
   CreditCard,
@@ -20,6 +20,7 @@ import {
   ArrowRight,
   Settings,
   Globe,
+  LogOut,
 } from 'lucide-react';
 import { NoeronLogo } from '@/components/brand/noeron-logo';
 import { UsageBar } from '@/components/subscription/usage-bar';
@@ -161,6 +162,13 @@ export default function SettingsPage() {
                 Back to App
               </button>
             </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="flex items-center gap-2 rounded-lg border border-[#261e151f] px-4 py-2 text-sm text-[#5f5343] transition-colors hover:bg-[#17130f]/5 hover:text-[#17130f]"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign out
+            </button>
           </div>
         </div>
       </header>
