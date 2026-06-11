@@ -13,6 +13,16 @@ export const appConfig = {
       return this.timeoutMinutes * 60 * 1000;
     },
 
+    // How often the builder pings to keep an active sandbox alive. Each ping
+    // extends the sandbox lifetime by this amount, so the remaining time stays
+    // roughly constant while the user is working. Extensions stop at the
+    // plan's maximum sandbox duration (45 min Hobby, 5 h Pro/Enterprise).
+    keepAliveIntervalMinutes: Number(process.env.SANDBOX_KEEPALIVE_INTERVAL_MINUTES) || 5,
+
+    get keepAliveIntervalMs() {
+      return this.keepAliveIntervalMinutes * 60 * 1000;
+    },
+
     // Development server port (Vercel Sandbox typically uses 3000 for Next.js/React)
     devPort: 3000,
 

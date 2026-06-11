@@ -53,6 +53,15 @@ export abstract class SandboxProvider {
   abstract isAlive(): boolean;
   
   // Optional methods that providers can override
+
+  // Extend the sandbox lifetime by durationMs. Returns false when the
+  // provider doesn't support extension or the plan's maximum duration
+  // has been reached.
+  async extendTimeout(durationMs: number): Promise<boolean> {
+    void durationMs;
+    return false;
+  }
+
   async setupViteApp(): Promise<void> {
     // Default implementation for setting up a Vite React app
     throw new Error('setupViteApp not implemented for this provider');

@@ -55,7 +55,7 @@ export class VercelProvider extends SandboxProvider {
       // Create Vercel sandbox
 
       const sandboxConfig: any = {
-        timeout: appConfig.vercelSandbox.timeoutMs, // Use config timeout (default 15 minutes)
+        timeout: appConfig.vercelSandbox.timeoutMs,
         runtime: appConfig.vercelSandbox.runtime, // Use config runtime
         ports: [appConfig.vercelSandbox.devPort] // Use config port
       };
@@ -82,6 +82,20 @@ export class VercelProvider extends SandboxProvider {
     } catch (error) {
       console.error('[VercelProvider] Error creating sandbox:', error);
       throw error;
+    }
+  }
+
+  async extendTimeout(durationMs: number): Promise<boolean> {
+    if (!this.sandbox) {
+      return false;
+    }
+    try {
+      await this.sandbox.extendTimeout(durationMs);
+      return true;
+    } catch (error: any) {
+      // Fails once the plan's maximum sandbox duration is reached
+      console.warn('[VercelProvider] Could not extend sandbox timeout:', error?.message || error);
+      return false;
     }
   }
 

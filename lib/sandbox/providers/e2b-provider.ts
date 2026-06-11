@@ -76,6 +76,22 @@ export class E2BProvider extends SandboxProvider {
     }
   }
 
+  async extendTimeout(durationMs: number): Promise<boolean> {
+    void durationMs;
+    if (!this.sandbox || typeof this.sandbox.setTimeout !== 'function') {
+      return false;
+    }
+    try {
+      // E2B's setTimeout resets the remaining lifetime from now, so reset
+      // to the full configured timeout rather than adding durationMs
+      await this.sandbox.setTimeout(appConfig.e2b.timeoutMs);
+      return true;
+    } catch (error: any) {
+      console.warn('[E2BProvider] Could not extend sandbox timeout:', error?.message || error);
+      return false;
+    }
+  }
+
   async runCommand(command: string): Promise<CommandResult> {
     if (!this.sandbox) {
       throw new Error('No active sandbox');

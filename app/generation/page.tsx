@@ -266,6 +266,13 @@ function AISandboxPage() {
     lastProcessedPosition: 0
   });
 
+  // Mirror generation state in a ref so long-lived intervals (keep-alive)
+  // can read the current value without re-subscribing
+  const generationProgressRef = useRef(generationProgress);
+  useEffect(() => {
+    generationProgressRef.current = generationProgress;
+  }, [generationProgress]);
+
   // Store flag to trigger generation after component mounts
   const [shouldAutoGenerate, setShouldAutoGenerate] = useState(false);
   const activeSite = sites.find((site) => site.id === activeSiteId) || null;
@@ -631,6 +638,42 @@ function AISandboxPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sandboxData?.url, generationProgress.isGenerating]);
+
+  // Keep the sandbox alive while the user is actively using the builder.
+  // Each ping extends the sandbox lifetime by the keep-alive interval, so an
+  // active session never times out (up to the Vercel plan's maximum duration).
+  // Idle or backgrounded sessions stop pinging and the sandbox expires normally.
+  useEffect(() => {
+    if (!sandboxData?.sandboxId) return;
+
+    const intervalMs = appConfig.vercelSandbox.keepAliveIntervalMs;
+    let lastActivity = Date.now();
+    const markActivity = () => { lastActivity = Date.now(); };
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    activityEvents.forEach(e => window.addEventListener(e, markActivity, { passive: true }));
+
+    const intervalId = setInterval(() => {
+      const activeRecently = Date.now() - lastActivity < intervalMs;
+      const generating = generationProgressRef.current?.isGenerating;
+      if (document.visibilityState === 'visible' && (activeRecently || generating)) {
+        fetch('/api/extend-sandbox-timeout', { method: 'POST' })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.extended) {
+              console.log('[keep-alive] Sandbox lifetime not extended:', data.message || data.error);
+            }
+          })
+          .catch(() => {
+            // Best-effort; the periodic health check handles a dead sandbox
+          });
+      }
+    }, intervalMs);
+
+    return () => {
+      clearInterval(intervalId);
+      activityEvents.forEach(e => window.removeEventListener(e, markActivity));
+    };
+  }, [sandboxData?.sandboxId]);
 
   const updateStatus = (text: string, active: boolean) => {
     setStatus({ text, active });
