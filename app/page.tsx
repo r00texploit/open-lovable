@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth/auth-options";
 import { NoeronLogo } from "@/components/brand/noeron-logo";
 import { BuildLauncher } from "@/components/saas-landing/build-launcher";
 import { formatTokenAmount, TIERS, type SubscriptionTier } from "@/lib/stripe/stripe";
@@ -73,7 +75,9 @@ function ArrowPuck() {
   );
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await getServerSession(authOptions);
+
   return (
     <main className="ol-shell min-h-screen overflow-hidden font-sans">
       <div className="ol-noise" />
@@ -95,10 +99,17 @@ export default function HomePage() {
           ))}
         </nav>
 
-        <Link href="/auth/signin" className="ol-primary-button group px-[16px] py-[8px] text-sm">
-          Sign in
-          <ArrowPuck />
-        </Link>
+        {session?.user ? (
+          <Link href="/generation" className="ol-primary-button group px-[16px] py-[8px] text-sm">
+            Open builder
+            <ArrowPuck />
+          </Link>
+        ) : (
+          <Link href="/auth/signin" className="ol-primary-button group px-[16px] py-[8px] text-sm">
+            Sign in
+            <ArrowPuck />
+          </Link>
+        )}
       </header>
 
       <section className="relative z-10 mx-auto grid w-full max-w-[1280px] items-center gap-[52px] px-[24px] pb-[72px] pt-[36px] sm:px-[40px] lg:grid-cols-[0.84fr_1.16fr] lg:pb-[80px] lg:pt-[44px]">
@@ -337,9 +348,11 @@ export default function HomePage() {
       <footer className="relative z-10 mx-auto flex w-full max-w-[1280px] flex-col gap-[20px] px-[24px] py-[48px] text-sm text-[#665745] sm:px-[40px] md:flex-row md:items-center md:justify-between">
         <BrandMark />
         <div className="flex gap-[20px]">
-          <Link href="/auth/signin">Sign in</Link>
-          <Link href="https://github.com/mendableai/noeron" target="_blank">
-            GitHub
+          <Link href={session?.user ? "/generation" : "/auth/signin"} className="transition-colors hover:text-[#17130f]">
+            {session?.user ? "Open builder" : "Sign in"}
+          </Link>
+          <Link href="/pricing" className="transition-colors hover:text-[#17130f]">
+            Pricing
           </Link>
         </div>
       </footer>
