@@ -54,6 +54,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'sandboxId is required' }, { status: 400 });
   }
 
+  // Only attach a siteId that actually exists and belongs to this user.
+  // A stale id (e.g. from localStorage after the site was deleted) would
+  // otherwise trip the GenerationSession_siteId_fkey foreign key constraint.
+  let validSiteId: string | null = null;
+  if (siteId) {
+    const ownedSite = await prisma.site.findFirst({
+      where: { id: siteId, userId: session.user.id },
+      select: { id: true },
+    });
+    validSiteId = ownedSite?.id ?? null;
+  }
+
   const data = {
     userId: session.user.id,
     sandboxProvider: sandboxProvider ?? 'vercel',
@@ -61,7 +73,7 @@ export async function POST(request: NextRequest) {
     chatMessages: chatMessages ?? [],
     conversationCtx: conversationCtx ?? null,
     aiModel: aiModel ?? null,
-    siteId: siteId ?? null,
+    siteId: validSiteId,
     lastActiveAt: new Date(),
   };
 
