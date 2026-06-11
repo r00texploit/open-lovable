@@ -53,9 +53,9 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Find user by email
+        // Find user by email (stored lowercased at registration)
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: credentials.email.trim().toLowerCase() },
         });
 
         // Check if user exists and has a password (not OAuth only)
