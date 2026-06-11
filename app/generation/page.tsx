@@ -8,8 +8,8 @@ import Image from 'next/image';
 import { appConfig } from '@/config/app.config';
 import HeroInput from '@/components/HeroInput';
 import SidebarInput from '@/components/app/generation/SidebarInput';
-import HeaderBrandKit from '@/components/shared/header/BrandKit/BrandKit';
-import { HeaderProvider } from '@/components/shared/header/HeaderContext';
+import BrandSelect from '@/components/app/generation/BrandSelect';
+import { NoeronLogo } from '@/components/brand/noeron-logo';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 // Import icons from centralized module to avoid Turbopack chunk issues
@@ -3748,16 +3748,16 @@ Focus on the key sections and content, making it clean and modern.`;
   };
 
   return (
-    <HeaderProvider>
       <div className="font-sans bg-background text-foreground h-screen flex flex-col">
-      <div className="bg-white py-[15px] py-[8px] border-b border-border-faint flex items-center justify-between shadow-sm">
-        <HeaderBrandKit />
+      <div className="bg-[#fff7e8]/90 backdrop-blur-xl px-4 py-2 border-b border-[#261e151f] flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2 px-2 text-[#17130f] transition-colors hover:text-[#8c4b26]">
+          <NoeronLogo iconClassName="h-[28px] w-[28px]" textClassName="text-[#17130f]" />
+        </Link>
         <div className="flex items-center gap-2">
           {/* Model Selector - Left side */}
-          <select
+          <BrandSelect
             value={aiModel}
-            onChange={(e) => {
-              const newModel = e.target.value;
+            onChange={(newModel) => {
               setAiModel(newModel);
               const params = new URLSearchParams(searchParams);
               params.set('model', newModel);
@@ -3766,17 +3766,15 @@ Focus on the key sections and content, making it clean and modern.`;
               }
               router.push(`/generation?${params.toString()}`);
             }}
-            className="px-3 py-1.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-300 transition-colors"
-          >
-            {appConfig.ai.availableModels.map(model => (
-              <option key={model} value={model}>
-                {appConfig.ai.modelDisplayNames?.[model] || model}
-              </option>
-            ))}
-          </select>
+            options={appConfig.ai.availableModels.map(model => ({
+              value: model,
+              label: appConfig.ai.modelDisplayNames?.[model] || model,
+            }))}
+            className="w-[190px]"
+          />
           <button 
             onClick={() => createSandbox()}
-            className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100"
+            className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f]"
             title="Create new sandbox"
           >
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -3785,7 +3783,7 @@ Focus on the key sections and content, making it clean and modern.`;
           </button>
           <button 
             onClick={reapplyLastGeneration}
-            className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f] disabled:opacity-50 disabled:cursor-not-allowed"
             title="Re-apply last generation"
             disabled={!conversationContext.lastGeneratedCode || !sandboxData}
           >
@@ -3796,7 +3794,7 @@ Focus on the key sections and content, making it clean and modern.`;
           <button
             onClick={downloadZip}
             disabled={!sandboxData}
-            className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f] disabled:opacity-50 disabled:cursor-not-allowed"
             title="Download your Vite app as ZIP"
           >
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -3807,7 +3805,7 @@ Focus on the key sections and content, making it clean and modern.`;
           {/* My Sites Button */}
           <Link href="/sites">
             <button
-              className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100"
+              className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f]"
               title="My Websites"
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -3819,7 +3817,7 @@ Focus on the key sections and content, making it clean and modern.`;
           {/* Settings Button */}
           <Link href="/settings">
             <button
-              className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100"
+              className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f]"
               title="Settings & Subscription"
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -3832,7 +3830,7 @@ Focus on the key sections and content, making it clean and modern.`;
           {/* Sign Out Button */}
           <button
             onClick={() => signOut({ callbackUrl: '/' })}
-            className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100"
+            className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f]"
             title="Sign out"
           >
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -3842,27 +3840,23 @@ Focus on the key sections and content, making it clean and modern.`;
         </div>
       </div>
 
-      <div className="border-b border-border bg-white px-4 py-3">
+      <div className="border-b border-[#261e151f] bg-[#fbf3e2] px-4 py-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <select
+            <BrandSelect
               value={activeSiteId}
-              onChange={(e) => {
-                setActiveSiteId(e.target.value);
-                debouncedSave(sandboxData, chatMessages, e.target.value);
+              onChange={(siteId) => {
+                setActiveSiteId(siteId);
+                debouncedSave(sandboxData, chatMessages, siteId);
               }}
-              className="min-w-[220px] rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900"
+              placeholder={sitesLoading ? 'Loading sites...' : sites.length > 0 ? 'Select a site' : 'No sites yet'}
+              options={[
+                ...(sites.length > 0 ? [{ value: '', label: 'Select a site' }] : []),
+                ...sites.map((site) => ({ value: site.id, label: `${site.name} (${site.slug})` })),
+              ]}
+              className="min-w-[220px]"
               disabled={sitesLoading || sites.length === 0}
-            >
-              <option value="">
-                {sitesLoading ? 'Loading sites...' : sites.length > 0 ? 'Select a site' : 'No sites yet'}
-              </option>
-              {sites.map((site) => (
-                <option key={site.id} value={site.id}>
-                  {site.name} ({site.slug})
-                </option>
-              ))}
-            </select>
+            />
 
             {activeSite ? (
               <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -3873,20 +3867,20 @@ Focus on the key sections and content, making it clean and modern.`;
                 </span>
                 <button
                   onClick={copyLiveUrl}
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                  className="rounded-full border border-[#261e151f] px-3 py-1.5 text-[#5f5343] transition-colors hover:bg-[#17130f]/5 hover:text-[#17130f]"
                 >
                   Copy URL
                 </button>
                 <Link
                   href={`/site-preview/${activeSite.slug}`}
                   target="_blank"
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                  className="rounded-full border border-[#261e151f] px-3 py-1.5 text-[#5f5343] transition-colors hover:bg-[#17130f]/5 hover:text-[#17130f]"
                 >
                   Preview Snapshot
                 </Link>
               </div>
             ) : (
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-[#5f5343]">
                 Create a site record to attach this build to a live tenant URL.
               </div>
             )}
@@ -3898,14 +3892,14 @@ Focus on the key sections and content, making it clean and modern.`;
                 <button
                   onClick={publishActiveSite}
                   disabled={siteActionLoading !== null || !sandboxData}
-                  className="rounded-lg bg-[#17130f] px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ol-primary-button px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {siteActionLoading === 'publish' ? 'Publishing...' : 'Publish current build'}
                 </button>
                 <button
                   onClick={unpublishActiveSite}
                   disabled={siteActionLoading !== null || !activeSite.published}
-                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-full border border-[#261e151f] px-4 py-2 text-sm text-[#5f5343] transition-colors hover:bg-[#17130f]/5 hover:text-[#17130f] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {siteActionLoading === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
                 </button>
@@ -3916,18 +3910,18 @@ Focus on the key sections and content, making it clean and modern.`;
                   value={newSiteName}
                   onChange={(e) => setNewSiteName(e.target.value)}
                   placeholder="Site name"
-                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  className="rounded-xl border border-[#261e151f] bg-[#fffcf4] px-3 py-2 text-sm text-[#17130f] placeholder:text-[#5f534399] transition-colors focus:border-[#ff6728] focus:outline-none"
                 />
                 <input
                   value={newSiteSlug}
                   onChange={(e) => setNewSiteSlug(e.target.value.toLowerCase())}
                   placeholder="site-slug"
-                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  className="rounded-xl border border-[#261e151f] bg-[#fffcf4] px-3 py-2 text-sm text-[#17130f] placeholder:text-[#5f534399] transition-colors focus:border-[#ff6728] focus:outline-none"
                 />
                 <button
                   onClick={createSite}
                   disabled={siteActionLoading !== null || !newSiteName.trim() || !newSiteSlug.trim()}
-                  className="rounded-lg bg-[#17130f] px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ol-primary-button px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {siteActionLoading === 'create' ? 'Creating...' : 'Create site'}
                 </button>
@@ -4559,7 +4553,6 @@ Focus on the key sections and content, making it clean and modern.`;
 
 
     </div>
-    </HeaderProvider>
   );
 }
 
