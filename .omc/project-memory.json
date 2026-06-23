@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1780778422047,
+  "lastScanned": 1781181551775,
   "projectRoot": "/Users/halim/open-lovable",
   "techStack": {
     "languages": [
@@ -73,14 +73,13 @@
     "mainDirectories": [
       "app",
       "components",
+      "docs",
       "lib",
       "public",
-      "scripts"
+      "scripts",
+      "tests"
     ],
-    "gitBranches": {
-      "defaultBranch": "main",
-      "branchingStrategy": null
-    }
+    "gitBranches": null
   },
   "customNotes": [],
   "directoryMap": {
@@ -88,7 +87,7 @@
       "path": "app",
       "purpose": "Application code",
       "fileCount": 6,
-      "lastAccessed": 1780778422002,
+      "lastAccessed": 1781181551754,
       "keyFiles": [
         "favicon.ico",
         "globals.css",
@@ -101,7 +100,7 @@
       "path": "atoms",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1780778422034,
+      "lastAccessed": 1781181551755,
       "keyFiles": [
         "sheets.ts"
       ]
@@ -110,7 +109,7 @@
       "path": "components",
       "purpose": "UI components",
       "fileCount": 10,
-      "lastAccessed": 1780778422036,
+      "lastAccessed": 1781181551760,
       "keyFiles": [
         "CodeApplicationProgress.tsx",
         "FirecrawlIcon.tsx",
@@ -123,7 +122,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 1,
-      "lastAccessed": 1780778422039,
+      "lastAccessed": 1781181551761,
       "keyFiles": [
         "app.config.ts"
       ]
@@ -132,14 +131,27 @@
       "path": "design-system",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1780778422039,
+      "lastAccessed": 1781181551765,
       "keyFiles": []
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 6,
+      "lastAccessed": 1781181551766,
+      "keyFiles": [
+        "FLUID-COMPUTE-SECURITY.md",
+        "IMPLEMENTATION-SUMMARY.md",
+        "SECURITY-FIXES-SUMMARY.md",
+        "SECURITY-MIGRATION-PROGRESS.md",
+        "VERCEL-DEPLOYMENT-OPTIMIZATION.md"
+      ]
     },
     "hooks": {
       "path": "hooks",
       "purpose": null,
       "fileCount": 3,
-      "lastAccessed": 1780778422040,
+      "lastAccessed": 1781181551767,
       "keyFiles": [
         "useDebouncedCallback.ts",
         "useDebouncedEffect.ts",
@@ -149,8 +161,8 @@
     "lib": {
       "path": "lib",
       "purpose": "Library code",
-      "fileCount": 10,
-      "lastAccessed": 1780778422040,
+      "fileCount": 15,
+      "lastAccessed": 1781181551767,
       "keyFiles": [
         "build-validator.ts",
         "context-selector.ts",
@@ -163,21 +175,21 @@
       "path": "open-lovable",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1780778422041,
+      "lastAccessed": 1781181551767,
       "keyFiles": []
     },
     "packages": {
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1780778422041,
+      "lastAccessed": 1781181551767,
       "keyFiles": []
     },
     "prisma": {
       "path": "prisma",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1780778422041,
+      "lastAccessed": 1781181551768,
       "keyFiles": [
         "schema.prisma"
       ]
@@ -186,7 +198,7 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 6,
-      "lastAccessed": 1780778422042,
+      "lastAccessed": 1781181551768,
       "keyFiles": [
         "compressor.json",
         "file.svg",
@@ -199,7 +211,7 @@
       "path": "screenshots",
       "purpose": null,
       "fileCount": 16,
-      "lastAccessed": 1780778422042,
+      "lastAccessed": 1781181551768,
       "keyFiles": [
         "cta.png",
         "faq.png",
@@ -211,17 +223,21 @@
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 1,
-      "lastAccessed": 1780778422042,
+      "fileCount": 6,
+      "lastAccessed": 1781181551768,
       "keyFiles": [
-        "init-db.ts"
+        "generate-jwt.cjs",
+        "init-db.ts",
+        "seed-test-session.ts",
+        "seed-test-user.ts",
+        "test-encode-decode.cjs"
       ]
     },
     "styles": {
       "path": "styles",
       "purpose": null,
       "fileCount": 6,
-      "lastAccessed": 1780778422043,
+      "lastAccessed": 1781181551769,
       "keyFiles": [
         "chrome-bug.css",
         "colors.json",
@@ -230,11 +246,22 @@
         "main.css"
       ]
     },
+    "tests": {
+      "path": "tests",
+      "purpose": "Test files",
+      "fileCount": 3,
+      "lastAccessed": 1781181551769,
+      "keyFiles": [
+        "api-endpoints.test.js",
+        "auth-api.test.cjs",
+        "code-execution.test.js"
+      ]
+    },
     "types": {
       "path": "types",
       "purpose": "Type definitions",
       "fileCount": 3,
-      "lastAccessed": 1780778422043,
+      "lastAccessed": 1781181551769,
       "keyFiles": [
         "conversation.ts",
         "file-manifest.ts",
@@ -245,7 +272,7 @@
       "path": "utils",
       "purpose": "Utility functions",
       "fileCount": 4,
-      "lastAccessed": 1780778422043,
+      "lastAccessed": 1781181551770,
       "keyFiles": [
         "cn.ts",
         "init-canvas.ts",
@@ -257,29 +284,30 @@
       "path": "app/api",
       "purpose": "API routes",
       "fileCount": 0,
-      "lastAccessed": 1780778422044,
+      "lastAccessed": 1781181551770,
       "keyFiles": []
     },
     "components/app": {
       "path": "components/app",
       "purpose": "Application code",
       "fileCount": 1,
-      "lastAccessed": 1780778422044,
+      "lastAccessed": 1781181551771,
       "keyFiles": []
     },
     "open-lovable/node_modules": {
       "path": "open-lovable/node_modules",
       "purpose": "Dependencies",
       "fileCount": 0,
-      "lastAccessed": 1780778422046,
+      "lastAccessed": 1781181551771,
       "keyFiles": []
     },
     "prisma/migrations": {
       "path": "prisma/migrations",
       "purpose": "Database migrations",
-      "fileCount": 1,
-      "lastAccessed": 1780778422046,
+      "fileCount": 2,
+      "lastAccessed": 1781181551772,
       "keyFiles": [
+        "add_rls_policies.sql",
         "migration_lock.toml"
       ]
     },
@@ -287,7 +315,7 @@
       "path": "styles/components",
       "purpose": "UI components",
       "fileCount": 3,
-      "lastAccessed": 1780778422046,
+      "lastAccessed": 1781181551774,
       "keyFiles": [
         "button.css",
         "code.css",

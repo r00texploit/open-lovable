@@ -1,0 +1,67 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { SandboxFactory } from '@/lib/sandbox/factory';
+import { createSession, updateSessionStatus, setSessionSandbox } from '@/lib/session-store';
+
+export async function POST(request: NextRequest) {
+  try {
+    // Get or create session
+    let sessionId = request.headers.get('x-session-id');
+    const userId = request.headers.get('x-user-id');
+    
+    if (!sessionId) {
+      // Create new session if none provided
+      if (!userId) {
+        return NextResponse.json(
+          { error: 'Either session ID or user ID required' },
+          { status: 400 }
+        );
+      }
+      
+      const session = await createSession(userId, {});
+      sessionId = session.id;
+      console.log('[create-ai-sandbox-v2] Created new session:', sessionId);
+    }
+
+    console.log(`[create-ai-sandbox-v2] Session ${sessionId}: Creating sandbox...`);
+    await updateSessionStatus(sessionId, 'creating');
+
+    try {
+      // Create new sandbox
+      const provider = await SandboxFactory.create();
+      const sandboxId = await provider.createSandbox();
+      
+      console.log(`[create-ai-sandbox-v2] Session ${sessionId}: Setting up Vite...`);
+      await provider.setupViteApp();
+      
+      // Get sandbox URL
+      const sandboxUrl = provider.getUrl?.() || `https://${sandboxId}.vercel-sandbox.dev`;
+      
+      // Store in session
+      await setSessionSandbox(sessionId, sandboxId, 'vercel', sandboxUrl);
+      
+      console.log(`[create-ai-sandbox-v2] Session ${sessionId}: Sandbox ready at ${sandboxUrl}`);
+      
+      return NextResponse.json({
+        success: true,
+        sessionId,
+        sandboxId,
+        url: sandboxUrl,
+        message: 'Sandbox created and Vite React app initialized'
+      });
+
+    } catch (error) {
+      await updateSessionStatus(sessionId, 'error');
+      throw error;
+    }
+
+  } catch (error) {
+    console.error('[create-ai-sandbox-v2] Error:', error);
+    return NextResponse.json(
+      { 
+        error: error instanceof Error ? error.message : 'Failed to create sandbox',
+        details: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
+      },
+      { status: 500 }
+    );
+  }
+}

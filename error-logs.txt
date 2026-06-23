@@ -1,0 +1,482 @@
+ Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+ [home] Cleared old conversation data on mount
+ [home] No sandbox in URL, creating new sandbox automatically...
+page.tsx:816 [createSandbox] Starting sandbox creation...
+page.tsx:785 [checkSandboxStatus] No existing sandboxData, clearing state
+page.tsx:834 [createSandbox] Response data: Object
+page.tsx:838 [createSandbox] Setting sandboxData from creation: Object
+page.tsx:869 [createSandbox] Sandbox ready with Vite server running
+page.tsx:617 [health-check] Starting periodic sandbox health check
+page.tsx:2015 [iframe] Loaded successfully
+page.tsx:2015 [iframe] Loaded successfully
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:2015 [iframe] Loaded successfully
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:2015 [iframe] Loaded successfully
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:2015 [iframe] Loaded successfully
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:2015 [iframe] Loaded successfully
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:2015 [iframe] Loaded successfully
+page.tsx:2015 [iframe] Loaded successfully
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:2015 [iframe] Loaded successfully
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:2015 [iframe] Loaded successfully
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+turbopack-hot-reloader-common.ts:43 [Fast Refresh] rebuilding
+report-hmr-latency.ts:26 [Fast Refresh] done in 161ms
+page.tsx:623 [health-check] Running periodic health check...
+page.tsx:790 [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved
+page.tsx:2212 [chat] Using backend file cache for context
+page.tsx:2225 [chat] Sending context to AI:
+page.tsx:2226 [chat] - sandboxId: sbx_m6yerdJwZwgqjR5UNDyByCptDDxU
+page.tsx:2227 [chat] - isEdit: false
+page.tsx:629 [health-check] Stopping periodic health check
+page.tsx:617 [health-check] Starting periodic sandbox health check
+turbopack-hot-reloader-common.ts:43 [Fast Refresh] rebuilding
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:21:1
+Module not found: Can't resolve '@/lib/user-helpers'
+  19 |   incrementTokenUsage,
+  20 | } from '@/lib/usage/token-usage';
+> 21 | import {
+     | ^^^^^^^^
+> 22 |   getOrInitConversationState,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 23 |   addConversationMessage,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 24 |   addConversationEdit,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 25 |   trackProjectChange,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 26 |   getSandboxStateFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |   analyzeUserPreferencesFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |   getSessionManifest,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 | } from '@/lib/user-helpers';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { getSession } from '@/lib/user-store';
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+
+Import map: aliased to relative './lib/user-helpers' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:30:1
+Module not found: Can't resolve '@/lib/user-store'
+  28 |   getSessionManifest,
+  29 | } from '@/lib/user-helpers';
+> 30 | import { getSession } from '@/lib/user-store';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+  33 | // Force dynamic route to enable streaming
+
+Import map: aliased to relative './lib/user-store' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+terminal.tsx:77 Object
+turbopack-hot-reloader-common.ts:43 [Fast Refresh] rebuilding
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:21:1
+Module not found: Can't resolve '@/lib/user-helpers'
+  19 |   incrementTokenUsage,
+  20 | } from '@/lib/usage/token-usage';
+> 21 | import {
+     | ^^^^^^^^
+> 22 |   getOrInitConversationState,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 23 |   addConversationMessage,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 24 |   addConversationEdit,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 25 |   trackProjectChange,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 26 |   getSandboxStateFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |   analyzeUserPreferencesFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |   getSessionManifest,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 | } from '@/lib/user-helpers';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { getSession } from '@/lib/user-store';
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+
+Import map: aliased to relative './lib/user-helpers' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:30:1
+Module not found: Can't resolve '@/lib/user-store'
+  28 |   getSessionManifest,
+  29 | } from '@/lib/user-helpers';
+> 30 | import { getSession } from '@/lib/user-store';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+  33 | // Force dynamic route to enable streaming
+
+Import map: aliased to relative './lib/user-store' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+turbopack-hot-reloader-common.ts:43 [Fast Refresh] rebuilding
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:21:1
+Module not found: Can't resolve '@/lib/user-helpers'
+  19 |   incrementTokenUsage,
+  20 | } from '@/lib/usage/token-usage';
+> 21 | import {
+     | ^^^^^^^^
+> 22 |   getOrInitConversationState,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 23 |   addConversationMessage,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 24 |   addConversationEdit,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 25 |   trackProjectChange,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 26 |   getSandboxStateFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |   analyzeUserPreferencesFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |   getSessionManifest,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 | } from '@/lib/user-helpers';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { getSession } from '@/lib/user-store';
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+
+Import map: aliased to relative './lib/user-helpers' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:30:1
+Module not found: Can't resolve '@/lib/user-store'
+  28 |   getSessionManifest,
+  29 | } from '@/lib/user-helpers';
+> 30 | import { getSession } from '@/lib/user-store';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+  33 | // Force dynamic route to enable streaming
+
+Import map: aliased to relative './lib/user-store' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+turbopack-hot-reloader-common.ts:43 [Fast Refresh] rebuilding
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:21:1
+Module not found: Can't resolve '@/lib/user-helpers'
+  19 |   incrementTokenUsage,
+  20 | } from '@/lib/usage/token-usage';
+> 21 | import {
+     | ^^^^^^^^
+> 22 |   getOrInitConversationState,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 23 |   addConversationMessage,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 24 |   addConversationEdit,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 25 |   trackProjectChange,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 26 |   getSandboxStateFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |   analyzeUserPreferencesFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |   getSessionManifest,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 | } from '@/lib/user-helpers';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { getSession } from '@/lib/user-store';
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+
+Import map: aliased to relative './lib/user-helpers' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:30:1
+Module not found: Can't resolve '@/lib/user-store'
+  28 |   getSessionManifest,
+  29 | } from '@/lib/user-helpers';
+> 30 | import { getSession } from '@/lib/user-store';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+  33 | // Force dynamic route to enable streaming
+
+Import map: aliased to relative './lib/user-store' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+:3000/api/generation-session:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+:3000/api/generate-ai-code-stream:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+page.tsx:629 [health-check] Stopping periodic health check
+page.tsx:617 [health-check] Starting periodic sandbox health check
+:3000/api/generation-session:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:21:1
+Module not found: Can't resolve '@/lib/user-helpers'
+  19 |   incrementTokenUsage,
+  20 | } from '@/lib/usage/token-usage';
+> 21 | import {
+     | ^^^^^^^^
+> 22 |   getOrInitConversationState,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 23 |   addConversationMessage,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 24 |   addConversationEdit,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 25 |   trackProjectChange,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 26 |   getSandboxStateFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |   analyzeUserPreferencesFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |   getSessionManifest,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 | } from '@/lib/user-helpers';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { getSession } from '@/lib/user-store';
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+
+Import map: aliased to relative './lib/user-helpers' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:30:1
+Module not found: Can't resolve '@/lib/user-store'
+  28 |   getSessionManifest,
+  29 | } from '@/lib/user-helpers';
+> 30 | import { getSession } from '@/lib/user-store';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+  33 | // Force dynamic route to enable streaming
+
+Import map: aliased to relative './lib/user-store' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+turbopack-hot-reloader-common.ts:43 [Fast Refresh] rebuilding
+turbopack-hot-reloader-common.ts:43 [Fast Refresh] rebuilding
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:21:1
+Module not found: Can't resolve '@/lib/user-helpers'
+  19 |   incrementTokenUsage,
+  20 | } from '@/lib/usage/token-usage';
+> 21 | import {
+     | ^^^^^^^^
+> 22 |   getOrInitConversationState,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 23 |   addConversationMessage,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 24 |   addConversationEdit,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 25 |   trackProjectChange,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 26 |   getSandboxStateFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |   analyzeUserPreferencesFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |   getSessionManifest,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 | } from '@/lib/user-helpers';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { getSession } from '@/lib/user-store';
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+
+Import map: aliased to relative './lib/user-helpers' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:30:1
+Module not found: Can't resolve '@/lib/user-store'
+  28 |   getSessionManifest,
+  29 | } from '@/lib/user-helpers';
+> 30 | import { getSession } from '@/lib/user-store';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+  33 | // Force dynamic route to enable streaming
+
+Import map: aliased to relative './lib/user-store' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+page.tsx:2015 [iframe] Loaded successfully
+page.tsx:623 [health-check] Running periodic health check...
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:21:1
+Module not found: Can't resolve '@/lib/user-helpers'
+  19 |   incrementTokenUsage,
+  20 | } from '@/lib/usage/token-usage';
+> 21 | import {
+     | ^^^^^^^^
+> 22 |   getOrInitConversationState,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 23 |   addConversationMessage,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 24 |   addConversationEdit,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 25 |   trackProjectChange,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 26 |   getSandboxStateFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |   analyzeUserPreferencesFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |   getSessionManifest,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 | } from '@/lib/user-helpers';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { getSession } from '@/lib/user-store';
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+
+Import map: aliased to relative './lib/user-helpers' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:30:1
+Module not found: Can't resolve '@/lib/user-store'
+  28 |   getSessionManifest,
+  29 | } from '@/lib/user-helpers';
+> 30 | import { getSession } from '@/lib/user-store';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+  33 | // Force dynamic route to enable streaming
+
+Import map: aliased to relative './lib/user-store' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+:3000/api/sandbox-status?checkHealth=true:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+intercept-console-error.ts:44 Failed to check sandbox status: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+error @ intercept-console-error.ts:44
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:21:1
+Module not found: Can't resolve '@/lib/user-helpers'
+  19 |   incrementTokenUsage,
+  20 | } from '@/lib/usage/token-usage';
+> 21 | import {
+     | ^^^^^^^^
+> 22 |   getOrInitConversationState,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 23 |   addConversationMessage,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 24 |   addConversationEdit,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 25 |   trackProjectChange,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 26 |   getSandboxStateFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |   analyzeUserPreferencesFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |   getSessionManifest,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 | } from '@/lib/user-helpers';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { getSession } from '@/lib/user-store';
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+
+Import map: aliased to relative './lib/user-helpers' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:30:1
+Module not found: Can't resolve '@/lib/user-store'
+  28 |   getSessionManifest,
+  29 | } from '@/lib/user-helpers';
+> 30 | import { getSession } from '@/lib/user-store';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+  33 | // Force dynamic route to enable streaming
+
+Import map: aliased to relative './lib/user-store' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+turbopack-hot-reloader-common.ts:43 [Fast Refresh] rebuilding
+turbopack-hot-reloader-common.ts:43 [Fast Refresh] rebuilding
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:21:1
+Module not found: Can't resolve '@/lib/user-helpers'
+  19 |   incrementTokenUsage,
+  20 | } from '@/lib/usage/token-usage';
+> 21 | import {
+     | ^^^^^^^^
+> 22 |   getOrInitConversationState,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 23 |   addConversationMessage,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 24 |   addConversationEdit,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 25 |   trackProjectChange,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 26 |   getSandboxStateFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |   analyzeUserPreferencesFromSession,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |   getSessionManifest,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 | } from '@/lib/user-helpers';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { getSession } from '@/lib/user-store';
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+
+Import map: aliased to relative './lib/user-helpers' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+handleErrors @ hot-reloader-app.tsx:219
+processMessage @ hot-reloader-app.tsx:310
+(anonymous) @ hot-reloader-app.tsx:527
+intercept-console-error.ts:44 ./app/api/generate-ai-code-stream/route.ts:30:1
+Module not found: Can't resolve '@/lib/user-store'
+  28 |   getSessionManifest,
+  29 | } from '@/lib/user-helpers';
+> 30 | import { getSession } from '@/lib/user-store';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { SandboxFactory } from '@/lib/sandbox/factory';
+  32 |
+  33 | // Force dynamic route to enable streaming
+
+Import map: aliased to relative './lib/user-store' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found
+error @ intercept-console-error.ts:44
+handleErrors @ hot-reloader-app.tsx:219
+processMessage @ hot-reloader-app.tsx:310
+(anonymous) @ hot-reloader-app.tsx:527
