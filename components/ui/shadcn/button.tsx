@@ -1,6 +1,6 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 import "./button.css";
 

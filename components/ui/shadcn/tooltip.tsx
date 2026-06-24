@@ -5,7 +5,7 @@ import { nanoid } from "nanoid";
 import { useEffect, useRef, useState } from "react";
 
 import PortalToBody from "@/components/shared/utils/portal-to-body";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 export default function Tooltip({
   delay = 0.5,

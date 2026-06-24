@@ -10,7 +10,7 @@ import {
   useImperativeHandle,
   useRef,
 } from "react";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 export interface FingerprintIconHandle {
   startAnimation: () => void;

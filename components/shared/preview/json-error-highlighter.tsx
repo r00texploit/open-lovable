@@ -1,4 +1,4 @@
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import React, { useRef, useState, useEffect, useCallback } from "react";
 
 export function JsonErrorHighlighter({

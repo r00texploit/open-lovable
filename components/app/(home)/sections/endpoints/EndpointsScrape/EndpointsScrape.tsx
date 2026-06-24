@@ -3,7 +3,7 @@
 import { animate } from "motion";
 import { useEffect, useRef } from "react";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import initCanvas from "@/utils/init-canvas";
 
 export default function EndpointsScrape({

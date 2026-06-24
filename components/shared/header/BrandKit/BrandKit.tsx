@@ -1,6 +1,5 @@
 "use client";
 
-import copy from "copy-to-clipboard";
 import { animate, cubicBezier } from "motion";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -8,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { NoeronLogo } from "@/components/brand/noeron-logo";
 import { useHeaderContext } from "@/components/shared/header/HeaderContext";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 import Download from "./_svg/Download";
 import Guidelines from "./_svg/Guidelines";
@@ -156,8 +155,8 @@ const Menu = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
       </div>
 
       <Button
-        onClick={() => {
-          copy(`<svg fill="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        onClick={async () => {
+          await navigator.clipboard.writeText(`<svg fill="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <rect width="100" height="100" rx="22" fill="#0a1628"/>
   <path d="M 22 38 A 32 32 0 0 1 78 38" stroke="#4a7fd4" stroke-width="4" stroke-linecap="round" fill="none"/>
   <path d="M50 18 L53 44 L76 50 L53 56 L50 82 L47 56 L24 50 L47 44 Z" fill="url(#g)"/>

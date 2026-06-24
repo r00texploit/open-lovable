@@ -7,7 +7,7 @@ import {
   ConnectorToRight,
 } from "@/components/shared/layout/curvy-rect";
 import { NAV_ITEMS } from "@/components/shared/header/Nav/Nav";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 export default function HeaderDropdownMobileItem({
   item,

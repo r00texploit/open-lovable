@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { ComponentProps, useEffect, useState } from "react";
 
 import { encryptText } from "@/components/app/(home)/sections/hero/Title/Title";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 export default function HeroScrapingTag({
   active,

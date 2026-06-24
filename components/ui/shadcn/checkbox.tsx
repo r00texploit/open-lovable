@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 export default function Checkbox({
   checked,

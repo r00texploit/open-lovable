@@ -3,7 +3,7 @@
 import { HTMLAttributes, useEffect, useRef } from "react";
 
 import data from "@/components/app/(home)/sections/hero-flame/data.json";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import { setIntervalOnVisible } from "@/utils/set-timeout-on-visible";
 
 export default function StoriesFlame(attrs: HTMLAttributes<HTMLDivElement>) {

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import AnimatedWidth from "@/components/shared/layout/animated-width";

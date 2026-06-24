@@ -2,7 +2,7 @@
 
 import { HTMLAttributes, useEffect, useRef, memo } from "react";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import { setIntervalOnVisible } from "@/utils/set-timeout-on-visible";
 
 import data from "./explosion-data.json";

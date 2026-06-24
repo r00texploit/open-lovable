@@ -2,7 +2,7 @@ import { HTMLAttributes } from "react";
 
 import Badge from "@/components/ui/shadcn/badge";
 import CurvyRect from "@/components/shared/layout/curvy-rect";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 type SectionHeadProps = {
   children: React.ReactNode;

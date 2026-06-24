@@ -1,0 +1,28 @@
+{
+  "sessionId": "noeron-dev",
+  "project": "noeron",
+  "branch": "claude/festive-turing-RsOod",
+  "status": "active",
+  "phase": "development",
+  "activeContexts": [
+    "sandbox-management",
+    "ai-code-generation",
+    "ui-components"
+  ],
+  "workingFiles": [
+    "components/shared/pixi/Pixi.tsx",
+    "components/shared/header/BrandKit/BrandKit.tsx",
+    "lib/session-store.ts",
+    "lib/sandbox/factory.ts"
+  ],
+  "skillsLoaded": [
+    "nextjs-expert",
+    "react-expert",
+    "typescript-expert",
+    "tailwind-expert",
+    "prisma-expert",
+    "sandbox-expert"
+  ],
+  "hooksEnabled": true,
+  "lastActivity": "2025-06-24T02:50:00Z"
+}
