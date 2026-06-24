@@ -1,6 +1,6 @@
 import { Children, ButtonHTMLAttributes } from "react";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "tertiary" | "playground" | "destructive";

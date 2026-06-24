@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "command": "pnpm prettier --write \"$FILE_PATH\"",
+        "description": "Format edited files with Prettier"
+      },
+      {
+        "matcher": "Write|Edit",
+        "command": "pnpm eslint --fix \"$FILE_PATH\"",
+        "description": "Auto-fix ESLint issues on edited files"
+      },
+      {
+        "matcher": "Write|Edit",
+        "command": "timeout 60 pnpm tsc --noEmit --pretty false --incremental --tsBuildInfoFile node_modules/.cache/tsc-hook.tsbuildinfo || true",
+        "description": "Type-check after edits (incremental + timeout-capped)"
+      }
+    ],
+    "Stop": [
+      {
+        "command": "pnpm build",
+        "description": "Verify production build at session end"
+      }
+    ]
+  }
+}

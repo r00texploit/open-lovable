@@ -1,7 +1,7 @@
 import { animate, AnimatePresence, cubicBezier, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import { lockBody } from "../lockBody";
 import PortalToBody from "../utils/portal-to-body";
 

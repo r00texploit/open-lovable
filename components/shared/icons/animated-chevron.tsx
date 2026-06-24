@@ -3,7 +3,7 @@
 import React from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 interface AnimatedChevronProps {
   isOpen: boolean;

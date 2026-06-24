@@ -2,7 +2,7 @@ import { animate } from "motion";
 import { motion } from "motion/react";
 import { useMemo, useRef, useState } from "react";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 export type Props = {
   tabs: {

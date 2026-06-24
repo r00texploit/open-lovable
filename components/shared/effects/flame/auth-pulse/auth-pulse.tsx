@@ -1,7 +1,7 @@
 "use client";
 
 import { HTMLAttributes, useEffect, useRef } from "react";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import { setIntervalOnVisible } from "@/utils/set-timeout-on-visible";
 import data from "./pulse-data.json";
 

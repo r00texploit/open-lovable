@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import CurvyRect from "@/components/shared/layout/curvy-rect";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogTrigger,

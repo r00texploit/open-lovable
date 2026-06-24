@@ -3,7 +3,7 @@
 import { motion, MotionProps, TargetAndTransition } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 type AnimatedHeight = {
   children: React.ReactNode;

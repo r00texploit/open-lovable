@@ -7,7 +7,7 @@ import {
   useHeaderContext,
   useHeaderHeight,
 } from "@/components/shared/header/HeaderContext";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 export const BackgroundOuterPiece = () => {
   const [noRender, setNoRender] = useState(false);

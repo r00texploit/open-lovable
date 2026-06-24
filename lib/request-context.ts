@@ -36,7 +36,7 @@ export function getRequestContext(): RequestContext | undefined {
  * Generate unique request ID
  */
 export function generateRequestId(): string {
-  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `req_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
 }
 
 /**

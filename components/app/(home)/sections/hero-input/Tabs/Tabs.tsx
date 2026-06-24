@@ -7,7 +7,7 @@ import EndpointsMap from "@/components/app/(home)/sections/endpoints/EndpointsMa
 import EndpointsScrape from "@/components/app/(home)/sections/endpoints/EndpointsScrape/EndpointsScrape";
 import EndpointsExtract from "@/components/app/(home)/sections/endpoints/EndpointsExtract/EndpointsExtract";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import Tooltip from "@/components/ui/shadcn/tooltip";
 import { Endpoint } from "@/components/shared/Playground/Context/types";
 

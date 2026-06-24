@@ -21,7 +21,7 @@ export interface SandboxSession {
   conversationCtx: any | null;
   aiModel: string | null;
   fileCache: Record<string, any>;
-  existingFiles: string[];
+  existingFiles: string[] | any; // Prisma returns String[]
   viteErrors: any[];
   lastActiveAt: Date;
   expiresAt: Date;
@@ -52,7 +52,7 @@ export async function createSession(
   const session = await prisma.generationSession.create({
     data: {
       userId,
-      sandboxId: data.sandboxId || `sb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      sandboxId: data.sandboxId || `sb_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`,
       sandboxProvider: data.sandboxProvider || 'vercel',
       sandboxUrl: data.sandboxUrl || null,
       status: data.status || 'creating',
@@ -63,7 +63,7 @@ export async function createSession(
       existingFiles: data.existingFiles || [],
       viteErrors: data.viteErrors || [],
       siteId: data.siteId || null,
-      expiresAt,
+      // expiresAt is set by database default: dbgenerated("(now() + '24:00:00'::interval)")
     },
   });
 

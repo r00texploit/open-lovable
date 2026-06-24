@@ -2,10 +2,9 @@
 import { animate } from "motion";
 import { nanoid } from "nanoid";
 import { Application, ApplicationOptions } from "pixi.js";
-import { HTMLAttributes, useMemo, useRef } from "react";
+import { HTMLAttributes, useEffect, useMemo, useRef } from "react";
 
-import useDebouncedEffect from "@/hooks/useDebouncedEffect";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 import { isDestroyed } from "./utils";
 
@@ -42,8 +41,7 @@ export default function Pixi({
 }: PixiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useDebouncedEffect(
-    () => {
+  useEffect(() => {
       const canvas = canvasRef.current!;
 
       if (!canvas) return;
@@ -194,13 +192,7 @@ export default function Pixi({
       return () => {
         cleanupFunctions.forEach((fn) => fn());
       };
-    },
-    {
-      timeout: 1,
-      ignoreInitialCall: false,
-    },
-    [],
-  );
+    }, []);
 
   const key = useMemo(() => {
     return nanoid();

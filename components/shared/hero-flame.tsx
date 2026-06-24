@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 // Sample of flame frames - using a subset for performance
 const flameFrames = [

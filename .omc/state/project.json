@@ -1,0 +1,13 @@
+{
+  "name": "noeron",
+  "type": "web-application",
+  "phases": {
+    "discovery": { "status": "completed", "completedAt": "2025-06-01" },
+    "planning": { "status": "completed", "completedAt": "2025-06-05" },
+    "development": { "status": "in_progress", "startedAt": "2025-06-06" },
+    "review": { "status": "pending" },
+    "deployment": { "status": "pending" }
+  },
+  "activeWorkflows": [],
+  "lastUpdated": "2025-06-24T02:37:00Z"
+}
