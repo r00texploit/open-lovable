@@ -1,0 +1,110 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - heading "TYPING" [level=1] [ref=e8]
+          - paragraph [ref=e9]: Coffee Shop — Zakhir, Al Ain
+        - img [ref=e11]
+      - generic [ref=e13]:
+        - img [ref=e14]
+        - textbox "Search menu..." [ref=e17]
+    - generic [ref=e20]:
+      - button "All Items" [ref=e21] [cursor=pointer]
+      - button "Hot Coffee" [active] [ref=e22] [cursor=pointer]
+      - button "Iced Coffee" [ref=e23] [cursor=pointer]
+      - button "Signature" [ref=e24] [cursor=pointer]
+      - button "Desserts" [ref=e25] [cursor=pointer]
+      - button "Food" [ref=e26] [cursor=pointer]
+  - main [ref=e27]:
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]: ⌨
+        - generic [ref=e31]: Digital Menu
+      - heading "Menu" [level=2] [ref=e32]
+      - paragraph [ref=e33]: Crafted beverages and bites in a space designed for focus. Made for those who love coffee and clean workspaces.
+    - generic [ref=e34]:
+      - heading "Recommended Today" [level=3] [ref=e35]:
+        - img [ref=e36]
+        - text: Recommended Today
+      - generic [ref=e38]:
+        - generic [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]:
+            - heading "Typing Signature" [level=4] [ref=e41]
+            - generic [ref=e42]: AED 35
+          - paragraph [ref=e43]: Our house specialty with caramel and sea salt
+          - generic [ref=e44]: Must Try
+        - generic [ref=e45] [cursor=pointer]:
+          - generic [ref=e46]:
+            - heading "Spanish Latte" [level=4] [ref=e47]
+            - generic [ref=e48]: AED 28
+          - paragraph [ref=e49]: Sweetened condensed milk with rich espresso
+          - generic [ref=e50]: Customer Favorite
+        - generic [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]:
+            - heading "Avocado Toast" [level=4] [ref=e53]
+            - generic [ref=e54]: AED 35
+          - paragraph [ref=e55]: Fresh sourdough with smashed avocado
+          - generic [ref=e56]: Breakfast Pick
+    - generic [ref=e57]:
+      - heading "Hot Coffee" [level=3] [ref=e358]
+      - generic [ref=e59]:
+        - generic [ref=e61] [cursor=pointer]:
+          - img [ref=e63]
+          - generic [ref=e65]:
+            - generic [ref=e66]:
+              - heading "Espresso" [level=4] [ref=e67]
+              - generic [ref=e68]: AED 18
+            - paragraph [ref=e69]: Rich, concentrated coffee shot
+            - generic [ref=e70]: Bestseller
+        - generic [ref=e72] [cursor=pointer]:
+          - img [ref=e74]
+          - generic [ref=e76]:
+            - generic [ref=e77]:
+              - heading "Americano" [level=4] [ref=e78]
+              - generic [ref=e79]: AED 22
+            - paragraph [ref=e80]: Espresso with hot water
+            - generic [ref=e81]: Popular
+        - generic [ref=e83] [cursor=pointer]:
+          - img [ref=e85]
+          - generic [ref=e87]:
+            - generic [ref=e88]:
+              - heading "Cappuccino" [level=4] [ref=e89]
+              - generic [ref=e90]: AED 25
+            - paragraph [ref=e91]: Equal parts espresso, steamed milk, and foam
+            - generic [ref=e92]: Recommended
+        - generic [ref=e94] [cursor=pointer]:
+          - img [ref=e96]
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - heading "Latte" [level=4] [ref=e100]
+              - generic [ref=e101]: AED 26
+            - paragraph [ref=e102]: Espresso with steamed milk
+        - generic [ref=e104] [cursor=pointer]:
+          - img [ref=e106]
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - heading "Spanish Latte" [level=4] [ref=e110]
+              - generic [ref=e111]: AED 28
+            - paragraph [ref=e112]: Sweetened condensed milk with espresso
+            - generic [ref=e113]: Popular
+  - contentinfo [ref=e334]:
+    - generic [ref=e335]:
+      - generic [ref=e336]:
+        - generic [ref=e337]:
+          - heading "TYPING Coffee Shop" [level=3] [ref=e338]
+          - paragraph [ref=e339]: Zakhir, Al Ain
+        - img [ref=e341]
+      - generic [ref=e343]:
+        - link "Instagram" [ref=e344] [cursor=pointer]:
+          - /url: https://instagram.com/typingcoffeeshop
+          - img [ref=e345]
+          - generic [ref=e348]: Instagram
+        - link "Directions" [ref=e349] [cursor=pointer]:
+          - /url: https://maps.google.com/?q=Zakhir,Al+Ain,UAE
+          - img [ref=e350]
+          - generic [ref=e353]: Directions
+        - link "Call" [ref=e354] [cursor=pointer]:
+          - /url: tel:+971501234567
+          - img [ref=e355]
+          - generic [ref=e357]: Call

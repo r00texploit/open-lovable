@@ -1,0 +1,2 @@
+- [Noeron design system](project-noeron-design-system.md) — tokens, palettes, fonts, and animation conventions across marketing surfaces.
+- [Noeron recurring visual issues](project-noeron-recurring-visual-issues.md) — checklist of defects that tend to reappear in this codebase.

@@ -68,7 +68,7 @@ export function Testimonials() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <section ref={ref} className="py-32 relative bg-[#0A0A0B] overflow-hidden">
+    <section ref={ref} className="py-32 relative bg-black overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0">
         <motion.div
@@ -184,7 +184,7 @@ export function Testimonials() {
                 whileHover={{ scale: 1.08, y: -3 }}
                 className={`${logo.width} opacity-60 hover:opacity-100 transition-all duration-300`}
               >
-                <div className="text-xl font-bold bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">
+                <div className="text-xl font-bold bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent drop-shadow-[0_0_12px_color-mix(in_srgb,var(--accent-white)_30%,transparent)]">
                   {logo.name}
                 </div>
               </motion.div>

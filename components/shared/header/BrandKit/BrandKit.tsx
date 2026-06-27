@@ -45,7 +45,7 @@ export default function HeaderBrandKit() {
       >
         <NoeronLogo
           iconClassName="h-[34px] w-[34px] rounded-[10px]"
-          textClassName="text-[19px] font-bold text-[#14100c]"
+          textClassName="text-[19px] font-bold text-warm-950"
         />
       </Link>
 
@@ -113,7 +113,7 @@ const Menu = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
       initial={{ opacity: 0, y: -6, filter: "blur(1px)" }}
       style={{
         boxShadow:
-          "0px 12px 24px rgba(0, 0, 0, 0.08), 0px 4px 8px rgba(0, 0, 0, 0.04)",
+          "0px 12px 24px var(--black-alpha-8), 0px 4px 8px var(--black-alpha-4)",
       }}
       transition={{
         ease: cubicBezier(0.1, 0.1, 0.25, 1),

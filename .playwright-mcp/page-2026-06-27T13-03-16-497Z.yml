@@ -1,0 +1,86 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Noeron" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]:
+            - img [ref=e7]
+            - generic [ref=e14]: Noeron
+        - button "GPT-5" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: GPT-5
+          - img [ref=e19]
+        - generic [ref=e21]: Sandbox active
+      - generic [ref=e22]:
+        - button "New sandbox" [ref=e334] [cursor=pointer]:
+          - img [ref=e336]
+          - generic [ref=e338]: New sandbox
+        - button "Re-apply" [disabled] [ref=e339]:
+          - img [ref=e341]
+          - generic [ref=e343]: Re-apply
+        - button "Download ZIP" [ref=e344] [cursor=pointer]:
+          - img [ref=e346]
+          - generic [ref=e348]: Download ZIP
+        - link "My Websites" [ref=e349] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e351]
+          - generic [ref=e353]: My Websites
+        - link "Settings" [ref=e354] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e356]
+          - generic [ref=e359]: Settings
+        - button "Sign out" [ref=e360] [cursor=pointer]:
+          - img [ref=e362]
+          - generic [ref=e364]: Sign out
+    - generic [ref=e55]:
+      - generic [ref=e56]:
+        - button "No sites yet" [disabled] [ref=e160]:
+          - generic [ref=e59]: No sites yet
+          - img [ref=e60]
+        - generic [ref=e62]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=e63]:
+        - textbox "Site name" [ref=e64]
+        - textbox "site-slug" [ref=e65]
+        - button "Create site" [disabled] [ref=e66]
+    - generic [ref=e67]:
+      - generic [ref=e68]:
+        - generic [ref=e72]:
+          - generic [ref=e73]: Website URL
+          - textbox "https://example.com" [disabled] [ref=e74]
+        - generic [ref=e75]:
+          - generic [ref=e79]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+          - generic [ref=e330]: "Create a premium, mobile-first cafe menu page for Nuviq Coffee. BRAND IDENTITY: - Name: Nuviq Coffee - Tagline: \"Premium Coffee, Elevated Experience\" - Color Palette: Dark charcoal (#0d0d0d), Forest green (#1a4d2e), Gold accents (#c9a227), Cream (#f5f5f0) - Style: Luxury, modern, minimalist with gold foil accents MENU SECTIONS: 1. HOT DRINKS (SAR 23-27): - Spanish Latte - Spanish Cortado - Cortado - Americano - Flat White - Cappuccino - Latte - Mocha - Vanilla Bean Latte - Caramel Macchiato 2. COLD DRINKS (SAR 24-38): - Iced Spanish Latte - Iced Americano - Iced V60 Coconut - Iced V60 Candy - Iced V60 Grape - Iced V60 Ethiopia - Iced V60 Vimto - Iced Nutty Tobacco V60 - Hibiscus Iced Tea - Strawberry Mojito - Blueberry Mojito - Acai Smoothie - Iced Matcha - Coconut Cloudy Matcha - Coconut Cloudy Espresso - Iced Nuviq Macchiato 3. DESSERTS (SAR 30-36): - London Cheesecake - Basque Cheesecake - Lotus Cheesecake DESIGN REQUIREMENTS: - Mobile-first responsive design - Hero section with elegant typography - Category tabs or accordion for drinks - Beautiful product cards with prices - Gold accent lines and elegant spacing - Dark mode as default (luxury feel) - Smooth animations and hover effects - Instagram-worthy aesthetic Use the uploaded menu item images throughout the page. Make it look like a high-end cafe menu you'd find in a luxury hotel."
+          - generic [ref=e332]: Planning application structure...
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - img [ref=e85]
+            - textbox "Describe what you want to build..." [ref=e88]
+          - generic [ref=e89]:
+            - button "Add image" [ref=e333] [cursor=pointer]:
+              - img [ref=e91]
+              - generic [ref=e95]: Add image
+            - button "Send" [disabled] [ref=e96]:
+              - generic [ref=e97]: Send
+              - img [ref=e98]
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - generic [ref=e104]:
+            - button "Code" [ref=e105] [cursor=pointer]:
+              - generic [ref=e106]:
+                - img [ref=e107]
+                - generic [ref=e109]: Code
+            - button "View" [ref=e110] [cursor=pointer]:
+              - generic [ref=e111]:
+                - img [ref=e112]
+                - generic [ref=e115]: View
+          - generic [ref=e116]:
+            - generic [ref=e117]: Sandbox active
+            - link "Open in new tab" [ref=e119] [cursor=pointer]:
+              - /url: https://sb-24pi2rvmetq0.vercel.run
+              - img [ref=e120]
+        - generic [ref=e123]:
+          - iframe [ref=e124]:
+            
+          - button "Refresh sandbox" [ref=e125] [cursor=pointer]:
+            - img [ref=e126]
+  - alert [ref=e128]

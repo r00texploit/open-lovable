@@ -1,0 +1,11 @@
+- main [ref=e3]:
+  - paragraph [ref=e4]:
+    - generic [ref=e5]:
+      - strong [ref=e6]: "410"
+      - text: ": This sandbox was stopped and is no longer reachable."
+    - generic [ref=e7]:
+      - text: "Code:"
+      - code [ref=e8]: "`SANDBOX_STOPPED`"
+    - generic [ref=e9]:
+      - text: "ID:"
+      - code [ref=e10]: "`bom1::8jhtt-1782564896408-12fc0a668803`"

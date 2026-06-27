@@ -1,0 +1,120 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Noeron" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]:
+            - img [ref=e7]
+            - generic [ref=e14]: Noeron
+        - button "GPT-5" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: GPT-5
+          - img [ref=e19]
+        - generic [ref=e21]: Sandbox active
+      - generic [ref=e22]:
+        - button "New sandbox" [disabled] [ref=e512]:
+          - img [ref=e514]
+          - generic [ref=e516]: New sandbox
+        - button "Re-apply" [ref=e517] [cursor=pointer]:
+          - img [ref=e519]
+          - generic [ref=e521]: Re-apply
+        - button "Download ZIP" [ref=e522] [cursor=pointer]:
+          - img [ref=e524]
+          - generic [ref=e526]: Download ZIP
+        - link "My Websites" [ref=e527] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e529]
+          - generic [ref=e531]: My Websites
+        - link "Settings" [ref=e532] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e534]
+          - generic [ref=e537]: Settings
+        - button "Sign out" [ref=e538] [cursor=pointer]:
+          - img [ref=e540]
+          - generic [ref=e542]: Sign out
+    - generic [ref=e55]:
+      - generic [ref=e56]:
+        - button "No sites yet" [disabled] [ref=e157]:
+          - generic [ref=e59]: No sites yet
+          - img [ref=e60]
+        - generic [ref=e62]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=e63]:
+        - textbox "Site name" [ref=e64]
+        - textbox "site-slug" [ref=e65]
+        - button "Create site" [disabled] [ref=e66]
+    - generic [ref=e67]:
+      - generic [ref=e68]:
+        - generic [ref=e71]:
+          - generic [ref=e72]: Website URL
+          - textbox "https://example.com" [disabled] [ref=e73]
+        - generic [ref=e74]:
+          - generic [ref=e78]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+          - generic [ref=e202]: The sandbox preview is no longer responding. Creating a fresh sandbox and restoring your files...
+          - generic [ref=e347]: Create a modern restaurant website called "Nuviq" with elegant dark theme, featuring a hero section with large text and CTA, interactive food menu with categories and prices, reservation form with date/time picker, about section with chef profiles and restaurant story, contact section with map and hours, smooth scroll animations using Framer Motion. Include 10+ realistic Lebanese dishes with prices in the menu.
+          - generic [ref=e545]:
+            - generic [ref=e546]: Code generated successfully!
+            - generic [ref=e547]:
+              - generic [ref=e548]: "Generated Files:"
+              - generic [ref=e549]:
+                - generic [ref=e550]: index.css
+                - generic [ref=e552]: main.tsx
+                - generic [ref=e554]: App.tsx
+                - generic [ref=e556]: Header.tsx
+                - generic [ref=e558]: Hero.tsx
+                - generic [ref=e560]: Reveal.tsx
+                - generic [ref=e562]: menu.ts
+                - generic [ref=e564]: Menu.tsx
+                - generic [ref=e566]: Reservation.tsx
+                - generic [ref=e568]: About.tsx
+                - generic [ref=e570]: Contact.tsx
+                - generic [ref=e572]: Footer.tsx
+          - generic [ref=e577]: "Already installed: lucide-react"
+          - generic [ref=e579]:
+            - img [ref=e581]
+            - generic [ref=e583]: Applying to sandbox...
+        - generic [ref=e81]:
+          - generic [ref=e82]:
+            - img [ref=e84]
+            - textbox "Describe what you want to build..." [active] [ref=e87]
+          - generic [ref=e88]:
+            - button "Add image" [ref=e89] [cursor=pointer]:
+              - img [ref=e90]
+              - generic [ref=e94]: Add image
+            - button "Send" [disabled] [ref=e95]:
+              - generic [ref=e96]: Send
+              - img [ref=e97]
+      - generic [ref=e100]:
+        - generic [ref=e101]:
+          - generic [ref=e103]:
+            - button "Code" [ref=e104] [cursor=pointer]:
+              - generic [ref=e105]:
+                - img [ref=e106]
+                - generic [ref=e108]: Code
+            - button "View" [ref=e109] [cursor=pointer]:
+              - generic [ref=e110]:
+                - img [ref=e111]
+                - generic [ref=e114]: View
+          - generic [ref=e158]:
+            - generic [ref=e242]: Sandbox active
+            - link "Open in new tab" [ref=e244] [cursor=pointer]:
+              - /url: https://sb-77n35vcflhj1.vercel.run
+              - img [ref=e245]
+        - generic [ref=e116]:
+          - iframe [ref=e247]:
+            - main [ref=f2e3]:
+              - paragraph [ref=f2e4]:
+                - generic [ref=f2e5]:
+                  - strong [ref=f2e6]: "502"
+                  - text: ": This sandbox is not listening on the requested port."
+                - generic [ref=f2e7]:
+                  - text: "Code:"
+                  - code [ref=f2e8]: "`SANDBOX_NOT_LISTENING`"
+                - generic [ref=f2e9]:
+                  - text: "ID:"
+                  - code [ref=f2e10]: "`bom1::k9dgv-1782541381132-a76db4a368b0`"
+          - generic [ref=e585]:
+            - heading "Analyzing code..." [level=3] [ref=e586]
+            - paragraph [ref=e587]: Parsing generated code and detecting dependencies...
+          - button "Refresh sandbox" [ref=e248] [cursor=pointer]:
+            - img [ref=e249]
+  - alert [ref=e125]

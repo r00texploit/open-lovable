@@ -1,0 +1,104 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Noeron" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e8]:
+            - img [ref=e9]
+            - generic [ref=e16]: Noeron
+        - button "GPT-5" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: GPT-5
+          - img [ref=e21]
+        - generic [ref=e23]: Sandbox active
+      - generic [ref=e24]:
+        - button "New sandbox" [ref=e208] [cursor=pointer]:
+          - img [ref=e210]
+          - generic [ref=e212]: New sandbox
+        - button "Re-apply" [disabled] [ref=e213]:
+          - img [ref=e215]
+          - generic [ref=e217]: Re-apply
+        - button "Download ZIP" [ref=e218] [cursor=pointer]:
+          - img [ref=e220]
+          - generic [ref=e222]: Download ZIP
+        - link "My Websites" [ref=e223] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e225]
+          - generic [ref=e227]: My Websites
+        - link "Settings" [ref=e228] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e230]
+          - generic [ref=e233]: Settings
+        - button "Sign out" [ref=e234] [cursor=pointer]:
+          - img [ref=e236]
+          - generic [ref=e238]: Sign out
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - button "No sites yet" [disabled] [ref=e60]:
+          - generic [ref=e61]: No sites yet
+          - img [ref=e62]
+        - generic [ref=e64]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=e65]:
+        - textbox "Site name" [ref=e66]
+        - textbox "site-slug" [ref=e67]
+        - button "Create site" [disabled] [ref=e68]
+    - generic [ref=e69]:
+      - generic [ref=e70]:
+        - generic [ref=e241]:
+          - generic [ref=e242]:
+            - img "Example Domain" [ref=e243]
+            - link "Example Domain" [ref=e244] [cursor=pointer]:
+              - /url: https://example.com
+          - generic [ref=e245]:
+            - generic [ref=e246]:
+              - generic [ref=e247]: Screenshot Preview
+              - button "Collapse screenshot" [ref=e248] [cursor=pointer]:
+                - img [ref=e249]
+            - img "Example Domain preview" [ref=e252]
+        - generic [ref=e71]:
+          - generic [ref=e75]: Starting to clone example.com...
+          - generic [ref=e158]: ⚠️ Sandbox timed out (1440 min limit). Creating a new sandbox...
+          - generic [ref=e254]: Planning application structure...
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - img [ref=e81]
+            - textbox "Describe what you want to build..." [ref=e84]
+          - generic [ref=e85]:
+            - button "Add image" [ref=e86] [cursor=pointer]:
+              - img [ref=e87]
+              - generic [ref=e91]: Add image
+            - button "Send" [disabled] [ref=e92]:
+              - generic [ref=e93]: Send
+              - img [ref=e94]
+      - generic [ref=e97]:
+        - generic [ref=e98]:
+          - generic [ref=e100]:
+            - button "Code" [active] [ref=e101] [cursor=pointer]:
+              - generic [ref=e102]:
+                - img [ref=e103]
+                - generic [ref=e105]: Code
+            - button "View" [ref=e106] [cursor=pointer]:
+              - generic [ref=e107]:
+                - img [ref=e108]
+                - generic [ref=e111]: View
+          - generic [ref=e112]:
+            - generic [ref=e255]: Live generation
+            - generic [ref=e199]: Sandbox active
+            - link "Open in new tab" [ref=e201] [cursor=pointer]:
+              - /url: https://sb-32cx4es7ptl0.vercel.run
+              - img [ref=e202]
+        - generic [ref=e119]:
+          - generic [ref=e257]:
+            - generic [ref=e259]:
+              - img [ref=e260]
+              - generic [ref=e262]: Explorer
+            - generic [ref=e265] [cursor=pointer]:
+              - img [ref=e266]
+              - img [ref=e268]
+              - generic [ref=e270]: app
+          - generic [ref=e274]:
+            - generic [ref=e278]: Streaming code...
+            - code [ref=e281]:
+              - generic [ref=e282]: "1"
+              - text: Starting code generation...
+  - alert [ref=e3]

@@ -1,0 +1,166 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Noeron" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]:
+            - img [ref=e7]
+            - generic [ref=e14]: Noeron
+        - button "GPT-5" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: GPT-5
+          - img [ref=e19]
+        - generic [ref=e21]: Sandbox active
+      - generic [ref=e22]:
+        - button "New sandbox" [disabled] [ref=e127]:
+          - img [ref=e129]
+          - generic [ref=e131]: New sandbox
+        - button "Re-apply" [disabled] [ref=e132]:
+          - img [ref=e134]
+          - generic [ref=e136]: Re-apply
+        - button "Download ZIP" [ref=e137] [cursor=pointer]:
+          - img [ref=e139]
+          - generic [ref=e141]: Download ZIP
+        - link "My Websites" [ref=e142] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e144]
+          - generic [ref=e146]: My Websites
+        - link "Settings" [ref=e147] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e149]
+          - generic [ref=e152]: Settings
+        - button "Sign out" [ref=e153] [cursor=pointer]:
+          - img [ref=e155]
+          - generic [ref=e157]: Sign out
+    - generic [ref=e55]:
+      - generic [ref=e56]:
+        - button "No sites yet" [disabled] [ref=e158]:
+          - generic [ref=e59]: No sites yet
+          - img [ref=e60]
+        - generic [ref=e62]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=e63]:
+        - textbox "Site name" [ref=e64]
+        - textbox "site-slug" [ref=e65]
+        - button "Create site" [disabled] [ref=e66]
+    - generic [ref=e67]:
+      - generic [ref=e68]:
+        - generic [ref=e72]:
+          - generic [ref=e73]: Website URL
+          - textbox "https://example.com" [disabled] [ref=e74]
+        - generic [ref=e79]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - img [ref=e85]
+            - textbox "Describe what you want to build..." [ref=e88]
+          - generic [ref=e159]:
+            - generic [ref=e160]:
+              - generic [ref=e161]:
+                - img "25_ice_spanish_latte__27.png" [ref=e163]
+                - generic [ref=e164]:
+                  - paragraph [ref=e165]: 25_ice_spanish_latte__27.png
+                  - paragraph [ref=e166]: 57 KB
+                - button "Remove image" [ref=e167] [cursor=pointer]:
+                  - img [ref=e168]
+              - generic [ref=e171]:
+                - img "26_iced_nuviq_macchiato__28.png" [ref=e173]
+                - generic [ref=e174]:
+                  - paragraph [ref=e175]: 26_iced_nuviq_macchiato__28.png
+                  - paragraph [ref=e176]: 50 KB
+                - button "Remove image" [ref=e177] [cursor=pointer]:
+                  - img [ref=e178]
+              - generic [ref=e181]:
+                - img "28_coconut_cloudy_matcha__35.png" [ref=e183]
+                - generic [ref=e184]:
+                  - paragraph [ref=e185]: 28_coconut_cloudy_matcha__35.png
+                  - paragraph [ref=e186]: 51 KB
+                - button "Remove image" [ref=e187] [cursor=pointer]:
+                  - img [ref=e188]
+              - generic [ref=e191]:
+                - img "30_acai_smoothie__38.png" [ref=e193]
+                - generic [ref=e194]:
+                  - paragraph [ref=e195]: 30_acai_smoothie__38.png
+                  - paragraph [ref=e196]: 50 KB
+                - button "Remove image" [ref=e197] [cursor=pointer]:
+                  - img [ref=e198]
+              - generic [ref=e201]:
+                - img "33_creamy_60__32.png" [ref=e203]
+                - generic [ref=e204]:
+                  - paragraph [ref=e205]: 33_creamy_60__32.png
+                  - paragraph [ref=e206]: 62 KB
+                - button "Remove image" [ref=e207] [cursor=pointer]:
+                  - img [ref=e208]
+              - generic [ref=e211]:
+                - img "36_coconut_mango_cake__40.png" [ref=e213]
+                - generic [ref=e214]:
+                  - paragraph [ref=e215]: 36_coconut_mango_cake__40.png
+                  - paragraph [ref=e216]: 69 KB
+                - button "Remove image" [ref=e217] [cursor=pointer]:
+                  - img [ref=e218]
+              - generic [ref=e221]:
+                - img "01_hot_spanish__27.png" [ref=e223]
+                - generic [ref=e224]:
+                  - paragraph [ref=e225]: 01_hot_spanish__27.png
+                  - paragraph [ref=e226]: 68 KB
+                - button "Remove image" [ref=e227] [cursor=pointer]:
+                  - img [ref=e228]
+              - generic [ref=e231]:
+                - img "11_cappuccino__26.png" [ref=e233]
+                - generic [ref=e234]:
+                  - paragraph [ref=e235]: 11_cappuccino__26.png
+                  - paragraph [ref=e236]: 68 KB
+                - button "Remove image" [ref=e237] [cursor=pointer]:
+                  - img [ref=e238]
+              - generic [ref=e241]:
+                - img "34_london_cheesecake__32.png" [ref=e243]
+                - generic [ref=e244]:
+                  - paragraph [ref=e245]: 34_london_cheesecake__32.png
+                  - paragraph [ref=e246]: 49 KB
+                - button "Remove image" [ref=e247] [cursor=pointer]:
+                  - img [ref=e248]
+              - generic [ref=e251]:
+                - img "16_hibiscus__31.png" [ref=e253]
+                - generic [ref=e254]:
+                  - paragraph [ref=e255]: 16_hibiscus__31.png
+                  - paragraph [ref=e256]: 62 KB
+                - button "Remove image" [ref=e257] [cursor=pointer]:
+                  - img [ref=e258]
+            - paragraph [ref=e261]: Max 10 images allowed
+          - generic [ref=e89]:
+            - button "10 images added" [disabled] [ref=e262]:
+              - img [ref=e91]
+              - generic [ref=e95]: 10 images added
+            - button "Send" [ref=e96] [cursor=pointer]:
+              - generic [ref=e97]: Send
+              - img [ref=e98]
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - generic [ref=e104]:
+            - button "Code" [ref=e105] [cursor=pointer]:
+              - generic [ref=e106]:
+                - img [ref=e107]
+                - generic [ref=e109]: Code
+            - button "View" [ref=e110] [cursor=pointer]:
+              - generic [ref=e111]:
+                - img [ref=e112]
+                - generic [ref=e115]: View
+          - generic [ref=e263]:
+            - generic [ref=e264]: Sandbox active
+            - link "Open in new tab" [ref=e266] [cursor=pointer]:
+              - /url: https://sb-1f14xmgksis7.vercel.run
+              - img [ref=e267]
+        - generic [ref=e117]:
+          - iframe [ref=e269]:
+            - main [ref=f1e3]:
+              - paragraph [ref=f1e4]:
+                - generic [ref=f1e5]:
+                  - strong [ref=f1e6]: "502"
+                  - text: ": This sandbox is not listening on the requested port."
+                - generic [ref=f1e7]:
+                  - text: "Code:"
+                  - code [ref=f1e8]: "`SANDBOX_NOT_LISTENING`"
+                - generic [ref=f1e9]:
+                  - text: "ID:"
+                  - code [ref=f1e10]: "`bom1::zrknl-1782551943396-fd187b472988`"
+          - button "Refresh sandbox" [ref=e270] [cursor=pointer]:
+            - img [ref=e271]
+  - alert [ref=e126]

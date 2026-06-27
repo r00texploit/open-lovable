@@ -18,28 +18,28 @@ export function getTierColor(tier: SubscriptionTier): {
 } {
   const colors: Record<SubscriptionTier, { bg: string; border: string; text: string; gradient: string }> = {
     free: {
-      bg: 'bg-[#17130f]/5',
-      border: 'border-[#261e151f]',
-      text: 'text-[#5f5343]',
-      gradient: 'from-[#8a7a64] to-[#5f5343]',
+      bg: 'bg-warm-800/5',
+      border: 'border-warm-750/12',
+      text: 'text-warm-500',
+      gradient: 'from-warm-350 to-warm-500',
     },
     pro: {
-      bg: 'bg-[#ff6728]/10',
-      border: 'border-[#ff6728]/25',
-      text: 'text-[#c14914]',
-      gradient: 'from-[#ff6728] to-[#e0490f]',
+      bg: 'bg-brand-orange/10',
+      border: 'border-brand-orange/25',
+      text: 'text-heat-110',
+      gradient: 'from-brand-orange to-brand-orange-dark',
     },
     plus: {
-      bg: 'bg-[#8c4b26]/10',
-      border: 'border-[#8c4b26]/20',
-      text: 'text-[#8c4b26]',
-      gradient: 'from-[#a85a2e] to-[#8c4b26]',
+      bg: 'bg-warm-600/10',
+      border: 'border-warm-600/20',
+      text: 'text-warm-600',
+      gradient: 'from-warm-600 to-warm-600',
     },
     team: {
-      bg: 'bg-[#17130f]/10',
-      border: 'border-[#17130f]/20',
-      text: 'text-[#17130f]',
-      gradient: 'from-[#2a221a] to-[#17130f]',
+      bg: 'bg-warm-800/10',
+      border: 'border-warm-800/20',
+      text: 'text-warm-800',
+      gradient: 'from-warm-700 to-warm-800',
     },
   };
   return colors[tier] || colors.free;
@@ -55,7 +55,7 @@ export function getStatusColor(status: string): string {
     unpaid: 'text-red-700',
     paused: 'text-orange-700',
   };
-  return colors[status] || 'text-[#5f5343]';
+  return colors[status] || 'text-warm-500';
 }
 
 export function formatSubscriptionStatus(status: string): string {

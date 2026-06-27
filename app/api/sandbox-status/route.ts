@@ -8,10 +8,12 @@ declare global {
 }
 
 /**
- * Check if the sandbox URL is actually responding
- * This detects 502 errors when the sandbox has timed out or crashed
+ * Check if the sandbox URL is actually responding.
+ * Vercel returns 410/SANDBOX_STOPPED when a sandbox session was stopped or its
+ * configured timeout expired. Treat it the same as a dead preview so the client
+ * can recreate the sandbox instead of embedding Vercel's error page.
  */
-async function checkSandboxHealth(url: string | null): Promise<{ healthy: boolean; statusCode?: number; error?: string }> {
+async function checkSandboxHealth(url: string | null): Promise<{ healthy: boolean; statusCode?: number; error?: string; stopped?: boolean }> {
   if (!url) {
     return { healthy: false, error: 'No sandbox URL provided' };
   }
@@ -30,11 +32,20 @@ async function checkSandboxHealth(url: string | null): Promise<{ healthy: boolea
 
     clearTimeout(timeoutId);
 
-    // 502 indicates the sandbox is not listening (timed out or crashed)
-    if (response.status === 502) {
+    if (response.status === 410) {
       return {
         healthy: false,
-        statusCode: 502,
+        statusCode: 410,
+        stopped: true,
+        error: 'Sandbox was stopped and is no longer reachable'
+      };
+    }
+
+    // 502 indicates the sandbox is not listening (timed out or crashed)
+    if (response.status === 502 || response.status === 503) {
+      return {
+        healthy: false,
+        statusCode: response.status,
         error: 'Sandbox not listening on port (timed out or crashed)'
       };
     }
@@ -83,10 +94,10 @@ export async function GET(request: Request) {
           healthDetails = await checkSandboxHealth(sandboxInfo.url);
           sandboxHealthy = healthDetails.healthy;
 
-          // If we got a 502, the sandbox needs to be recreated
-          if (healthDetails.statusCode === 502) {
+          // If Vercel says the sandbox stopped, or the port is gone, recreate.
+          if ([410, 502, 503].includes(healthDetails.statusCode ?? 0)) {
             needsRecreation = true;
-            console.log('[sandbox-status] Sandbox returned 502, needs recreation');
+            console.log(`[sandbox-status] Sandbox returned ${healthDetails.statusCode}, needs recreation`);
           }
         } else {
           // Basic health check - just verify provider has info
@@ -106,7 +117,7 @@ export async function GET(request: Request) {
       sandboxData: sandboxInfo,
       healthDetails,
       message: needsRecreation
-        ? 'Sandbox has timed out and needs to be recreated'
+        ? 'Sandbox stopped or timed out and needs to be recreated'
         : sandboxHealthy
           ? 'Sandbox is active and healthy'
           : sandboxExists

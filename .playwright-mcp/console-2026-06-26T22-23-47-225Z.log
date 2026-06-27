@@ -1,0 +1,36 @@
+[     122ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     142ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     283ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     283ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782512545754_85a569e4&model=openai%2Fgpt-5:0
+[     325ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     325ms] [LOG] [home] Restoring session for sandbox: sb_1782512545754_85a569e4 @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     380ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     422ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782512545754_85a569e4&model=openai%2Fgpt-5:0
+[    1071ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_RLDF7dAHU8KNFEuPlEX1khNYluWR, url: https://sb-aq7244skjvxv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T22:23:47.554Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1091ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    2158ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    2547ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_RLDF7dAHU8KNFEuPlEX1khNYluWR, url: https://sb-aq7244skjvxv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T22:23:49.083Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3066ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3723ms] [LOG] [home] Session restored (sandbox alive): sb_1782512545754_85a569e4 @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    4162ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31094ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31861ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_RLDF7dAHU8KNFEuPlEX1khNYluWR, url: https://sb-aq7244skjvxv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T22:24:18.365Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   32639ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   61094ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   61913ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_RLDF7dAHU8KNFEuPlEX1khNYluWR, url: https://sb-aq7244skjvxv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T22:24:48.348Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   91095ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   91833ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_RLDF7dAHU8KNFEuPlEX1khNYluWR, url: https://sb-aq7244skjvxv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T22:25:18.370Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  121095ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  121818ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_RLDF7dAHU8KNFEuPlEX1khNYluWR, url: https://sb-aq7244skjvxv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T22:25:48.358Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151096ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151845ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_RLDF7dAHU8KNFEuPlEX1khNYluWR, url: https://sb-aq7244skjvxv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T22:26:18.361Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  181109ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  181915ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_RLDF7dAHU8KNFEuPlEX1khNYluWR, url: https://sb-aq7244skjvxv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T22:26:48.422Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  211111ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  212018ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_RLDF7dAHU8KNFEuPlEX1khNYluWR, url: https://sb-aq7244skjvxv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T22:27:18.489Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  241095ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  241905ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_RLDF7dAHU8KNFEuPlEX1khNYluWR, url: https://sb-aq7244skjvxv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T22:27:48.342Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  265523ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  266281ms] [LOG] [Fast Refresh] done in 798ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  271095ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  272143ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_RLDF7dAHU8KNFEuPlEX1khNYluWR, url: https://sb-aq7244skjvxv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T22:28:18.339Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477

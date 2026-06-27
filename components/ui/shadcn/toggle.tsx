@@ -25,7 +25,7 @@ export default function Toggle({
         height: "20px",
         boxShadow: checked
           ? "0px 6px 12px 0px rgba(174, 37, 0, 0.12) inset, 0px 0.75px 0.75px 0px rgba(174, 37, 0, 0.06) inset, 0px 0.25px 0.25px 0px rgba(174, 37, 0, 0.06) inset"
-          : "0px 6px 12px 0px rgba(0, 0, 0, 0.02) inset, 0px 0.75px 0.75px 0px rgba(0, 0, 0, 0.02) inset, 0px 0.25px 0.25px 0px rgba(0, 0, 0, 0.04) inset",
+          : "0px 6px 12px 0px rgba(0, 0, 0, 0.02) inset, 0px 0.75px 0.75px 0px rgba(0, 0, 0, 0.02) inset, 0px 0.25px 0.25px 0px var(--black-alpha-4) inset",
       }}
       type="button"
       onClick={() => onChange?.(!checked)}
@@ -35,7 +35,7 @@ export default function Toggle({
     >
       <div
         className={cn(
-          "overlay bg-[#FA4500] transition-opacity",
+          "overlay bg-heat-100 transition-opacity",
           checked
             ? "opacity-0 group-hover:opacity-100"
             : "opacity-0 group-hover:opacity-0",
@@ -66,10 +66,10 @@ export default function Toggle({
             }
 
             if (isHovering) {
-              return "0px 6px 12px -3px rgba(0, 0, 0, 0.06), 0px 3px 6px -1px rgba(0, 0, 0, 0.06), 0px 1px 2px 0px rgba(0, 0, 0, 0.04), 0px 0.5px 0.5px 0px rgba(0, 0, 0, 0.08)";
+              return "0px 6px 12px -3px var(--black-alpha-6), 0px 3px 6px -1px var(--black-alpha-6), 0px 1px 2px 0px var(--black-alpha-4), 0px 0.5px 0.5px 0px var(--black-alpha-8)";
             }
 
-            return "0px 6px 12px -3px rgba(0, 0, 0, 0.06), 0px 3px 6px -1px rgba(0, 0, 0, 0.06), 0px 1px 2px 0px rgba(0, 0, 0, 0.04), 0px 0.5px 0.5px 0px rgba(0, 0, 0, 0.08)";
+            return "0px 6px 12px -3px var(--black-alpha-6), 0px 3px 6px -1px var(--black-alpha-6), 0px 1px 2px 0px var(--black-alpha-4), 0px 0.5px 0.5px 0px var(--black-alpha-8)";
           })(),
         }}
       />

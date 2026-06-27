@@ -19,7 +19,7 @@ export default function Checkbox({
         className={cn(
           "w-full h-full rounded-3 group inside-border relative transition-all",
           checked
-            ? "bg-heat-100 group-hover:bg-[#FA4500] before:border-transparent"
+            ? "bg-heat-100 group-hover:bg-heat-100 before:border-transparent"
             : "bg-black-alpha-3 group-hover:bg-black-alpha-6 before:border-black-alpha-10 group-hover:before:border-black-alpha-40",
         )}
         style={{

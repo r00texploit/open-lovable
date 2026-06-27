@@ -1,0 +1,19 @@
+[     161ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     188ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     188ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[     199ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     405ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     421ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     421ms] [LOG] [home] No sandbox in URL, creating new sandbox automatically... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     421ms] [LOG] [createSandbox] Starting sandbox creation... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     436ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[    1264ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_IrPj4R2tdOFUHsOx4LMqAoZ4MOsY, url: https://sb-2gg0su4v39xk.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T07:05:10.211Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1272ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    2078ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    2819ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_IrPj4R2tdOFUHsOx4LMqAoZ4MOsY, url: https://sb-2gg0su4v39xk.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T07:05:11.829Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3393ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    8052ms] [ERROR] Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://react.dev/link/setstate-in-render AISandboxPage HeroInput HeroInput @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:3318
+[    9841ms] [LOG] [vite] server connection lost. polling for restart... @ https://sb-2gg0su4v39xk.vercel.run/@vite/client:287
+[   10080ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-2gg0su4v39xk.vercel.run/:0
+[   10322ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-2gg0su4v39xk.vercel.run/:0
+[   10324ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477

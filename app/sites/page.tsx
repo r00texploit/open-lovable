@@ -16,6 +16,9 @@ import {
   Copy,
   Check,
   Zap,
+  ChevronRight,
+  LayoutGrid,
+  Sparkles,
 } from "lucide-react";
 
 interface GenerationSession {
@@ -62,102 +65,11 @@ function CopyButton({ text }: { text: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}
-      className="p-1 rounded hover:bg-[#17130f]/5 transition-colors"
+      className="p-1.5 rounded-md hover:bg-background-base transition-colors text-foreground-dimmer hover:text-foreground"
       title="Copy URL"
     >
-      {copied ? <Check size={13} className="text-green-700" /> : <Copy size={13} className="text-[#5f534399]" />}
+      {copied ? <Check size={14} className="text-accent-forest" /> : <Copy size={14} />}
     </button>
-  );
-}
-
-function SiteCard({ site, onEdit }: { site: Site; onEdit: (id: string) => void }) {
-  return (
-    <div className="group relative ol-bezel rounded-2xl hover:shadow-[0_24px_60px_rgba(74,54,28,0.18)] transition-all duration-200 overflow-hidden">
-      {/* Preview strip */}
-      <div className="h-2 w-full" style={{ background: "linear-gradient(90deg, #17130f 0%, #8c4b26 55%, #ff6728 100%)" }} />
-
-      <div className="p-5">
-        {/* Header row */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="min-w-0">
-            <h3 className="font-semibold text-[#17130f] truncate text-[15px]">{site.name}</h3>
-            <p className="text-[12px] text-[#5f534399] truncate mt-0.5">{site.slug}</p>
-          </div>
-          <span
-            className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${
-              site.published
-                ? "bg-green-100 text-green-700"
-                : "bg-amber-100 text-amber-700"
-            }`}
-          >
-            {site.published ? (
-              <CheckCircle2 size={10} />
-            ) : (
-              <Circle size={10} />
-            )}
-            {site.published ? "Published" : "Draft"}
-          </span>
-        </div>
-
-        {/* URL row */}
-        <div className="flex items-center gap-1 bg-[#17130f]/5 rounded-lg px-3 py-2 mb-4">
-          <Globe size={12} className="text-[#8c4b26] shrink-0" />
-          <span className="text-[12px] text-[#5f5343] truncate flex-1">{site.liveUrl}</span>
-          <CopyButton text={site.liveUrl} />
-          {site.published && (
-            <a
-              href={site.liveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="p-1 rounded hover:bg-[#17130f]/5 transition-colors"
-              title="Open site"
-            >
-              <ExternalLink size={13} className="text-[#5f534399]" />
-            </a>
-          )}
-        </div>
-
-        {/* Footer row */}
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1 text-[11px] text-[#5f534399]">
-            <Clock size={11} />
-            {site.lastPublishedAt
-              ? `Published ${timeAgo(site.lastPublishedAt)}`
-              : `Created ${timeAgo(site.createdAt)}`}
-          </span>
-
-          <button
-            onClick={() => onEdit(site.id)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#17130f] hover:bg-[#2a221a] text-[#fff7e8] text-[12px] font-medium rounded-full transition-colors"
-          >
-            <Edit3 size={12} />
-            Edit
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ onCreate }: { onCreate: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-16 h-16 bg-[#ff6728]/10 rounded-2xl flex items-center justify-center mb-5">
-        <Globe size={28} className="text-[#8c4b26]" />
-      </div>
-      <h3 className="text-lg font-semibold text-[#17130f] mb-2">No websites yet</h3>
-      <p className="text-sm text-[#5f5343] mb-6 max-w-xs">
-        Start by building your first website from a URL or description.
-      </p>
-      <button
-        onClick={onCreate}
-        className="ol-primary-button px-5 py-2.5 text-sm"
-      >
-        <Plus size={16} />
-        Build your first site
-      </button>
-    </div>
   );
 }
 
@@ -202,68 +114,66 @@ export default function SitesPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-[#fff7e8] flex items-center justify-center">
+      <div className="min-h-screen bg-background-base flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#17130f] border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-[#5f5343]">Loading your sites…</p>
+          <div className="w-8 h-8 border-2 border-heat-100 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-foreground-dimmer">Loading your sites...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#fff7e8]">
-      {/* Nav */}
-      <header className="sticky top-0 z-10 bg-[#fff7e8]/80 backdrop-blur-xl border-b border-[#261e151f]">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-[#17130f] hover:text-[#8c4b26] transition-colors">
-            <NoeronLogo
-              iconClassName="h-[32px] w-[32px]"
-              textClassName="text-[17px] font-bold text-[#17130f]"
-            />
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/generation"
-              className="text-sm text-[#5f5343] hover:text-[#17130f] transition-colors"
-            >
-              Studio
+    <div className="min-h-screen bg-background-base">
+      {/* Navigation */}
+      <header className="sticky top-0 z-10 bg-background-lighter/80 backdrop-blur-xl border-b border-border-faint">
+        <div className="container-modern">
+          <div className="flex items-center justify-between h-16">
+            <Link href="/" className="flex items-center gap-2">
+              <NoeronLogo iconClassName="h-7 w-7" textClassName="text-foreground font-semibold" />
             </Link>
-            <button
-              onClick={handleCreate}
-              className="ol-primary-button px-4 py-2 text-sm"
-            >
-              <Plus size={15} />
-              New site
-            </button>
+
+            <div className="flex items-center gap-3">
+              <Link
+                href="/generation"
+                className="btn btn-ghost"
+              >
+                Studio
+              </Link>
+              <button onClick={handleCreate} className="btn btn-primary">
+                <Plus className="w-4 h-4" />
+                New site
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
-        {/* Title */}
+      <main className="container-modern py-10">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-black tracking-[-0.035em] text-[#17130f]">My Websites</h1>
-          <p className="text-sm text-[#5f5343] mt-1">
+          <h1 className="text-2xl font-bold text-foreground">My Websites</h1>
+          <p className="text-sm text-foreground-dimmer mt-1">
             {sites.length > 0
-              ? `${sites.length} site${sites.length === 1 ? "" : "s"}`
+              ? `${sites.length} site${sites.length === 1 ? "" : "s"} deployed`
               : "Build and manage your AI-generated websites"}
           </p>
         </div>
 
+        {/* Error Message */}
         {error && (
-          <div className="mb-6 px-4 py-3 bg-red-400/10 border border-red-300/40 rounded-xl text-sm text-red-700">
+          <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
             {error}
           </div>
         )}
 
-        {/* Recent sessions — continue where you left off */}
+        {/* Recent Sessions */}
         {sessions.length > 0 && (
           <div className="mb-10">
-            <h2 className="text-sm font-semibold text-[#8c4b26] uppercase tracking-wider mb-3">
+            <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">
               Continue editing
             </h2>
-            <div className="flex flex-col gap-2">
+            <div className="space-y-2">
               {sessions.slice(0, 5).map((s) => {
                 const lastMsg = [...(s.chatMessages ?? [])].reverse().find(
                   (m) => m.type === "user"
@@ -271,29 +181,26 @@ export default function SitesPage() {
                 return (
                   <button
                     key={s.id}
-                    onClick={() =>
-                      router.push(`/generation?sandbox=${s.sandboxId}`)
-                    }
-                    className="flex items-center gap-4 bg-[#fffcf4]/70 border border-[#261e151f] rounded-xl px-4 py-3 text-left hover:border-[#ff672866] hover:shadow-[0_12px_32px_rgba(74,54,28,0.12)] transition-all group"
+                    onClick={() => router.push(`/generation?sandbox=${s.sandboxId}`)}
+                    className="w-full flex items-center gap-4 bg-background-lighter rounded-xl p-4 border border-border-faint hover:border-heat-40 hover:shadow-sm transition-all group text-left"
                   >
-                    <div className="shrink-0 w-8 h-8 bg-[#17130f] rounded-lg flex items-center justify-center">
-                      <Zap size={14} className="text-[#ff6728]" />
+                    <div className="w-10 h-10 bg-foreground rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Zap size={18} className="text-heat-100" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#17130f] truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {s.site?.name ?? "Untitled session"}
                       </p>
                       {lastMsg && (
-                        <p className="text-xs text-[#5f534399] truncate mt-0.5">
-                          {lastMsg.content.slice(0, 80)}
+                        <p className="text-xs text-foreground-dimmer truncate mt-0.5">
+                          {lastMsg.content.slice(0, 60)}...
                         </p>
                       )}
                     </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-xs text-[#5f534399]">{timeAgo(s.lastActiveAt)}</p>
-                      <p className="text-xs text-[#5f534366] mt-0.5">{s.aiModel?.split("/").pop() ?? ""}</p>
+                    <div className="text-right text-xs text-foreground-dimmer">
+                      <p>{timeAgo(s.lastActiveAt)}</p>
                     </div>
-                    <Edit3 size={14} className="shrink-0 text-[#5f534366] group-hover:text-[#8c4b26] transition-colors" />
+                    <ChevronRight size={16} className="text-border-loud group-hover:text-heat-100 transition-colors" />
                   </button>
                 );
               })}
@@ -301,22 +208,99 @@ export default function SitesPage() {
           </div>
         )}
 
+        {/* Sites Grid */}
         {sites.length === 0 ? (
-          <EmptyState onCreate={handleCreate} />
+          <div className="flex flex-col items-center justify-center py-20 text-center bg-background-lighter rounded-2xl border border-border-faint border-dashed">
+            <div className="w-14 h-14 bg-heat-8 rounded-2xl flex items-center justify-center mb-5">
+              <Globe size={28} className="text-heat-100" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">No websites yet</h3>
+            <p className="text-sm text-foreground-dimmer mb-6 max-w-xs">
+              Start by building your first website from a URL or description.
+            </p>
+            <button onClick={handleCreate} className="btn btn-primary">
+              <Plus size={16} />
+              Build your first site
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {sites.map((site) => (
-              <SiteCard key={site.id} site={site} onEdit={handleEdit} />
+              <div
+                key={site.id}
+                className="group bg-background-lighter rounded-2xl border border-border-faint overflow-hidden hover:border-heat-40 hover:shadow-lg hover:shadow-black-alpha-10 transition-all"
+              >
+                {/* Preview stripe */}
+                <div className="h-1.5 w-full bg-gradient-to-r from-foreground via-heat-100 to-heat-200" />
+
+                <div className="p-5">
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-foreground truncate">{site.name}</h3>
+                      <p className="text-xs text-foreground-dimmer truncate mt-0.5">{site.slug}</p>
+                    </div>
+                    <span
+                      className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        site.published
+                          ? "bg-accent-forest/10 text-accent-forest"
+                          : "bg-background-base text-foreground-dimmer"
+                      }`}
+                    >
+                      {site.published ? <CheckCircle2 size={10} /> : <Circle size={10} />}
+                      {site.published ? "Live" : "Draft"}
+                    </span>
+                  </div>
+
+                  {/* URL */}
+                  <div className="flex items-center gap-2 bg-background-base rounded-lg px-3 py-2 mb-4">
+                    <Globe size={14} className="text-heat-100 shrink-0" />
+                    <span className="text-xs text-foreground-dimmer truncate flex-1">{site.liveUrl}</span>
+                    <CopyButton text={site.liveUrl} />
+                    {site.published && (
+                      <a
+                        href={site.liveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1.5 rounded-md hover:bg-border-faint transition-colors text-foreground-dimmer hover:text-foreground"
+                        title="Open site"
+                      >
+                        <ExternalLink size={14} />
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-xs text-foreground-dimmer">
+                      <Clock size={12} />
+                      {site.lastPublishedAt
+                        ? `Published ${timeAgo(site.lastPublishedAt)}`
+                        : `Created ${timeAgo(site.createdAt)}`}
+                    </span>
+
+                    <button
+                      onClick={() => handleEdit(site.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground hover:bg-accent-black text-white text-xs font-medium rounded-lg transition-colors"
+                    >
+                      <Edit3 size={12} />
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              </div>
             ))}
+
             {/* New site card */}
             <button
               onClick={handleCreate}
-              className="flex flex-col items-center justify-center gap-3 bg-[#fffcf4]/50 rounded-2xl border-2 border-dashed border-[#261e1533] hover:border-[#ff6728] hover:bg-[#fffcf4] transition-all duration-200 min-h-[180px] text-[#5f5343] hover:text-[#17130f]"
+              className="flex flex-col items-center justify-center gap-3 bg-background-lighter rounded-2xl border-2 border-dashed border-border-muted hover:border-heat-100 hover:bg-heat-8 transition-all min-h-[200px] text-foreground-dimmer hover:text-foreground"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#ff6728]/10 flex items-center justify-center">
-                <Plus size={20} />
+              <div className="w-12 h-12 rounded-xl bg-heat-8 flex items-center justify-center">
+                <Plus size={24} className="text-heat-100" />
               </div>
-              <span className="text-sm font-medium">New website</span>
+              <span className="text-sm font-medium">Create new site</span>
             </button>
           </div>
         )}

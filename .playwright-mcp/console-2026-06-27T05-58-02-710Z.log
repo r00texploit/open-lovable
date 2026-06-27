@@ -1,0 +1,28 @@
+[     215ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     256ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     386ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     386ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[     446ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     446ms] [LOG] [home] No sandbox in URL, creating new sandbox automatically... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     446ms] [LOG] [createSandbox] Starting sandbox creation... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     480ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     496ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[    1240ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_yXauaOx9ihZtruAcgIK2hAxaI545, url: https://sb-6117p37mpkqe.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T05:58:03.143Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1251ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1643ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    2742ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_yXauaOx9ihZtruAcgIK2hAxaI545, url: https://sb-6117p37mpkqe.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T05:58:04.734Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3375ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    9571ms] [LOG] [vite] server connection lost. polling for restart... @ https://sb-6117p37mpkqe.vercel.run/@vite/client:287
+[    9833ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-6117p37mpkqe.vercel.run/:0
+[   10087ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-6117p37mpkqe.vercel.run/:0
+[   10092ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31253ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31577ms] [LOG] [checkSandboxStatus] Sandbox needs recreation, auto-recreating... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31578ms] [LOG] [createSandbox] Sandbox creation already in progress, skipping... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31598ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   45945ms] [LOG] [createSandbox] Response data: {success: true, sessionId: cmqvy8611002nitoyt9wlhjyj, sandboxId: sb_1782539888902_1149d0a5, url: https://sb-4nmeods9idxe.vercel.run, provider: vercel} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   45945ms] [LOG] [createSandbox] Setting sandboxData from creation: {success: true, sessionId: cmqvy8611002nitoyt9wlhjyj, sandboxId: sb_1782539888902_1149d0a5, url: https://sb-4nmeods9idxe.vercel.run, provider: vercel} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   45951ms] [LOG] [createSandbox] Sandbox ready with Vite server running @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   45973ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   46065ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[   46068ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782539888902_1149d0a5&model=openai%2Fgpt-5:0

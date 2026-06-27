@@ -1,1 +1,487 @@
 @import "../styles/main.css";
+
+/* ============================================
+   DESIGN TOKENS - Spacing Scale (8px base)
+   ============================================ */
+:root {
+  /* Spacing Scale - 8px base */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Section Spacing - Fluid */
+  --section-sm: clamp(3rem, 5vw, 4rem);
+  --section-md: clamp(4rem, 8vw, 6rem);
+  --section-lg: clamp(6rem, 12vw, 10rem);
+
+  /* Elevation Shadows - Layered Depth */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-3: 0 12px 32px rgba(0, 0, 0, 0.2);
+  --shadow-4: 0 24px 64px rgba(0, 0, 0, 0.25);
+
+  /* Brand Colors */
+  --brand-orange: #ff6728;
+  --brand-orange-hover: #ff7b3d;
+  --brand-orange-glow: rgba(255, 103, 40, 0.3);
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* App shell aliases — bridge legacy builder variables to Fire tokens */
+  --border-default: var(--border-faint);
+  --bg-primary: var(--background-lighter);
+  --bg-secondary: var(--background-base);
+  --bg-tertiary: var(--background-base);
+  --text-primary: var(--foreground);
+  --text-secondary: var(--foreground-dimmer);
+  --text-tertiary: var(--black-alpha-48);
+}
+
+/* ============================================
+   FOCUS VISIBLE - Accessibility
+   ============================================ */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   PREFERS REDUCED MOTION - Accessibility
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Respect prefers-reduced-motion in Framer Motion */
+[data-framer-motion-skip-scroll] {
+  scroll-behavior: auto !important;
+}
+
+/* ============================================
+   SELECTION STYLES
+   ============================================ */
+::selection {
+  background: var(--brand-orange);
+  color: black;
+}
+
+/* ============================================
+   SCROLLBAR STYLES - Refined
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #171717;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #525252;
+}
+
+/* ============================================
+   CONTAINER - Consistent Padding
+   ============================================ */
+.container-modern {
+  width: 100%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .container-modern {
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-modern {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-modern {
+    padding-left: var(--space-12);
+    padding-right: var(--space-12);
+  }
+}
+
+/* ============================================
+   TYPOGRAPHY - Enhanced Hierarchy
+   ============================================ */
+.text-hero {
+  font-size: clamp(48px, 8vw, 88px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+.text-display {
+  font-size: clamp(40px, 6vw, 64px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+.text-headline {
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+.text-title {
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+.text-subtitle {
+  font-size: clamp(18px, 2vw, 22px);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+}
+
+.text-body {
+  font-size: clamp(16px, 1.5vw, 18px);
+  line-height: 1.7;
+  font-weight: 400;
+}
+
+.text-small {
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* ============================================
+   SPACING UTILITIES
+   ============================================ */
+.section-sm { padding-top: var(--section-sm); padding-bottom: var(--section-sm); }
+.section-md { padding-top: var(--section-md); padding-bottom: var(--section-md); }
+.section-lg { padding-top: var(--section-lg); padding-bottom: var(--section-lg); }
+
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.gap-6 { gap: var(--space-6); }
+.gap-8 { gap: var(--space-8); }
+.gap-10 { gap: var(--space-10); }
+.gap-12 { gap: var(--space-12); }
+
+/* ============================================
+   ELEVATION UTILITIES
+   ============================================ */
+.elevation-1 { box-shadow: var(--shadow-1); }
+.elevation-2 { box-shadow: var(--shadow-2); }
+.elevation-3 { box-shadow: var(--shadow-3); }
+.elevation-4 { box-shadow: var(--shadow-4); }
+
+/* ============================================
+   GLASSMORPHISM
+   ============================================ */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================
+   BUTTON BASE - Enhanced Affordance
+   ============================================ */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: var(--brand-orange);
+  color: #000;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 1px 2px rgba(255, 103, 40, 0.3),
+    0 4px 12px rgba(255, 103, 40, 0.2);
+  transition:
+    transform 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  background: var(--brand-orange-hover);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 4px 12px rgba(255, 103, 40, 0.4),
+    0 8px 24px rgba(255, 103, 40, 0.25);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-weight: 500;
+  font-size: 15px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition:
+    transform 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Unified button base used with .btn-primary/.btn-secondary/.btn-ghost */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition:
+    transform 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary button for light app surfaces */
+.btn-secondary-light {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: var(--white);
+  color: var(--foreground);
+  font-weight: 500;
+  font-size: 15px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-muted);
+  cursor: pointer;
+  transition:
+    transform 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-secondary-light:hover {
+  transform: translateY(-2px);
+  background: var(--background-lighter);
+  border-color: var(--border-loud);
+}
+
+.btn-secondary-light:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Ghost button for subtle actions */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  color: var(--foreground-dimmer);
+  font-weight: 500;
+  font-size: 15px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    color 200ms ease,
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+.btn-ghost:hover {
+  color: var(--foreground);
+  background: var(--black-alpha-4);
+  border-color: var(--black-alpha-4);
+}
+
+/* ============================================
+   CARD STYLES - With Depth
+   ============================================ */
+.card-elevated {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  transition:
+    transform 300ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 300ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.card-elevated:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-3);
+}
+
+/* ============================================
+   NAV LINKS - Enhanced States
+   ============================================ */
+.nav-link {
+  position: relative;
+  padding: var(--space-2) var(--space-3);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition:
+    color 200ms ease,
+    background-color 200ms ease;
+}
+
+.nav-link:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link-active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================
+   HIGH CONTRAST MODE - Accessibility
+   ============================================ */
+@media (prefers-contrast: high) {
+  .glass,
+  .glass-dark {
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .card-elevated {
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .nav-link:hover,
+  .nav-link-active {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+/* ============================================
+   SCREEN READER ONLY TEXT - Accessibility
+   ============================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================
+   SKIP LINK - Accessibility
+   ============================================ */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: black;
+  font-weight: 600;
+  border-radius: 0 0 0.5rem 0.5rem;
+  z-index: 9999;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0;
+}

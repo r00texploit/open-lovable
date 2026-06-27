@@ -60,17 +60,17 @@ function SignInContent() {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-6 flex h-12 w-12 items-center justify-center rounded-[18px] bg-[#ff6728] text-[#211409]"
+          className="mb-6 flex h-12 w-12 items-center justify-center rounded-[18px] bg-brand-orange text-warm-800"
         >
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </motion.div>
 
-        <h1 className="text-4xl font-black tracking-[-0.055em] text-[#fff7e8] sm:text-5xl">
+        <h1 className="text-4xl font-black tracking-[-0.055em] text-warm-100 sm:text-5xl">
           Welcome back
         </h1>
-        <p className="mt-3 text-sm leading-6 text-[#d8c5a8]">
+        <p className="mt-3 text-sm leading-6 text-warm-300">
           Continue to your sandbox, generated files, and live preview.
         </p>
       </div>
@@ -90,11 +90,11 @@ function SignInContent() {
       <AuthForm onSubmit={handleSubmit}>
         <AuthFormItem>
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[#ead7b8]">
+            <label className="block text-sm font-semibold text-warm-200">
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#ead7b899]" />
+              <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-warm-200/60" />
               <input
                 type="email"
                 value={formData.email}
@@ -136,7 +136,7 @@ function SignInContent() {
           <div className="flex items-center justify-between">
             <Link
               href="/auth/forgot-password"
-              className="text-sm font-semibold text-[#ffb07f] transition-colors hover:text-[#ffd0ad]"
+              className="text-sm font-semibold text-brand-orange-light transition-colors hover:text-brand-orange-lighter"
             >
               Forgot password?
             </Link>
@@ -170,10 +170,10 @@ function SignInContent() {
         className="relative my-6"
       >
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-[#fff7e81a]" />
+          <div className="w-full border-t border-warm-100/10" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-[#11100d] px-3 text-[#d8c5a899]">
+          <span className="bg-warm-900 px-3 text-warm-300/60">
             Or continue with
           </span>
         </div>
@@ -196,12 +196,12 @@ function SignInContent() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
-        className="mt-8 text-center text-sm text-[#d8c5a8]"
+        className="mt-8 text-center text-sm text-warm-300"
       >
         Don't have an account?{' '}
         <Link
           href="/auth/signup"
-          className="font-semibold text-[#ffb07f] transition-colors hover:text-[#ffd0ad]"
+          className="font-semibold text-brand-orange-light transition-colors hover:text-brand-orange-lighter"
         >
           Sign up
         </Link>
@@ -215,11 +215,11 @@ export default function SignIn() {
     <Suspense fallback={
       <div className="w-full max-w-md mx-auto p-8">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-[#fff7e81a] rounded w-3/4 mx-auto" />
-          <div className="h-4 bg-[#fff7e81a] rounded w-1/2 mx-auto" />
+          <div className="h-8 bg-warm-100/10 rounded w-3/4 mx-auto" />
+          <div className="h-4 bg-warm-100/10 rounded w-1/2 mx-auto" />
           <div className="space-y-2 pt-4">
-            <div className="h-12 bg-[#fff7e81a] rounded" />
-            <div className="h-12 bg-[#fff7e81a] rounded" />
+            <div className="h-12 bg-warm-100/10 rounded" />
+            <div className="h-12 bg-warm-100/10 rounded" />
           </div>
         </div>
       </div>

@@ -1,0 +1,228 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - link "Skip to content" [ref=e5] [cursor=pointer]:
+      - /url: "#main"
+    - generic [ref=e7]:
+      - link "Nuviq Coffee home" [ref=e8] [cursor=pointer]:
+        - /url: "#"
+        - img [ref=e10]
+        - generic [ref=e12]:
+          - generic [ref=e13]: Nuviq Coffee
+          - generic [ref=e14]: Premium Coffee
+      - navigation "Primary" [ref=e15]:
+        - list [ref=e16]:
+          - listitem [ref=e17]:
+            - link "Hot" [ref=e18] [cursor=pointer]:
+              - /url: "#hot"
+              - img [ref=e19]
+              - text: Hot
+          - listitem [ref=e21]:
+            - link "Cold" [ref=e22] [cursor=pointer]:
+              - /url: "#cold"
+              - img [ref=e23]
+              - text: Cold
+          - listitem [ref=e25]:
+            - link "Desserts" [ref=e26] [cursor=pointer]:
+              - /url: "#desserts"
+              - img [ref=e27]
+              - text: Desserts
+  - main [ref=e32]:
+    - region "Premium Coffee, Elevated Experience" [ref=e33]:
+      - generic [ref=e35]:
+        - heading "Premium Coffee, Elevated Experience" [level=1] [ref=e36]:
+          - text: Premium Coffee,
+          - generic [ref=e37]: Elevated Experience
+        - paragraph [ref=e38]: Crafted with single-origin beans, precise extraction, and an obsession for detail. Welcome to Nuviq Coffee—where luxury meets minimalism.
+        - generic [ref=e40]:
+          - generic [ref=e41]: Signature V60
+          - generic [ref=e42]: House Roasted
+          - generic [ref=e43]: Seasonal Desserts
+    - region "Menu categories and items" [ref=e44]:
+      - tablist "Menu categories" [ref=e46]:
+        - tab "Hot Drinks SAR 23–27" [selected] [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]:
+            - img [ref=e49]
+            - generic [ref=e51]: Hot Drinks
+          - generic [ref=e52]: SAR 23–27
+        - tab "Cold Drinks SAR 24–38" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]:
+            - img [ref=e55]
+            - generic [ref=e57]: Cold Drinks
+          - generic [ref=e58]: SAR 24–38
+        - tab "Desserts SAR 30–36" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]:
+            - img [ref=e61]
+            - generic [ref=e65]: Desserts
+          - generic [ref=e66]: SAR 30–36
+      - tabpanel [ref=e72]:
+        - list [ref=e73]:
+          - listitem [ref=e74]:
+            - img "Spanish Latte image placeholder" [ref=e76]
+            - generic [ref=e78]:
+              - generic [ref=e79]:
+                - heading "Spanish Latte" [level=3] [ref=e80]
+                - generic [ref=e82]: signature
+              - generic [ref=e84]: SAR 27
+          - listitem [ref=e86]:
+            - img "Spanish Cortado image placeholder" [ref=e88]
+            - generic [ref=e90]:
+              - heading "Spanish Cortado" [level=3] [ref=e92]
+              - generic [ref=e94]: SAR 26
+          - listitem [ref=e96]:
+            - img "Cortado image placeholder" [ref=e98]
+            - generic [ref=e100]:
+              - heading "Cortado" [level=3] [ref=e102]
+              - generic [ref=e104]: SAR 24
+          - listitem [ref=e106]:
+            - img "Americano image placeholder" [ref=e108]
+            - generic [ref=e110]:
+              - heading "Americano" [level=3] [ref=e112]
+              - generic [ref=e114]: SAR 23
+          - listitem [ref=e116]:
+            - img "Flat White image placeholder" [ref=e118]
+            - generic [ref=e120]:
+              - heading "Flat White" [level=3] [ref=e122]
+              - generic [ref=e124]: SAR 25
+          - listitem [ref=e126]:
+            - img "Cappuccino image placeholder" [ref=e128]
+            - generic [ref=e130]:
+              - heading "Cappuccino" [level=3] [ref=e132]
+              - generic [ref=e134]: SAR 24
+          - listitem [ref=e136]:
+            - img "Latte image placeholder" [ref=e138]
+            - generic [ref=e140]:
+              - heading "Latte" [level=3] [ref=e142]
+              - generic [ref=e144]: SAR 25
+          - listitem [ref=e146]:
+            - img "Mocha image placeholder" [ref=e148]
+            - generic [ref=e150]:
+              - heading "Mocha" [level=3] [ref=e152]
+              - generic [ref=e154]: SAR 26
+          - listitem [ref=e156]:
+            - img "Vanilla Bean Latte image placeholder" [ref=e158]
+            - generic [ref=e160]:
+              - heading "Vanilla Bean Latte" [level=3] [ref=e162]
+              - generic [ref=e164]: SAR 26
+          - listitem [ref=e166]:
+            - img "Caramel Macchiato image placeholder" [ref=e168]
+            - generic [ref=e170]:
+              - heading "Caramel Macchiato" [level=3] [ref=e172]
+              - generic [ref=e174]: SAR 27
+      - region "Hot Drinks":
+        - heading "Hot Drinks" [level=2] [ref=e176]
+      - region "Cold Drinks" [ref=e177]:
+        - heading "Cold Drinks" [level=2] [ref=e178]
+      - region "Desserts" [ref=e179]:
+        - heading "Desserts" [level=2] [ref=e180]
+    - generic [ref=e183]:
+      - generic [ref=e184]:
+        - generic [ref=e185]:
+          - heading "Hot Drinks Highlights" [level=3] [ref=e186]
+          - paragraph [ref=e187]: Our barista-crafted favorites.
+        - generic [ref=e188]:
+          - article [ref=e189]:
+            - img "Spanish Latte image placeholder" [ref=e191]
+            - generic [ref=e193]:
+              - generic [ref=e194]: Spanish Latte
+              - generic [ref=e195]: SAR 27
+          - article [ref=e196]:
+            - img "Spanish Cortado image placeholder" [ref=e198]
+            - generic [ref=e200]:
+              - generic [ref=e201]: Spanish Cortado
+              - generic [ref=e202]: SAR 26
+          - article [ref=e203]:
+            - img "Cortado image placeholder" [ref=e205]
+            - generic [ref=e207]:
+              - generic [ref=e208]: Cortado
+              - generic [ref=e209]: SAR 24
+          - article [ref=e210]:
+            - img "Americano image placeholder" [ref=e212]
+            - generic [ref=e214]:
+              - generic [ref=e215]: Americano
+              - generic [ref=e216]: SAR 23
+          - article [ref=e217]:
+            - img "Flat White image placeholder" [ref=e219]
+            - generic [ref=e221]:
+              - generic [ref=e222]: Flat White
+              - generic [ref=e223]: SAR 25
+          - article [ref=e224]:
+            - img "Cappuccino image placeholder" [ref=e226]
+            - generic [ref=e228]:
+              - generic [ref=e229]: Cappuccino
+              - generic [ref=e230]: SAR 24
+      - generic [ref=e231]:
+        - generic [ref=e232]:
+          - heading "Cold Creations" [level=3] [ref=e233]
+          - paragraph [ref=e234]: Chilled to perfection.
+        - generic [ref=e235]:
+          - article [ref=e236]:
+            - img "Iced Spanish Latte image placeholder" [ref=e238]
+            - generic [ref=e240]:
+              - generic [ref=e241]: Iced Spanish Latte
+              - generic [ref=e242]: SAR 32
+          - article [ref=e243]:
+            - img "Iced Americano image placeholder" [ref=e245]
+            - generic [ref=e247]:
+              - generic [ref=e248]: Iced Americano
+              - generic [ref=e249]: SAR 24
+          - article [ref=e250]:
+            - img "Iced V60 Coconut image placeholder" [ref=e252]
+            - generic [ref=e254]:
+              - generic [ref=e255]: Iced V60 Coconut
+              - generic [ref=e256]: SAR 34
+          - article [ref=e257]:
+            - img "Iced V60 Candy image placeholder" [ref=e259]
+            - generic [ref=e261]:
+              - generic [ref=e262]: Iced V60 Candy
+              - generic [ref=e263]: SAR 34
+          - article [ref=e264]:
+            - img "Iced V60 Grape image placeholder" [ref=e266]
+            - generic [ref=e268]:
+              - generic [ref=e269]: Iced V60 Grape
+              - generic [ref=e270]: SAR 34
+          - article [ref=e271]:
+            - img "Iced V60 Ethiopia image placeholder" [ref=e273]
+            - generic [ref=e275]:
+              - generic [ref=e276]: Iced V60 Ethiopia
+              - generic [ref=e277]: SAR 36
+      - generic [ref=e278]:
+        - generic [ref=e279]:
+          - heading "Desserts" [level=3] [ref=e280]
+          - paragraph [ref=e281]: Rich, creamy, and unforgettable.
+        - generic [ref=e282]:
+          - article [ref=e283]:
+            - img "London Cheesecake image placeholder" [ref=e285]
+            - generic [ref=e287]:
+              - generic [ref=e288]: London Cheesecake
+              - generic [ref=e289]: SAR 34
+          - article [ref=e290]:
+            - img "Basque Cheesecake image placeholder" [ref=e292]
+            - generic [ref=e294]:
+              - generic [ref=e295]: Basque Cheesecake
+              - generic [ref=e296]: SAR 36
+          - article [ref=e297]:
+            - img "Lotus Cheesecake image placeholder" [ref=e299]
+            - generic [ref=e301]:
+              - generic [ref=e302]: Lotus Cheesecake
+              - generic [ref=e303]: SAR 32
+  - contentinfo [ref=e304]:
+    - generic [ref=e305]:
+      - generic [ref=e306]:
+        - generic [ref=e307]:
+          - heading "Nuviq Coffee" [level=3] [ref=e308]
+          - paragraph [ref=e309]: Premium Coffee, Elevated Experience
+        - generic [ref=e311]:
+          - link "Instagram" [ref=e312] [cursor=pointer]:
+            - /url: https://instagram.com
+            - img [ref=e313]
+            - text: Instagram
+          - link "hello@nuviq.coffee" [ref=e316] [cursor=pointer]:
+            - /url: mailto:hello@nuviq.coffee
+            - img [ref=e317]
+            - text: hello@nuviq.coffee
+          - generic [ref=e320]:
+            - img [ref=e321]
+            - text: Riyadh, Saudi Arabia
+      - generic [ref=e324]:
+        - paragraph [ref=e325]: © 2026 Nuviq Coffee. All rights reserved.
+        - paragraph [ref=e326]: Crafted with care.

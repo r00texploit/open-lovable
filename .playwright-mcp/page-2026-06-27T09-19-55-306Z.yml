@@ -1,0 +1,160 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Noeron" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]:
+            - img [ref=e7]
+            - generic [ref=e14]: Noeron
+        - button "GPT-5" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: GPT-5
+          - img [ref=e19]
+        - generic [ref=e21]: Sandbox active
+      - generic [ref=e22]:
+        - button "New sandbox" [ref=e273] [cursor=pointer]:
+          - img [ref=e275]
+          - generic [ref=e277]: New sandbox
+        - button "Re-apply" [disabled] [ref=e278]:
+          - img [ref=e280]
+          - generic [ref=e282]: Re-apply
+        - button "Download ZIP" [ref=e283] [cursor=pointer]:
+          - img [ref=e285]
+          - generic [ref=e287]: Download ZIP
+        - link "My Websites" [ref=e288] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e290]
+          - generic [ref=e292]: My Websites
+        - link "Settings" [ref=e293] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e295]
+          - generic [ref=e298]: Settings
+        - button "Sign out" [ref=e299] [cursor=pointer]:
+          - img [ref=e301]
+          - generic [ref=e303]: Sign out
+    - generic [ref=e55]:
+      - generic [ref=e56]:
+        - button "No sites yet" [disabled] [ref=e158]:
+          - generic [ref=e59]: No sites yet
+          - img [ref=e60]
+        - generic [ref=e62]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=e63]:
+        - textbox "Site name" [ref=e64]
+        - textbox "site-slug" [ref=e65]
+        - button "Create site" [disabled] [ref=e66]
+    - generic [ref=e67]:
+      - generic [ref=e68]:
+        - generic [ref=e72]:
+          - generic [ref=e73]: Website URL
+          - textbox "https://example.com" [ref=e74]
+        - generic [ref=e75]:
+          - generic [ref=e79]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+          - generic [ref=e307]: The sandbox preview is no longer responding. Creating a fresh sandbox and restoring your files...
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - img [ref=e85]
+            - textbox "Describe what you want to build..." [active] [ref=e88]: "Act as a senior award-winning frontend designer and creative developer. Create a premium, immersive, visually rich 3D animated scroll menu page for a modern beverage and dessert brand called Nuviq. The page should feel elegant, coastal, refreshing, and luxurious — inspired by summer, the sea, creamy drinks, tropical desserts, and a calm beachside atmosphere. PAGE TYPE: This is a scrollable interactive menu page, not a generic landing page. BRAND FEEL: - Coastal luxury - Summer refreshment - Smooth, creamy, premium drinks - Beach-inspired calm - Elegant, soft, and slightly playful - Modern 3D product showcase - Premium café / dessert brand aesthetic USE THIS EXACT THEME PALETTE: - Primary Blue: #0D4FA3 - Deep Ocean Blue: #063B7A - Soft Sky Blue: #C4CBD7 - Sea Mist Blue: #98B0BD - Cream Sand: #F2E8DE - Warm Beige: #D9C3AC - Driftwood Beige: #C9A573 - Mango Yellow: #F2B20D - Coconut White: #FFF8EF - Soft Shadow Gray: #716E71 COLOR USAGE RULES: - Use Deep Ocean Blue #063B7A and Primary Blue #0D4FA3 as the main brand colors. - Use Cream Sand #F2E8DE and Coconut White #FFF8EF for backgrounds and menu card surfaces. - Use Warm Beige #D9C3AC and Driftwood Beige #C9A573 for secondary surfaces, dividers, shadows, and soft coastal layers. - Use Soft Sky Blue #C4CBD7 and Sea Mist Blue #98B0BD for ocean-inspired overlays, hover states, and glass panels. - Use Mango Yellow #F2B20D only for premium accents: prices, selected categories, badges, highlights, and CTA glows. - Use Soft Shadow Gray #716E71 for muted text and shadows. PAGE STRUCTURE: 1. Full-screen animated hero 2. Sticky floating category navigation 3. Featured / signature menu section 4. Hot Drinks section 5. Cold Drinks section 6. Dessert section 7. Other section 8. Footer / brand closeout HERO SECTION: Create a full-screen opening section with a soft animated beach-inspired background. Hero text: - Main title: \"Nuviq Menu\" - Subtitle: \"Summer, sip by sip.\" - Supporting line: \"Specialty coffee, iced drinks, desserts, and refreshing signatures.\" Hero visual: - Add a 3D floating Nuviq iced drink cup. - The cup should gently rotate, float, and respond subtly to scroll. - Use shell line art, soft wave shapes, umbrella shadows, beach sand texture, and ocean light. - Keep the motion elegant and premium, not cartoonish. Primary CTA: \"Explore Menu\" Secondary CTA: \"View Signatures\" CATEGORY NAVIGATION: Create a sticky horizontal category bar with smooth scroll behavior. Categories: - Hot Drinks - Cold Drinks - Dessert - Other Selected tab style: - Pill shape - Mango Yellow accent - Deep Ocean Blue text or background - Smooth transition between active states MENU DATA: Use the following exact menu items and prices. HOT DRINKS: - Hot Spanish — 27 - Hot Spanish Cortado — 27 - Hot Cortado — 26 - Hot Americano — 25 - Hot V60 Nutty Tobacco — 37 - Hot V60 Vimto — 35 - Hot V60 Candy — 37 - Hot V60 Coconut — 36 - Hot V60 Grape — 35 - Hot V60 Ethiopia — 34 - Cappuccino — 26 - Flat White — 26 - Espresso — 20 - Double Espresso — 23 - Piccolo — 25 COLD DRINKS: - Hibiscus — 31 - Ice Americano — 25 - Ice Espresso — 23 - Ice Coconut V60 — 36 - Ice Candy V60 — 37 - Ice Grape V60 — 35 - Ice Ethiopia V60 — 34 - Ice Vimto V60 — 35 - Ice Nutty Tobacco V60 — 37 - Ice Spanish Latte — 27 - Iced Nuviq Macchiato — 28 - Iced Matcha — 35 - Coconut Cloudy Matcha — 35 - Coconut Cloudy Espresso — 33 - Acai Smoothie — 38 - Strawberry Mojito — 24 - Blueberry Mojito — 24 - Creamy 60 — 32 DESSERT: - London Cheesecake — 32 - Marshmallow Nutella Cake — 32 - Coconut Mango Cake — 40 OTHER: - Water — 5 - Sparkling Water — 6 MENU NOTE: - Acai Smoothie includes 2 free toppings. FEATURED / SIGNATURE ITEMS: Create a special highlighted section called \"Nuviq Signatures\". Feature these items with larger 3D product cards: - Ice Spanish Latte — 27 - Iced Nuviq Macchiato — 28 - Coconut Cloudy Matcha — 35 - Coconut Mango Cake — 40 - Acai Smoothie — 38 - Creamy 60 — 32 Each featured card should include: - Large product image or 3D mockup placeholder - Item name - Price - Short premium description - Small accent badge such as \"Signature\", \"Fresh\", \"Creamy\", or \"Dessert\" PRODUCT DESCRIPTIONS: Generate short elegant descriptions for each item. Keep descriptions realistic and concise. Do not over-explain ingredients unless obvious from the name. Examples: - Ice Spanish Latte: \"Smooth espresso, chilled milk, and soft sweetness.\" - Coconut Cloudy Matcha: \"Creamy matcha with a tropical coconut finish.\" - Coconut Mango Cake: \"A bright mango dessert layered with coconut softness.\" - Hibiscus: \"A refreshing floral drink with a crisp summer finish.\" MENU CARD DESIGN: Each menu item card should include: - Product thumbnail or 3D-styled image placeholder - Item name - Short description - Price badge - Optional tag: Hot, Cold, Signature, Dessert, Refreshing, V60 - Subtle divider line - Soft hover state Card style: - Rounded corners - Coconut White / Cream Sand surface - Thin Sea Mist Blue border - Soft layered shadow - Mango Yellow price badge - Deep Ocean Blue item title - Subtle 3D tilt on hover - Gentle glowing edge on active/hover state 3D / MOTION DIRECTION: Use sophisticated scroll-based animation: - Hero product gently floats and rotates - Menu sections fade up on scroll - Cards reveal in staggered sequence - Background shell/wave elements move with subtle parallax - Product cards have hover tilt using rotateX / rotateY - Selected menu item softly scales forward - Section transitions feel smooth and cinematic Avoid: - Aggressive spinning - Heavy parallax - Cartoon motion - Distracting effects - Generic flat card layouts SECTION DESIGN: HOT DRINKS: Use warmer beige and deep blue tones. Add subtle steam line animations. Cards should feel cozy but still coastal. COLD DRINKS: Use more Soft Sky Blue and Sea Mist Blue. Add subtle ice/glass effects, light reflections, and fresh summer movement. DESSERT: Use Cream Sand, Coconut White, Warm Beige, and Mango Yellow. Add soft dessert-focused lighting and a premium product showcase feel. OTHER: Keep this section minimal and clean. Use simple cards for Water and Sparkling Water. BACKGROUND / ATMOSPHERE: Use: - Beach sand texture - Shell line illustrations - Starfish and wave motifs - Soft umbrella shadows - Ocean gradient accents - Creamy packaging-inspired backgrounds Make the background feel premium, not childish. TYPOGRAPHY: Use elegant, premium, highly legible typography. Recommended direction: - Large bold display font for \"Nuviq Menu\" - Clean modern sans-serif for menu items - Wide letter spacing for section labels - Price badges should be clear and easy to scan UX REQUIREMENTS: - Fully responsive - Mobile-first - Sticky category navigation - Smooth scroll to section on category click - Product cards must be easy to scan - Prices must be clear - Large touch targets on mobile - High contrast - Clean spacing - Fast-loading layout - No clutter - Keep the menu usable, not just pretty MOBILE EXPERIENCE: On mobile: - Hero should remain compact and elegant - Category pills should horizontally scroll - Menu cards should stack in one column - Price badges should stay visible - Floating bottom CTA can show \"Menu\" and \"Order\" - Reduce heavy 3D effects for performance - Keep motion smooth and lightweight DESKTOP EXPERIENCE: On desktop: - Use richer 3D depth - Two-column or three-column menu layout - Larger hero product scene - More visible parallax layers - Sticky category navigation should feel premium and glassy INTERACTION DETAILS: - Hover cards: lift, tilt, glow, shadow expansion - Click card: open a side panel or modal with larger product image, description, price, and category - Category click: smooth scroll and active highlight - CTA hover: subtle blue-to-gold glow - Section entry: staggered fade-up animation TECHNICAL EXPECTATIONS: Build production-quality UI, not a demo. Use: - React - Tailwind CSS - Framer Motion or GSAP for scroll animations - Optional Three.js only if lightweight and performance-safe - CSS 3D transforms preferred for product cards - Reusable components Required components: - Hero3D - CategoryNav - FeaturedSignatures - MenuSection - MenuItemCard - ProductModal - FloatingCTA - Footer DATA STRUCTURE: Store all menu items in a clean editable array/object with: - category - name - price - description - tag - image - featured boolean Example structure: { category: \"Cold Drinks\", name: \"Ice Spanish Latte\", price: 27, description: \"Smooth espresso, chilled milk, and soft sweetness.\", tag: \"Signature\", image: \"/images/ice-spanish-latte.png\", featured: true } FINAL QUALITY BAR: The final page should look like a premium interactive Nuviq digital menu, inspired by summer, beach, ocean blue, cream packaging, shell illustrations, and mango dessert accents. It should feel: - Expensive - Fresh - Smooth - Coastal - Branded - Usable - Highly polished - Not generic - Not flat - Not cluttered Deliver the full page design and implementation for a 3D animated scroll menu page using the exact palette and full menu data above. Images are provided showing the actual menu items - use them as reference for colors, styling, and presentation."
+          - generic [ref=e159]:
+            - generic [ref=e160]:
+              - generic [ref=e161]:
+                - img "25_ice_spanish_latte__27.png" [ref=e163]
+                - generic [ref=e164]:
+                  - paragraph [ref=e165]: 25_ice_spanish_latte__27.png
+                  - paragraph [ref=e166]: 57 KB
+                - button "Remove image" [ref=e167] [cursor=pointer]:
+                  - img [ref=e168]
+              - generic [ref=e171]:
+                - img "26_iced_nuviq_macchiato__28.png" [ref=e173]
+                - generic [ref=e174]:
+                  - paragraph [ref=e175]: 26_iced_nuviq_macchiato__28.png
+                  - paragraph [ref=e176]: 50 KB
+                - button "Remove image" [ref=e177] [cursor=pointer]:
+                  - img [ref=e178]
+              - generic [ref=e181]:
+                - img "28_coconut_cloudy_matcha__35.png" [ref=e183]
+                - generic [ref=e184]:
+                  - paragraph [ref=e185]: 28_coconut_cloudy_matcha__35.png
+                  - paragraph [ref=e186]: 51 KB
+                - button "Remove image" [ref=e187] [cursor=pointer]:
+                  - img [ref=e188]
+              - generic [ref=e191]:
+                - img "30_acai_smoothie__38.png" [ref=e193]
+                - generic [ref=e194]:
+                  - paragraph [ref=e195]: 30_acai_smoothie__38.png
+                  - paragraph [ref=e196]: 50 KB
+                - button "Remove image" [ref=e197] [cursor=pointer]:
+                  - img [ref=e198]
+              - generic [ref=e201]:
+                - img "33_creamy_60__32.png" [ref=e203]
+                - generic [ref=e204]:
+                  - paragraph [ref=e205]: 33_creamy_60__32.png
+                  - paragraph [ref=e206]: 62 KB
+                - button "Remove image" [ref=e207] [cursor=pointer]:
+                  - img [ref=e208]
+              - generic [ref=e211]:
+                - img "36_coconut_mango_cake__40.png" [ref=e213]
+                - generic [ref=e214]:
+                  - paragraph [ref=e215]: 36_coconut_mango_cake__40.png
+                  - paragraph [ref=e216]: 69 KB
+                - button "Remove image" [ref=e217] [cursor=pointer]:
+                  - img [ref=e218]
+              - generic [ref=e221]:
+                - img "01_hot_spanish__27.png" [ref=e223]
+                - generic [ref=e224]:
+                  - paragraph [ref=e225]: 01_hot_spanish__27.png
+                  - paragraph [ref=e226]: 68 KB
+                - button "Remove image" [ref=e227] [cursor=pointer]:
+                  - img [ref=e228]
+              - generic [ref=e231]:
+                - img "11_cappuccino__26.png" [ref=e233]
+                - generic [ref=e234]:
+                  - paragraph [ref=e235]: 11_cappuccino__26.png
+                  - paragraph [ref=e236]: 68 KB
+                - button "Remove image" [ref=e237] [cursor=pointer]:
+                  - img [ref=e238]
+              - generic [ref=e241]:
+                - img "34_london_cheesecake__32.png" [ref=e243]
+                - generic [ref=e244]:
+                  - paragraph [ref=e245]: 34_london_cheesecake__32.png
+                  - paragraph [ref=e246]: 49 KB
+                - button "Remove image" [ref=e247] [cursor=pointer]:
+                  - img [ref=e248]
+              - generic [ref=e251]:
+                - img "16_hibiscus__31.png" [ref=e253]
+                - generic [ref=e254]:
+                  - paragraph [ref=e255]: 16_hibiscus__31.png
+                  - paragraph [ref=e256]: 62 KB
+                - button "Remove image" [ref=e257] [cursor=pointer]:
+                  - img [ref=e258]
+            - paragraph [ref=e261]: Max 10 images allowed
+          - generic [ref=e89]:
+            - button "10 images added" [disabled] [ref=e262]:
+              - img [ref=e91]
+              - generic [ref=e95]: 10 images added
+            - button "Send" [ref=e96] [cursor=pointer]:
+              - generic [ref=e97]: Send
+              - img [ref=e98]
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - generic [ref=e104]:
+            - button "Code" [ref=e105] [cursor=pointer]:
+              - generic [ref=e106]:
+                - img [ref=e107]
+                - generic [ref=e109]: Code
+            - button "View" [ref=e110] [cursor=pointer]:
+              - generic [ref=e111]:
+                - img [ref=e112]
+                - generic [ref=e115]: View
+          - generic [ref=e263]:
+            - generic [ref=e308]: Sandbox active
+            - link "Open in new tab" [ref=e310] [cursor=pointer]:
+              - /url: https://sb-6e68aluyg649.vercel.run
+              - img [ref=e311]
+        - generic [ref=e117]:
+          - iframe [ref=e313]:
+            - paragraph [ref=f2e5]:
+              - text: Sandbox Ready
+              - text: Start building your React app with Vite and Tailwind CSS!
+          - button "Refresh sandbox" [ref=e314] [cursor=pointer]:
+            - img [ref=e315]
+  - alert [ref=e126]

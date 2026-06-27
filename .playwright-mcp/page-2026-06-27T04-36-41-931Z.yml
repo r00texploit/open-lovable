@@ -1,0 +1,89 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Noeron" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]:
+            - img [ref=e7]
+            - generic [ref=e14]: Noeron
+        - button "GPT-5" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: GPT-5
+          - img [ref=e19]
+        - generic [ref=e21]: Sandbox active
+      - generic [ref=e22]:
+        - button "New sandbox" [ref=e208] [cursor=pointer]:
+          - img [ref=e210]
+          - generic [ref=e212]: New sandbox
+        - button "Re-apply" [disabled] [ref=e213]:
+          - img [ref=e215]
+          - generic [ref=e217]: Re-apply
+        - button "Download ZIP" [ref=e218] [cursor=pointer]:
+          - img [ref=e220]
+          - generic [ref=e222]: Download ZIP
+        - link "My Websites" [ref=e223] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e225]
+          - generic [ref=e227]: My Websites
+        - link "Settings" [ref=e228] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e230]
+          - generic [ref=e233]: Settings
+        - button "Sign out" [ref=e234] [cursor=pointer]:
+          - img [ref=e236]
+          - generic [ref=e238]: Sign out
+    - generic [ref=e55]:
+      - generic [ref=e56]:
+        - button "No sites yet" [disabled] [ref=e58]:
+          - generic [ref=e59]: No sites yet
+          - img [ref=e60]
+        - generic [ref=e62]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=e63]:
+        - textbox "Site name" [ref=e64]
+        - textbox "site-slug" [ref=e65]
+        - button "Create site" [disabled] [ref=e66]
+    - generic [ref=e67]:
+      - generic [ref=e68]:
+        - generic [ref=e71]:
+          - generic [ref=e72]: Website URL
+          - textbox "https://example.com" [disabled] [ref=e73]
+        - generic [ref=e74]:
+          - generic [ref=e78]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+          - generic [ref=e191]: "Act as a senior award-winning frontend designer and creative developer. Create a premium, immersive, visually rich 3D animated scroll menu page for a modern beverage and dessert brand called Nuviq. The page should feel elegant, coastal, refreshing, and luxurious — inspired by summer, the sea, creamy drinks, tropical desserts, and a calm beachside atmosphere. BRAND FEEL: - Coastal luxury - Summer refreshment - Smooth, creamy, premium drinks - Beach-inspired calm - Elegant, soft, and slightly playful - Modern 3D product showcase - Premium café / dessert brand aesthetic USE THIS EXACT THEME PALETTE: - Primary Blue: #0D4FA3 - Deep Ocean Blue: #063B7A - Soft Sky Blue: #C4CBD7 - Sea Mist Blue: #98B0BD - Cream Sand: #F2E8DE - Warm Beige: #D9C3AC - Driftwood Beige: #C9A573 - Mango Yellow: #F2B20D - Coconut White: #FFF8EF - Soft Shadow Gray: #716E71 Build a scrollable interactive menu page with: HERO SECTION: - Full-screen opening with soft animated beach-inspired background - Main title: \"Nuviq Menu\" - Subtitle: \"Summer, sip by sip.\" - Supporting line: \"Specialty coffee, iced drinks, desserts, and refreshing signatures.\" - Primary CTA: \"Explore Menu\" - Secondary CTA: \"View Signatures\" CATEGORY NAVIGATION (Sticky horizontal): - Hot Drinks, Cold Drinks, Dessert, Other MENU DATA: HOT DRINKS: - Hot Spanish — 27 - Hot Spanish Cortado — 27 - Hot Cortado — 26 - Hot Americano — 25 - Hot V60 Nutty Tobacco — 37 - Hot V60 Vimto — 35 - Hot V60 Candy — 37 - Hot V60 Coconut — 36 - Hot V60 Grape — 35 - Hot V60 Ethiopia — 34 - Cappuccino — 26 - Flat White — 26 - Espresso — 20 - Double Espresso — 23 - Piccolo — 25 COLD DRINKS: - Hibiscus — 31 - Ice Americano — 25 - Ice Espresso — 23 - Ice Coconut V60 — 36 - Ice Candy V60 — 37 - Ice Grape V60 — 35 - Ice Ethiopia V60 — 34 - Ice Vimto V60 — 35 - Ice Nutty Tobacco V60 — 37 - Ice Spanish Latte — 27 - Iced Nuviq Macchiato — 28 - Iced Matcha — 35 - Coconut Cloudy Matcha — 35 - Coconut Cloudy Espresso — 33 - Acai Smoothie — 38 - Strawberry Mojito — 24 - Blueberry Mojito — 24 - Creamy 60 — 32 DESSERT: - London Cheesecake — 32 - Marshmallow Nutella Cake — 32 - Coconut Mango Cake — 40 OTHER: - Water — 5 - Sparkling Water — 6 FEATURED SIGNATURES: - Ice Spanish Latte — 27 - Iced Nuviq Macchiato — 28 - Coconut Cloudy Matcha — 35 - Coconut Mango Cake — 40 - Acai Smoothie — 38 - Creamy 60 — 32 DESIGN: - Use sophisticated scroll-based animations - Menu cards with rounded corners, Coconut White/Cream Sand surface - Mango Yellow price badges - Deep Ocean Blue item titles - Subtle 3D tilt on hover - Beach-inspired backgrounds with shell line illustrations - Fully responsive, mobile-first - Sticky category navigation - Smooth scroll to section on category click Build the complete page with Hero, CategoryNav, FeaturedSignatures, MenuSection components."
+          - generic [ref=e195]: Creating sandbox while I plan your app...
+          - generic [ref=e197]: Planning application structure...
+        - generic [ref=e81]:
+          - generic [ref=e82]:
+            - img [ref=e84]
+            - textbox "Describe what you want to build..." [ref=e87]
+          - generic [ref=e88]:
+            - button "Add image" [ref=e89] [cursor=pointer]:
+              - img [ref=e90]
+              - generic [ref=e94]: Add image
+            - button "Send" [disabled] [ref=e95]:
+              - generic [ref=e96]: Send
+              - img [ref=e97]
+      - generic [ref=e100]:
+        - generic [ref=e101]:
+          - generic [ref=e103]:
+            - button "Code" [ref=e104] [cursor=pointer]:
+              - generic [ref=e105]:
+                - img [ref=e106]
+                - generic [ref=e108]: Code
+            - button "View" [ref=e109] [cursor=pointer]:
+              - generic [ref=e110]:
+                - img [ref=e111]
+                - generic [ref=e114]: View
+          - generic [ref=e198]:
+            - generic [ref=e199]: Sandbox active
+            - link "Open in new tab" [ref=e201] [cursor=pointer]:
+              - /url: https://sb-33e8nxxypzaz.vercel.run
+              - img [ref=e202]
+        - generic [ref=e116]:
+          - iframe [ref=e204]:
+            - paragraph [ref=f1e5]:
+              - text: Sandbox Ready
+              - text: Start building your React app with Vite and Tailwind CSS!
+          - button "Refresh sandbox" [ref=e205] [cursor=pointer]:
+            - img [ref=e206]
+  - alert [ref=e125]

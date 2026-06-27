@@ -387,6 +387,64 @@ export async function POST(request: NextRequest) {
       return true;
     });
 
+    // Handle file extension conflicts: delete .jsx files when .tsx files are being written
+    const tsxFiles = filteredFiles.filter(f => f.path.endsWith('.tsx'));
+    const jsxFilesToDelete: string[] = [];
+    let needsIndexHtmlUpdate = false;
+    let newEntryFile: string | null = null;
+
+    for (const tsxFile of tsxFiles) {
+      const jsxPath = tsxFile.path.replace(/\.tsx$/, '.jsx');
+      const normalizedJsxPath = jsxPath.startsWith('src/') ? jsxPath : 'src/' + jsxPath;
+      const normalizedTsxPath = tsxFile.path.startsWith('src/') ? tsxFile.path : 'src/' + tsxFile.path;
+
+      // Check if the .jsx version exists in tracked files
+      if (global.existingFiles.has(normalizedJsxPath) || global.existingFiles.has(jsxPath)) {
+        jsxFilesToDelete.push(normalizedJsxPath);
+        console.log(`[apply-ai-code] Will delete conflicting .jsx file: ${normalizedJsxPath} (replacing with ${normalizedTsxPath})`);
+      }
+
+      // Check if this is the main entry file (App.tsx or main.tsx)
+      const fileName = tsxFile.path.split('/').pop() || '';
+      if (fileName === 'main.tsx' || fileName === 'App.tsx') {
+        needsIndexHtmlUpdate = true;
+        newEntryFile = fileName === 'main.tsx' ? '/src/main.tsx' : null;
+      }
+    }
+
+    // Delete conflicting .jsx files before writing new files
+    if (jsxFilesToDelete.length > 0 && sandbox) {
+      for (const jsxFile of jsxFilesToDelete) {
+        try {
+          if (sandbox.runCommand) {
+            await sandbox.runCommand(`rm -f ${jsxFile}`);
+          }
+          global.existingFiles.delete(jsxFile);
+          console.log(`[apply-ai-code] Deleted conflicting file: ${jsxFile}`);
+        } catch (err) {
+          console.warn(`[apply-ai-code] Failed to delete ${jsxFile}:`, err);
+        }
+      }
+    }
+
+    // Update index.html to point to correct entry file if needed
+    if (needsIndexHtmlUpdate && newEntryFile && sandbox?.readFile && sandbox?.writeFile) {
+      try {
+        const currentIndexHtml = await sandbox.readFile('index.html');
+        const updatedIndexHtml = currentIndexHtml.replace(
+          /src\/(main|index)\.(jsx|tsx)/,
+          newEntryFile.replace(/^\//, '')
+        );
+
+        if (updatedIndexHtml !== currentIndexHtml) {
+          await sandbox.writeFile('index.html', updatedIndexHtml);
+          console.log(`[apply-ai-code] Updated index.html to point to ${newEntryFile}`);
+        }
+      } catch (err) {
+        console.warn(`[apply-ai-code] Failed to update index.html:`, err);
+      }
+    }
+
     // Avoid overwriting files already updated by Morph
     if (morphUpdatedPaths.size > 0) {
       filteredFiles = filteredFiles.filter(file => {

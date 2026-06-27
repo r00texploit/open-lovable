@@ -1,0 +1,76 @@
+[      76ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     100ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     105ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3000/auth/signin:0
+[     105ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     111ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/auth/signin:0
+[     164ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     168ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/auth/signin:0
+[   17034ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   17316ms] [LOG] [Fast Refresh] done in 384ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   17338ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   17359ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   17401ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[   17529ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[   17627ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   17627ms] [LOG] [home] No sandbox in URL, creating new sandbox automatically... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   17627ms] [LOG] [createSandbox] Starting sandbox creation... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   17636ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   17660ms] [LOG] [checkSandboxStatus] No existing sandboxData, clearing state @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   17673ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[   17678ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[   17752ms] [LOG] [Fast Refresh] done in 217ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   57096ms] [LOG] [createSandbox] Response data: {success: true, sessionId: cmqv6qau7000tit7ep8pb4tfg, sandboxId: sb_1782493705394_020454da, url: https://sb-7nt9oypfpfmf.vercel.run, provider: vercel} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   57097ms] [LOG] [createSandbox] Setting sandboxData from creation: {success: true, sessionId: cmqv6qau7000tit7ep8pb4tfg, sandboxId: sb_1782493705394_020454da, url: https://sb-7nt9oypfpfmf.vercel.run, provider: vercel} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   57105ms] [LOG] [createSandbox] Sandbox ready with Vite server running @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   57130ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   57246ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[   57248ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782493705394_020454da&model=openai%2Fgpt-5:0
+[   62265ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   87134ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   87955ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_comsJ8RH4AQzuK8QQyXmxHTH77yD, url: https://sb-7nt9oypfpfmf.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T17:09:26.735Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   88805ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   90189ms] [ERROR] ./components/app/generation/SidebarInput.tsx:154:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  152 |     </div>
+  153 |   );
+> 154 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./components/app/generation/SidebarInput.tsx [Client Component Browser]
+    ./app/generation/page.tsx [Client Component Browser]
+    ./app/generation/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./components/app/generation/SidebarInput.tsx [Client Component SSR]
+    ./app/generation/page.tsx [Client Component SSR]
+    ./app/generation/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:3318
+[   90236ms] [ERROR] ./components/app/generation/SidebarInput.tsx:154:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  152 |     </div>
+  153 |   );
+> 154 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./components/app/generation/SidebarInput.tsx [Client Component Browser]
+    ./app/generation/page.tsx [Client Component Browser]
+    ./app/generation/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./components/app/generation/SidebarInput.tsx [Client Component SSR]
+    ./app/generation/page.tsx [Client Component SSR]
+    ./app/generation/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:3318
+[   90307ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  110544ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  110787ms] [LOG] [Fast Refresh] done in 296ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  110839ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  110842ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782493705394_020454da&model=openai%2Fgpt-5:0
+[  117133ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  117826ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_comsJ8RH4AQzuK8QQyXmxHTH77yD, url: https://sb-7nt9oypfpfmf.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-26T17:09:56.725Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477

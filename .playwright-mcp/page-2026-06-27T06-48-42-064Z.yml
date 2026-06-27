@@ -1,0 +1,51 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e489]
+  - main [ref=e490]:
+    - generic [ref=e491]:
+      - generic [ref=e492]:
+        - link "Noeron" [ref=e493] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e494]:
+            - img [ref=e495]
+            - generic [ref=e502]: Noeron
+        - generic [ref=e503]:
+          - paragraph [ref=e504]: Builder access
+          - generic [ref=e505]:
+            - img [ref=e506]
+            - generic [ref=e513]: Noeron
+          - heading "Your next site starts with a working app." [level=2] [ref=e514]
+          - paragraph [ref=e515]: Sign in to continue from prompt, URL, or sandbox. The generated code stays visible, editable, and ready for export.
+        - generic [ref=e516]:
+          - generic [ref=e517]: URL scrape
+          - generic [ref=e518]: React files
+          - generic [ref=e519]: Live preview
+      - generic [ref=e524]:
+        - generic [ref=e525]:
+          - img [ref=e527]
+          - heading "Welcome back" [level=1] [ref=e529]
+          - paragraph [ref=e530]: Continue to your sandbox, generated files, and live preview.
+        - generic [ref=e531]:
+          - generic [ref=e533]:
+            - generic [ref=e534]: Email
+            - generic [ref=e535]:
+              - img [ref=e536]
+              - textbox "you@example.com" [ref=e539]: testuser_fix_2025@example.com
+          - generic [ref=e541]:
+            - generic [ref=e542]: Password
+            - generic [ref=e543]:
+              - textbox "Enter your password" [ref=e544]: TestPass123!
+              - button "Show password" [ref=e545] [cursor=pointer]:
+                - img [ref=e546]
+          - link "Forgot password?" [ref=e551] [cursor=pointer]:
+            - /url: /auth/forgot-password
+          - button "Sign in" [ref=e553] [cursor=pointer]:
+            - text: Sign in
+            - img [ref=e554]
+        - generic [ref=e560]: Or continue with
+        - button "Continue with Google" [ref=e562] [cursor=pointer]:
+          - img [ref=e565]
+          - generic [ref=e570]: Continue with Google
+        - paragraph [ref=e571]:
+          - text: Don't have an account?
+          - link "Sign up" [ref=e572] [cursor=pointer]:
+            - /url: /auth/signup

@@ -1,0 +1,96 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Noeron" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e8]:
+            - img [ref=e9]
+            - generic [ref=e16]: Noeron
+        - button "GPT-5" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: GPT-5
+          - img [ref=e21]
+        - generic [ref=e23]: Sandbox active
+      - generic [ref=e24]:
+        - button "New sandbox" [disabled] [ref=e160]:
+          - img [ref=e162]
+          - generic [ref=e164]: New sandbox
+        - button "Re-apply" [disabled] [ref=e165]:
+          - img [ref=e167]
+          - generic [ref=e169]: Re-apply
+        - button "Download ZIP" [ref=e170] [cursor=pointer]:
+          - img [ref=e172]
+          - generic [ref=e174]: Download ZIP
+        - link "My Websites" [ref=e175] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e177]
+          - generic [ref=e179]: My Websites
+        - link "Settings" [ref=e180] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e182]
+          - generic [ref=e185]: Settings
+        - button "Sign out" [ref=e186] [cursor=pointer]:
+          - img [ref=e188]
+          - generic [ref=e190]: Sign out
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - button "No sites yet" [disabled] [ref=e60]:
+          - generic [ref=e61]: No sites yet
+          - img [ref=e62]
+        - generic [ref=e64]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=e65]:
+        - textbox "Site name" [ref=e66]
+        - textbox "site-slug" [ref=e67]
+        - button "Create site" [disabled] [ref=e68]
+    - generic [ref=e69]:
+      - generic [ref=e70]:
+        - generic [ref=e73]:
+          - generic [ref=e74]: Website URL
+          - textbox "https://example.com" [disabled] [ref=e75]
+        - generic [ref=e76]:
+          - generic [ref=e80]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+          - generic [ref=e194]: Create a simple hero section with a title and subtitle
+          - generic [ref=e196]: Planning application structure...
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - img [ref=e86]
+            - textbox "Describe what you want to build..." [active] [ref=e89]
+          - generic [ref=e90]:
+            - button "Add image" [ref=e91] [cursor=pointer]:
+              - img [ref=e92]
+              - generic [ref=e96]: Add image
+            - button "Send" [disabled] [ref=e97]:
+              - generic [ref=e98]: Send
+              - img [ref=e99]
+      - generic [ref=e102]:
+        - generic [ref=e103]:
+          - generic [ref=e105]:
+            - button "Code" [ref=e106] [cursor=pointer]:
+              - generic [ref=e107]:
+                - img [ref=e108]
+                - generic [ref=e110]: Code
+            - button "View" [ref=e111] [cursor=pointer]:
+              - generic [ref=e112]:
+                - img [ref=e113]
+                - generic [ref=e116]: View
+          - generic [ref=e117]:
+            - generic [ref=e118]: Sandbox active
+            - link "Open in new tab" [ref=e120] [cursor=pointer]:
+              - /url: https://sb-6krh0foidiem.vercel.run
+              - img [ref=e121]
+        - generic [ref=e124]:
+          - iframe [ref=e125]:
+            - main [ref=f5e3]:
+              - paragraph [ref=f5e4]:
+                - generic [ref=f5e5]:
+                  - strong [ref=f5e6]: "502"
+                  - text: ": This sandbox is not listening on the requested port."
+                - generic [ref=f5e7]:
+                  - text: "Code:"
+                  - code [ref=f5e8]: "`SANDBOX_NOT_LISTENING`"
+                - generic [ref=f5e9]:
+                  - text: "ID:"
+                  - code [ref=f5e10]: "`bom1::qw2bl-1782539993973-57f7d0c17869`"
+          - button "Refresh sandbox" [ref=e126] [cursor=pointer]:
+            - img [ref=e127]
+  - alert [ref=e3]

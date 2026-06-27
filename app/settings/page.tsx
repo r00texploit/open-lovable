@@ -10,26 +10,19 @@ import {
   Zap,
   Clock,
   Crown,
-  Users,
   Check,
   ExternalLink,
-  Loader2,
   Calendar,
   Shield,
   Sparkles,
   ArrowRight,
-  Settings,
   Globe,
   LogOut,
+  ChevronRight,
 } from 'lucide-react';
 import { NoeronLogo } from '@/components/brand/noeron-logo';
-import { UsageBar } from '@/components/subscription/usage-bar';
-import { ManageSubscriptionButton } from '@/components/subscription/manage-button';
-import { SiteSettingsPanel } from '@/components/site/site-settings-panel';
 import {
   getTierDisplayName,
-  getTierColor,
-  getStatusColor,
   formatSubscriptionStatus,
 } from '@/lib/stripe/subscription-display';
 import { formatTokenAmount, TIERS, type SubscriptionTier } from '@/lib/stripe/stripe';
@@ -49,21 +42,20 @@ interface SubscriptionData {
   stripeCustomerId?: string | null;
 }
 
-
-const planOrder: SubscriptionTier[] = ['free', 'pro', 'plus', 'team'];
+const planOrder: SubscriptionTier[] = ['free', 'pro', 'plus'];
 
 const planDescriptions: Record<SubscriptionTier, string> = {
   free: 'Try the builder and validate the flow.',
   pro: 'For regular builders shipping client or product work.',
   plus: 'For power users needing more tokens and API access.',
-  team: 'A larger token pool for studios and small teams.',
+  team: 'For studios and teams.',
 };
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'subscription' | 'usage' | 'billing' | 'sites'>('subscription');
+  const [activeTab, setActiveTab] = useState<'subscription' | 'usage' | 'billing'>('subscription');
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -87,10 +79,10 @@ export default function SettingsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-[#fff7e8] flex items-center justify-center">
+      <div className="min-h-screen bg-background-base flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[#8c4b26] mx-auto mb-4" />
-          <p className="text-[#5f5343]">Loading settings...</p>
+          <div className="w-8 h-8 border-2 border-heat-100 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-foreground-dimmer">Loading settings...</p>
         </div>
       </div>
     );
@@ -98,23 +90,23 @@ export default function SettingsPage() {
 
   if (status === 'unauthenticated') {
     return (
-      <div className="min-h-screen bg-[#fff7e8] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background-base flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center max-w-md"
         >
-          <div className="p-4 bg-[#8c4b26]/10 rounded-full inline-flex mb-6">
-            <Shield className="w-8 h-8 text-[#8c4b26]" />
+          <div className="p-4 bg-heat-8 rounded-2xl inline-flex mb-6">
+            <Shield className="w-8 h-8 text-heat-100" />
           </div>
-          <h1 className="text-2xl font-bold text-[#17130f] mb-2">Sign In Required</h1>
-          <p className="text-[#5f5343] mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Sign In Required</h1>
+          <p className="text-foreground-dimmer mb-6">
             Please sign in to access your subscription settings and billing information.
           </p>
           <Link href="/auth/signin?callbackUrl=/settings">
-            <button className="ol-primary-button group px-6 py-3">
+            <button className="btn btn-primary">
               Sign In
-              <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="w-4 h-4" />
             </button>
           </Link>
         </motion.div>
@@ -123,41 +115,42 @@ export default function SettingsPage() {
   }
 
   const tier = subscription?.tier || 'free';
+  const usagePercent = Math.round(((subscription?.usage.used || 0) / (subscription?.usage.limit || 1)) * 100);
 
   return (
-    <div className="min-h-screen bg-[#fff7e8]">
+    <div className="min-h-screen bg-background-base">
       {/* Header */}
-      <header className="border-b border-[#261e151f] bg-[#fff7e8]/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-[1280px] mx-auto px-6 sm:px-10 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-[#17130f] hover:text-[#8c4b26] transition-colors">
-            <NoeronLogo iconClassName="h-[32px] w-[32px]" textClassName="text-[#17130f]" />
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/generation">
-              <button className="px-4 py-2 text-sm text-[#5f5343] hover:text-[#17130f] transition-colors">
-                Back to App
-              </button>
+      <header className="sticky top-0 z-50 bg-background-lighter/80 backdrop-blur-xl border-b border-border-faint">
+        <div className="container-modern">
+          <div className="flex items-center justify-between h-16">
+            <Link href="/" className="flex items-center gap-2">
+              <NoeronLogo iconClassName="h-7 w-7" textClassName="text-foreground font-semibold" />
             </Link>
-            <button
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="flex items-center gap-2 rounded-lg border border-[#261e151f] px-4 py-2 text-sm text-[#5f5343] transition-colors hover:bg-[#17130f]/5 hover:text-[#17130f]"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign out
-            </button>
+            <div className="flex items-center gap-3">
+              <Link href="/generation" className="btn btn-ghost">
+                Back to App
+              </Link>
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="btn btn-secondary-light-light"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign out
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1280px] mx-auto px-6 sm:px-10 py-10">
+      <main className="container-modern py-10">
         {/* Page Title */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-black tracking-[-0.035em] text-[#17130f] mb-2">Settings</h1>
-          <p className="text-[#5f5343]">Manage your subscription, usage, and billing</p>
+          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+          <p className="text-foreground-dimmer mt-1">Manage your subscription, usage, and billing</p>
         </motion.div>
 
         {/* Navigation Tabs */}
@@ -165,21 +158,20 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex gap-1 mb-8 p-1 bg-[#17130f]/5 rounded-xl border border-[#261e151f] w-fit"
+          className="flex gap-1 mb-8 p-1 bg-background-lighter rounded-xl border border-border-muted w-fit"
         >
           {[
             { id: 'subscription', label: 'Subscription', icon: Crown },
             { id: 'usage', label: 'Usage', icon: Zap },
             { id: 'billing', label: 'Billing', icon: CreditCard },
-            { id: 'sites', label: 'Sites', icon: Globe },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 activeTab === tab.id
-                  ? 'bg-[#17130f] text-[#fff7e8]'
-                  : 'text-[#5f5343] hover:text-[#17130f] hover:bg-[#17130f]/5'
+                  ? 'bg-foreground text-white'
+                  : 'text-foreground-dimmer hover:text-foreground hover:bg-background-base'
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -198,111 +190,107 @@ export default function SettingsPage() {
               className="space-y-6"
             >
               {/* Profile Card */}
-              <FireCard>
+              <div className="bg-background-lighter rounded-2xl border border-border-faint p-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#8c4b26] to-[#fa5d19] flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-heat-100 to-heat-200 flex items-center justify-center text-white text-xl font-bold shadow-lg">
                     {session?.user?.name?.[0] || session?.user?.email?.[0]?.toUpperCase() || 'U'}
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-[#17130f]">
+                    <h2 className="text-xl font-semibold text-foreground">
                       {session?.user?.name || 'User'}
                     </h2>
-                    <p className="text-[#5f5343]">{session?.user?.email}</p>
+                    <p className="text-foreground-dimmer">{session?.user?.email}</p>
                   </div>
                 </div>
-              </FireCard>
+              </div>
 
               {/* Subscription Card */}
-              <FireCard>
+              <div className="bg-background-lighter rounded-2xl border border-border-faint p-6">
                 <div className="flex items-start justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-[#17130f] mb-1">Current Plan</h3>
-                    <p className="text-[#5f5343]">Your subscription details</p>
+                    <h3 className="text-lg font-semibold text-foreground mb-1">Current Plan</h3>
+                    <p className="text-foreground-dimmer text-sm">Your subscription details</p>
                   </div>
-                  <TierBadge tier={tier} />
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    tier === 'free'
+                      ? 'bg-background-base text-foreground-dimmer'
+                      : tier === 'pro'
+                      ? 'bg-heat-8 text-heat-100'
+                      : 'bg-accent-amethyst/10 text-accent-amethyst'
+                  }`}>
+                    {getTierDisplayName(tier)}
+                  </span>
                 </div>
 
                 <div className="space-y-4">
-                  {/* Status */}
-                  <div className="flex items-center justify-between py-3 border-b border-[#261e151f]">
+                  <div className="flex items-center justify-between py-3 border-b border-border-faint">
                     <div className="flex items-center gap-3">
-                      <Shield className="w-5 h-5 text-[#5f5343]" />
-                      <span className="text-[#5f5343]">Status</span>
+                      <Shield className="w-5 h-5 text-foreground-dimmer" />
+                      <span className="text-foreground-dimmer">Status</span>
                     </div>
-                    <span className={`font-medium ${getStatusColor(subscription?.status || 'active')} capitalize`}>
+                    <span className="font-medium text-foreground capitalize">
                       {formatSubscriptionStatus(subscription?.status || 'active')}
                     </span>
                   </div>
 
-                  {/* Current Period End */}
                   {subscription?.currentPeriodEnd && (
-                    <div className="flex items-center justify-between py-3 border-b border-[#261e151f]">
+                    <div className="flex items-center justify-between py-3 border-b border-border-faint">
                       <div className="flex items-center gap-3">
-                        <Calendar className="w-5 h-5 text-[#5f5343]" />
-                        <span className="text-[#5f5343]">Current Period Ends</span>
+                        <Calendar className="w-5 h-5 text-foreground-dimmer" />
+                        <span className="text-foreground-dimmer">Current Period Ends</span>
                       </div>
-                      <span className="text-[#17130f]">
+                      <span className="text-foreground">
                         {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
                       </span>
                     </div>
                   )}
 
-                  {/* Cancel At Period End */}
                   {subscription?.cancelAtPeriodEnd && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="p-4 bg-[#fa5d19]/10 border border-[#fa5d19]/20 rounded-lg flex items-start gap-3"
-                    >
-                      <AlertCircle className="w-5 h-5 text-[#8c4b26] flex-shrink-0 mt-0.5" />
+                    <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-[#8c4b26] font-medium">Subscription Ending</p>
-                        <p className="text-[#8c4b26]/80 text-sm">
+                        <p className="text-red-700 font-medium">Subscription Ending</p>
+                        <p className="text-red-600 text-sm">
                           Your subscription will end on{' '}
                           {subscription?.currentPeriodEnd
                             ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
                             : 'the next billing date'}
                         </p>
                       </div>
-                    </motion.div>
+                    </div>
                   )}
                 </div>
 
-                {/* Action Buttons */}
                 <div className="mt-6 flex flex-wrap gap-3">
-                  {tier !== 'free' ? (
-                    <ManageSubscriptionButton size="md">
-                      Manage Subscription
-                    </ManageSubscriptionButton>
-                  ) : (
+                  {tier === 'free' ? (
                     <Link href="/pricing">
-                      <button className="ol-primary-button group px-6 py-3">
+                      <button className="btn btn-primary">
                         Upgrade Plan
-                        <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                        <ArrowRight className="w-4 h-4" />
                       </button>
                     </Link>
+                  ) : (
+                    <button className="btn btn-secondary-light">
+                      Manage Subscription
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
-              </FireCard>
+              </div>
 
               {/* Available Plans */}
-              {tier !== 'team' && (
-                <FireCard>
-                  <h3 className="text-lg font-semibold text-[#17130f] mb-2">Available Plans</h3>
-                  <p className="text-[#5f5343] text-sm mb-6">Choose the plan that works best for you</p>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {tier !== 'plus' && (
+                <div className="bg-background-lighter rounded-2xl border border-border-faint p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Available Plans</h3>
+                  <p className="text-foreground-dimmer text-sm mb-6">Choose the plan that works best for you</p>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {planOrder
                       .filter((t) => t !== tier)
                       .map((planTier) => (
-                        <PlanCard
-                          key={planTier}
-                          tier={planTier}
-                          isCurrent={false}
-                          onSelect={() => (window.location.href = '/pricing')}
-                        />
+                        <PlanCard key={planTier} tier={planTier} />
                       ))}
                   </div>
-                </FireCard>
+                </div>
               )}
             </motion.div>
           )}
@@ -316,26 +304,38 @@ export default function SettingsPage() {
               className="space-y-6"
             >
               {/* Usage Summary */}
-              <FireCard>
+              <div className="bg-background-lighter rounded-2xl border border-border-faint p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-[#17130f]">Monthly Tokens</h3>
-                    <p className="text-[#5f5343]">Track your token pool</p>
+                    <h3 className="text-lg font-semibold text-foreground">Monthly Tokens</h3>
+                    <p className="text-foreground-dimmer text-sm">Track your token pool</p>
                   </div>
-                  <div className="p-3 bg-[#8c4b26]/10 rounded-xl">
-                    <Zap className="w-6 h-6 text-[#8c4b26]" />
+                  <div className="p-3 bg-heat-8 rounded-xl">
+                    <Zap className="w-6 h-6 text-heat-100" />
                   </div>
                 </div>
 
-                <UsageBar
-                  used={subscription?.usage.used || 0}
-                  limit={subscription?.usage.limit || TIERS.free.tokens}
-                  variant="card"
-                  size="lg"
-                />
-              </FireCard>
+                {/* Progress Bar */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="text-foreground-dimmer">
+                      {formatTokenAmount(subscription?.usage.used || 0)} used
+                    </span>
+                    <span className="text-foreground font-medium">
+                      {formatTokenAmount(subscription?.usage.limit || TIERS.free.tokens)} total
+                    </span>
+                  </div>
+                  <div className="h-2 bg-background-base rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-heat-100 to-heat-200 rounded-full transition-all"
+                      style={{ width: `${Math.min(usagePercent, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-foreground-dimmer mt-2">{usagePercent}% used this month</p>
+                </div>
+              </div>
 
-              {/* Usage Stats */}
+              {/* Stats Grid */}
               <div className="grid sm:grid-cols-3 gap-4">
                 <StatCard
                   icon={Zap}
@@ -367,71 +367,59 @@ export default function SettingsPage() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              {/* Billing History */}
-              <FireCard>
+              <div className="bg-background-lighter rounded-2xl border border-border-faint p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-[#17130f]">Billing History</h3>
-                    <p className="text-[#5f5343]">View your past invoices</p>
+                    <h3 className="text-lg font-semibold text-foreground">Billing History</h3>
+                    <p className="text-foreground-dimmer text-sm">View your past invoices</p>
                   </div>
-                  <div className="p-3 bg-[#8c4b26]/10 rounded-xl">
-                    <CreditCard className="w-6 h-6 text-[#8c4b26]" />
+                  <div className="p-3 bg-heat-8 rounded-xl">
+                    <CreditCard className="w-6 h-6 text-heat-100" />
                   </div>
                 </div>
 
                 {tier === 'free' ? (
-                  <div className="text-center py-8 text-[#5f5343]">
-                    <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <div className="text-center py-8 text-foreground-dimmer">
+                    <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-30" />
                     <p>No billing history on the free plan</p>
                     <Link href="/pricing">
-                      <button className="mt-4 px-4 py-2 border border-[#261e151f] text-[#17130f] rounded-lg hover:bg-[#17130f]/5 transition-colors">
+                      <button className="mt-4 btn btn-secondary-light">
                         Upgrade to Pro
                       </button>
                     </Link>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-start gap-4 rounded-xl bg-[#17130f]/5 p-6">
-                    <p className="text-[#5f5343]">
+                  <div className="flex flex-col items-start gap-4 rounded-xl bg-background-base p-6">
+                    <p className="text-foreground-dimmer">
                       Your invoices and receipts are managed securely by Stripe. Open the
                       billing portal to view, download, or update payment details.
                     </p>
-                    <ManageSubscriptionButton size="md">
+                    <button className="btn btn-secondary-light">
                       View invoices in Stripe
-                    </ManageSubscriptionButton>
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
-              </FireCard>
+              </div>
 
-              {/* Payment Method */}
               {tier !== 'free' && (
-                <FireCard>
+                <div className="bg-background-lighter rounded-2xl border border-border-faint p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 bg-[#8c4b26]/10 rounded-xl">
-                        <CreditCard className="w-6 h-6 text-[#8c4b26]" />
+                      <div className="p-3 bg-heat-8 rounded-xl">
+                        <CreditCard className="w-6 h-6 text-heat-100" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-[#17130f]">Payment Method</h3>
-                        <p className="text-[#5f5343]">Manage your payment details</p>
+                        <h3 className="text-lg font-semibold text-foreground">Payment Method</h3>
+                        <p className="text-foreground-dimmer text-sm">Manage your payment details</p>
                       </div>
                     </div>
-                    <ManageSubscriptionButton variant="outline">
+                    <button className="btn btn-secondary-light">
                       Update
-                    </ManageSubscriptionButton>
+                    </button>
                   </div>
-                </FireCard>
+                </div>
               )}
-            </motion.div>
-          )}
-
-          {activeTab === 'sites' && (
-            <motion.div
-              key="sites"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <SiteSettingsPanel />
             </motion.div>
           )}
         </AnimatePresence>
@@ -442,139 +430,66 @@ export default function SettingsPage() {
 
 // Helper Components
 
-function FireCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`relative overflow-hidden rounded-2xl border border-[#261e151f] bg-white p-6 shadow-sm ${className}`}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-function TierBadge({ tier }: { tier: SubscriptionTier }) {
-  const isFree = tier === 'free';
-  const isPro = tier === 'pro';
-  const isPlus = tier === 'plus';
-  const isTeam = tier === 'team';
-
-  return (
-    <div
-      className={`px-4 py-2 rounded-full font-medium border ${
-        isFree
-          ? 'bg-[#17130f]/5 text-[#5f5343] border-[#261e151f]'
-          : isPro
-          ? 'bg-[#8c4b26]/10 text-[#8c4b26] border-[#8c4b26]/20'
-          : isPlus
-          ? 'bg-[#ff6728]/10 text-[#c14914] border-[#ff6728]/25'
-          : 'bg-[#17130f]/10 text-[#17130f] border-[#17130f]/20'
-      }`}
-    >
-      {getTierDisplayName(tier)}
-    </div>
-  );
-}
-
-function PlanCard({ tier, isCurrent, onSelect }: { tier: SubscriptionTier; isCurrent: boolean; onSelect: () => void }) {
+function PlanCard({ tier }: { tier: SubscriptionTier }) {
   const tierData = TIERS[tier];
-  const isFree = tier === 'free';
   const isPro = tier === 'pro';
   const isPlus = tier === 'plus';
-  const isTeam = tier === 'team';
-
-  const accentColor = isPro ? '#8c4b26' : isPlus ? '#fa5d19' : isTeam ? '#9061ff' : '#17130f';
 
   return (
-    <div
-      className={`relative p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
-        isCurrent
-          ? 'border-[#8c4b26] bg-gradient-to-br from-[#8c4b26]/5 to-white'
-          : isPro
-          ? 'border-[#8c4b26]/30 bg-gradient-to-br from-[#8c4b26]/5 to-white hover:border-[#8c4b26]/50'
-          : isPlus
-          ? 'border-[#fa5d19]/30 bg-gradient-to-br from-[#fa5d19]/5 to-white hover:border-[#fa5d19]/50'
-          : isTeam
-          ? 'border-[#9061ff]/30 bg-gradient-to-br from-[#9061ff]/5 to-white hover:border-[#9061ff]/50'
-          : 'border-[#261e151f] bg-white hover:border-[#8c4b26]/30'
-      }`}
-    >
-      {/* Popular badge for Plus */}
+    <div className="relative p-5 rounded-xl border border-border-muted bg-background-lighter hover:border-heat-40 hover:shadow-lg transition-all">
       {isPlus && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#fa5d19] text-white text-xs font-bold rounded-full shadow-lg">
-          POPULAR
+        <div className="absolute -top-2 left-4 px-2 py-0.5 bg-heat-100 text-white text-xs font-semibold rounded-full">
+          Popular
         </div>
       )}
 
-      <div className="flex items-start justify-between mb-5">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h4 className="font-bold text-lg text-[#17130f]">{tierData.name}</h4>
-            {isPlus && <Sparkles className="w-4 h-4 text-[#fa5d19]" />}
-            {isTeam && <Users className="w-4 h-4 text-[#9061ff]" />}
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-4xl font-black text-[#17130f]">${tierData.price}</span>
-            <span className="text-[#5f5343] font-medium">/mo</span>
-          </div>
+      <div className="mb-4">
+        <h4 className="font-semibold text-foreground mb-1">{tierData.name}</h4>
+        <div className="flex items-baseline gap-1">
+          <span className="text-2xl font-bold text-foreground">${tierData.price}</span>
+          <span className="text-foreground-dimmer text-sm">/mo</span>
         </div>
       </div>
 
-      <div className="mb-4 p-3 rounded-lg bg-[#fff7e8]/50 border border-[#261e151f]/10">
-        <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4" style={{ color: accentColor }} />
-          <span className="font-semibold text-[#17130f]">{formatTokenAmount(tierData.tokens)} tokens</span>
-        </div>
-        <p className="text-xs text-[#5f5343] mt-1">per month</p>
+      <div className="flex items-center gap-2 text-sm text-heat-100 mb-3">
+        <Zap className="w-4 h-4" />
+        <span className="font-medium">{formatTokenAmount(tierData.tokens)} tokens</span>
       </div>
 
-      <p className="text-sm text-[#5f5343] mb-5 leading-relaxed">{planDescriptions[tier]}</p>
+      <p className="text-xs text-foreground-dimmer mb-4">{planDescriptions[tier]}</p>
 
-      <ul className="space-y-3 mb-6">
+      <ul className="space-y-2 mb-4">
         {tierData.features.slice(0, 3).map((feature, i) => (
-          <li key={i} className="flex items-start gap-3 text-sm">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                 style={{ backgroundColor: `${accentColor}15` }}>
-              <Check className="w-3 h-3" style={{ color: accentColor }} />
-            </div>
-            <span className="text-[#5f5343]">{feature}</span>
+          <li key={i} className="flex items-start gap-2 text-sm text-foreground-dimmer">
+            <Check className="w-4 h-4 text-heat-100 flex-shrink-0 mt-0.5" />
+            <span>{feature}</span>
           </li>
         ))}
       </ul>
 
-      <button
-        onClick={onSelect}
-        disabled={isCurrent}
-        className={`w-full py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
-          isCurrent
-            ? 'bg-[#17130f]/10 text-[#5f5343] cursor-default'
-            : isFree
-            ? 'bg-white text-[#17130f] border-2 border-[#261e151f] hover:border-[#8c4b26] hover:bg-[#fff7e8]'
-            : 'text-white shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
-        }`}
-        style={
-          !isCurrent && !isFree
-            ? { backgroundColor: accentColor, boxShadow: `0 4px 14px ${accentColor}40` }
-            : undefined
-        }
-      >
-        {isCurrent ? 'Current Plan' : 'Select Plan'}
-      </button>
+      <Link href="/pricing" className="block">
+        <button className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors ${
+          isPro
+            ? 'bg-heat-100 text-white hover:bg-heat-200'
+            : 'bg-background-base text-foreground hover:bg-border-faint'
+        }`}>
+          Select Plan
+        </button>
+      </Link>
     </div>
   );
 }
 
 function StatCard({ icon: Icon, label, value, suffix }: { icon: typeof Zap; label: string; value: number | string; suffix: string }) {
   return (
-    <FireCard className="text-center">
-      <div className="p-3 bg-[#8c4b26]/10 rounded-xl inline-flex mb-3">
-        <Icon className="w-5 h-5 text-[#8c4b26]" />
+    <div className="bg-background-lighter rounded-2xl border border-border-faint p-6 text-center">
+      <div className="p-3 bg-heat-8 rounded-xl inline-flex mb-3">
+        <Icon className="w-5 h-5 text-heat-100" />
       </div>
-      <p className="text-3xl font-bold text-[#17130f] mb-1">{value}</p>
-      <p className="text-[#5f5343] text-sm">{label}</p>
-      {suffix && <p className="text-[#5f5343]/70 text-xs mt-1">{suffix}</p>}
-    </FireCard>
+      <p className="text-2xl font-bold text-foreground mb-1">{value}</p>
+      <p className="text-foreground-dimmer text-sm">{label}</p>
+      {suffix && <p className="text-foreground-dimmer text-xs mt-1">{suffix}</p>}
+    </div>
   );
 }
 

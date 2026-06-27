@@ -12,6 +12,9 @@ import { FileManifest } from '@/types/file-manifest';
 import type { ConversationState, ConversationMessage, ConversationEdit } from '@/types/conversation';
 import { appConfig } from '@/config/app.config';
 import { authOptions } from '@/lib/auth/auth-options';
+import { sanitizeFiles } from '@/lib/ai/code-sanitizer';
+import { validatePackages, getPackagesToInstall, hasBlockedPackages } from '@/lib/ai/package-validator';
+import { CODE_GENERATION_RULES } from '@/lib/ai/code-generation-rules';
 import {
   TOKEN_USAGE_FALLBACK,
   assertTokenAllowance,
@@ -19,6 +22,7 @@ import {
   extractTokenUsage,
   incrementTokenUsage,
 } from '@/lib/usage/token-usage';
+import { getEnhancedSystemPrompt, enhanceUserPrompt } from '@/lib/ai/prompts';
 
 // Force dynamic route to enable streaming
 export const dynamic = 'force-dynamic';
@@ -109,7 +113,10 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
 
-    const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false, uploadedImage } = await request.json();
+    const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false, uploadedImage, uploadedImages } = await request.json();
+
+    // Support both single uploadedImage and array uploadedImages for backwards compatibility
+    const imagesToProcess = uploadedImages || (uploadedImage ? [uploadedImage] : []);
 
     console.log('[generate-ai-code-stream] Received request:');
     console.log('[generate-ai-code-stream] - prompt:', prompt);
@@ -117,7 +124,7 @@ export async function POST(request: NextRequest) {
     console.log('[generate-ai-code-stream] - context.sandboxId:', context?.sandboxId);
     console.log('[generate-ai-code-stream] - context.currentFiles:', context?.currentFiles ? Object.keys(context.currentFiles) : 'none');
     console.log('[generate-ai-code-stream] - currentFiles count:', context?.currentFiles ? Object.keys(context.currentFiles).length : 0);
-    console.log('[generate-ai-code-stream] - uploadedImage:', uploadedImage ? `${uploadedImage.type} (${uploadedImage.name})` : 'none');
+    console.log('[generate-ai-code-stream] - uploadedImages:', imagesToProcess.length > 0 ? `${imagesToProcess.length} image(s)` : 'none');
     
     // Initialize conversation state if not exists
     if (!global.conversationState) {
@@ -620,8 +627,11 @@ Remember: You are a SURGEON making a precise incision, not an artist repainting 
           }
         }
         
-        // Build system prompt with conversation awareness
-        let systemPrompt = `You are an expert React developer with perfect memory of the conversation. You maintain context across messages and remember scraped websites, generated components, and applied code. Generate clean, modern React code for Vite applications.
+        // Build system prompt with conversation awareness and enhanced design guidelines
+        const baseSystemPrompt = getEnhancedSystemPrompt(isEdit);
+
+        let systemPrompt = `${baseSystemPrompt}
+
 ${conversationContext}
 
 🚨 CRITICAL RULES - YOUR MOST IMPORTANT INSTRUCTIONS:
@@ -632,7 +642,7 @@ ${conversationContext}
 2. **CHECK App.jsx FIRST** - ALWAYS see what components exist before creating new ones
 3. **NAVIGATION LIVES IN Header.jsx** - Don't create Nav.jsx if Header exists with nav
 4. **USE STANDARD TAILWIND CLASSES ONLY**:
-   - ✅ CORRECT: bg-white, text-black, bg-blue-500, bg-gray-100, text-gray-900
+   - ✅ CORRECT: bg-white, text-black, bg-blue-500, bg-orange-500, bg-gray-100, text-gray-900
    - ❌ WRONG: bg-background, text-foreground, bg-primary, bg-muted, text-secondary
    - Use ONLY classes from the official Tailwind CSS documentation
 5. **FILE COUNT LIMITS**:
@@ -643,7 +653,6 @@ ${conversationContext}
    - NEVER generate custom SVG code unless explicitly asked
    - Use existing icon libraries (lucide-react, heroicons, etc.)
    - Or use placeholder elements/text if icons are not critical
-   - Only create custom SVGs when user specifically requests "create an SVG" or "draw an SVG"
 
 COMPONENT RELATIONSHIPS (CHECK THESE FIRST):
 - Navigation usually lives INSIDE Header.jsx, not separate Nav.jsx
@@ -685,31 +694,6 @@ YOU MUST FOLLOW THESE EDIT RULES:
    - Import them ONLY in the files where they're actually used
    - The system will auto-install missing packages
 
-CRITICAL FILE MODIFICATION RULES - VIOLATION = FAILURE:
-- **NEVER TRUNCATE FILES** - Always return COMPLETE files with ALL content
-- **NO ELLIPSIS (...)** - Include every single line of code, no skipping
-- Files MUST be complete and runnable - include ALL imports, functions, JSX, and closing tags
-- Count the files you're about to generate
-- If the user asked to change ONE thing, you should generate ONE file (or at most two if adding a new component)
-- DO NOT "fix" or "improve" files that weren't mentioned in the request
-- DO NOT update multiple components when only one was requested
-- DO NOT add features the user didn't ask for
-- RESIST the urge to be "helpful" by updating related files
-
-CRITICAL: DO NOT REDESIGN OR REIMAGINE COMPONENTS
-- "update" means make a small change, NOT redesign the entire component
-- "change X to Y" means ONLY change X to Y, nothing else
-- "fix" means repair what's broken, NOT rewrite everything
-- "remove X" means delete X from the existing file, NOT create a new file
-- "delete X" means remove X from where it currently exists
-- Preserve ALL existing functionality and design unless explicitly asked to change it
-
-NEVER CREATE NEW FILES WHEN THE USER ASKS TO REMOVE/DELETE SOMETHING
-If the user says "remove X", you must:
-1. Find which existing file contains X
-2. Edit that file to remove X
-3. DO NOT create any new files
-
 ${editContext ? `
 TARGETED EDIT MODE ACTIVE
 - Edit Type: ${editContext.editIntent.type}
@@ -724,63 +708,14 @@ ABSOLUTE REQUIREMENTS:
 2. If "Files to Edit" shows ONE file, generate ONLY that ONE file
 3. DO NOT generate App.jsx unless it's EXPLICITLY listed in "Files to Edit"
 4. DO NOT generate ANY components that aren't listed in "Files to Edit"
-5. DO NOT "helpfully" update related files
-6. DO NOT fix unrelated issues you notice
-7. DO NOT improve code quality in files not being edited
-8. DO NOT add bonus features
-
-EXAMPLE VIOLATIONS (THESE ARE FAILURES):
-❌ User says "update the hero" → You update Hero, Header, Footer, and App.jsx
-❌ User says "change header color" → You redesign the entire header
-❌ User says "fix the button" → You update multiple components
-❌ Files to Edit shows "Hero.jsx" → You also generate App.jsx "to integrate it"
-❌ Files to Edit shows "Header.jsx" → You also update Footer.jsx "for consistency"
-
-CORRECT BEHAVIOR (THIS IS SUCCESS):
-✅ User says "update the hero" → You ONLY edit Hero.jsx with the requested change
-✅ User says "change header color" → You ONLY change the color in Header.jsx
-✅ User says "fix the button" → You ONLY fix the specific button issue
-✅ Files to Edit shows "Hero.jsx" → You generate ONLY Hero.jsx
-✅ Files to Edit shows "Header.jsx, Nav.jsx" → You generate EXACTLY 2 files: Header.jsx and Nav.jsx
-
-THE AI INTENT ANALYZER HAS ALREADY DETERMINED THE FILES.
-DO NOT SECOND-GUESS IT.
-DO NOT ADD MORE FILES.
-ONLY OUTPUT THE EXACT FILES LISTED IN "Files to Edit".
 ` : ''}
-
-VIOLATION OF THESE RULES WILL RESULT IN FAILURE!
 ` : ''}
-
-CRITICAL INCREMENTAL UPDATE RULES:
-- When the user asks for additions or modifications (like "add a videos page", "create a new component", "update the header"):
-  - DO NOT regenerate the entire application
-  - DO NOT recreate files that already exist unless explicitly asked
-  - ONLY create/modify the specific files needed for the requested change
-  - Preserve all existing functionality and files
-  - If adding a new page/route, integrate it with the existing routing system
-  - Reference existing components and styles rather than duplicating them
-  - NEVER recreate config files (tailwind.config.js, vite.config.js, package.json, etc.)
-
-IMPORTANT: When the user asks for edits or modifications:
-- You have access to the current file contents in the context
-- Make targeted changes to existing files rather than regenerating everything
-- Preserve the existing structure and only modify what's requested
-- If you need to see a specific file that's not in context, mention it
 
 IMPORTANT: You have access to the full conversation context including:
 - Previously scraped websites and their content
 - Components already generated and applied
 - The current project being worked on
 - Recent conversation history
-- Any Vite errors that need to be resolved
-
-When the user references "the app", "the website", or "the site" without specifics, refer to:
-1. The most recently scraped website in the context
-2. The current project name in the context
-3. The files currently in the sandbox
-
-If you see scraped websites in the context, you're working on a clone/recreation of that site.
 
 CRITICAL UI/UX RULES:
 - NEVER use emojis in any code, text, console logs, or UI elements
@@ -1306,36 +1241,59 @@ ALWAYS write complete code:
 If you're running out of space, generate FEWER files but make them COMPLETE.
 It's better to have 3 complete files than 10 incomplete files.`;
 
-        // If an image was uploaded, convert to multimodal message format and expose
-        // a real data URL the generated app can render directly.
-        if (uploadedImage?.base64) {
-          const uploadedImageDataUrl = `data:${uploadedImage.type || 'image/png'};base64,${uploadedImage.base64}`;
+        // If images were uploaded, convert to multimodal message format and expose
+        // real data URLs the generated app can render directly.
+        if (imagesToProcess.length > 0) {
+          // Process all images and generate data URLs
+          const imageDataUrls: string[] = [];
+          const imageParts: any[] = [];
+          let totalSize = 0;
+
+          imagesToProcess.forEach((img: any, index: number) => {
+            if (img?.base64) {
+              const dataUrl = `data:${img.type || 'image/png'};base64,${img.base64}`;
+              totalSize += dataUrl.length;
+
+              // Only include data URLs for individual images if they're not too large
+              if (dataUrl.length < 500000) {
+                imageDataUrls.push(`IMAGE_${index + 1}_DATA_URL:\n${dataUrl}`);
+              }
+
+              // Add to multimodal content
+              imageParts.push({
+                type: 'image',
+                image: img.base64,
+                mediaType: img.type || 'image/png'
+              });
+            }
+          });
+
           const dataUrlInstruction =
-            uploadedImageDataUrl.length < 700000
+            totalSize < 700000
               ? `
 
-UPLOADED_IMAGE_DATA_URL:
-${uploadedImageDataUrl}
+UPLOADED_IMAGE_DATA_URLS:
+${imageDataUrls.join('\n\n')}
 
 CRITICAL IMAGE ASSET RULES:
-- The uploaded image is not only inspiration. It is a real asset.
-- Use the exact UPLOADED_IMAGE_DATA_URL above as the src for the main/reference image in the generated app.
-- Do NOT replace it with text-only blocks, colored placeholder cards, fake labels, stock photos, or generic placeholder images.
-- If you create a gallery, hero image, product/menu image, mood board, or brand-photo strip based on the upload, at least one visible <img> must use this exact data URL.
-- Add meaningful alt text from the user's prompt and make the image responsive with object-cover/object-contain as appropriate.`
+- The uploaded images are not only inspiration. They are real assets.
+- Use the exact UPLOADED_IMAGE_DATA_URLs above as the src for images in the generated app.
+- Do NOT replace them with text-only blocks, colored placeholder cards, fake labels, stock photos, or generic placeholder images.
+- If you create a gallery, hero image, product/menu image, mood board, or brand-photo strip based on the uploads, at least one visible <img> must use these exact data URLs.
+- Add meaningful alt text from the user's prompt and make the images responsive with object-cover/object-contain as appropriate.`
               : `
 
 CRITICAL IMAGE ASSET RULES:
-- The uploaded image is a real visual asset, not just inspiration.
-- The data URL is too large to safely inline in code, so do not invent placeholder imagery.
-- Build the layout around the uploaded image content and clearly reserve an image slot for the provided upload.`;
+- The uploaded images are real visual assets, not just inspiration.
+- The data URLs are too large to safely inline in code, so do not invent placeholder imagery.
+- Build the layout around the uploaded image content and clearly reserve image slots for the provided uploads.`;
 
           userMessageContent = [
             {
               type: 'text',
               text: fullPrompt + `
 
-I have uploaded an image for reference. Please analyze this image and use it as a visual reference for the design, layout, colors, and style when generating the website.${dataUrlInstruction}
+I have uploaded ${imagesToProcess.length} image${imagesToProcess.length > 1 ? 's' : ''} for reference. Please analyze these images and use them as visual references for the design, layout, colors, and style when generating the website.${dataUrlInstruction}
 
 CRITICAL: You MUST complete EVERY file you start. If you write:
 <file path="src/components/Hero.jsx">
@@ -1353,11 +1311,7 @@ ALWAYS write complete code:
 If you're running out of space, generate FEWER files but make them COMPLETE.
 It's better to have 3 complete files than 10 incomplete files.`
             },
-            {
-              type: 'image',
-              image: uploadedImage.base64,
-              mediaType: uploadedImage.type || 'image/png'
-            }
+            ...imageParts
           ];
         }
 
@@ -1692,12 +1646,12 @@ REMEMBER: It's better to generate fewer COMPLETE files than many INCOMPLETE file
         const fileRegex = /<file path="([^"]+)">([\s\S]*?)<\/file>/g;
         const files = [];
         let match;
-        
+
         while ((match = fileRegex.exec(generatedCode)) !== null) {
           const filePath = match[1];
           const content = match[2].trim();
           files.push({ path: filePath, content });
-          
+
           // Extract packages from file content - ONLY for edits
           if (isEdit) {
             const filePackages = extractPackagesFromCode(content);
@@ -1705,31 +1659,72 @@ REMEMBER: It's better to generate fewer COMPLETE files than many INCOMPLETE file
               if (!packagesToInstall.includes(pkg)) {
                 packagesToInstall.push(pkg);
                 console.log(`[generate-ai-code-stream] Package detected from imports: ${pkg}`);
-                await sendProgress({ 
-                  type: 'package', 
+                await sendProgress({
+                  type: 'package',
                   name: pkg,
                   message: `Package detected from imports: ${pkg}`
                 });
               }
             }
           }
-          
+
           // Send progress for each file (reusing componentCount from streaming)
           if (filePath.includes('components/')) {
             const componentName = filePath.split('/').pop()?.replace('.jsx', '') || 'Component';
-            await sendProgress({ 
-              type: 'component', 
+            await sendProgress({
+              type: 'component',
               name: componentName,
               path: filePath,
               index: componentCount
             });
           } else if (filePath.includes('App.jsx')) {
-            await sendProgress({ 
-              type: 'app', 
+            await sendProgress({
+              type: 'app',
               message: 'Generated main App.jsx',
               path: filePath
             });
           }
+        }
+
+        // SANITIZE GENERATED CODE - Remove problematic patterns
+        console.log('[generate-ai-code-stream] Sanitizing generated code...');
+        const filesRecord: Record<string, string> = {};
+        for (const file of files) {
+          filesRecord[file.path] = file.content;
+        }
+
+        const { sanitized, results: sanitizationResults, hasBlockedContent } = sanitizeFiles(filesRecord);
+
+        if (hasBlockedContent) {
+          console.warn('[generate-ai-code-stream] Blocked content detected and sanitized');
+          await sendProgress({
+            type: 'warning',
+            message: 'Some code patterns were automatically fixed for compatibility'
+          });
+        }
+
+        // Log sanitization results
+        for (const [path, result] of Object.entries(sanitizationResults)) {
+          if (result.wasModified) {
+            console.log(`[generate-ai-code-stream] Sanitized ${path}:`, result.warnings.join(', '));
+            // Update the file content
+            const fileIndex = files.findIndex(f => f.path === path);
+            if (fileIndex !== -1) {
+              files[fileIndex].content = result.sanitized;
+            }
+          }
+        }
+
+        // Validate packages across all files
+        const allContent = files.map(f => f.content).join('\n');
+        const validationResult = validatePackages(allContent);
+
+        if (!validationResult.valid) {
+          console.warn('[generate-ai-code-stream] Package validation failed:', validationResult.blockedPackages);
+          await sendProgress({
+            type: 'warning',
+            message: `Blocked packages detected: ${validationResult.blockedPackages.map(p => p.name).join(', ')}. Using CSS alternatives.`
+          });
         }
         
         // Extract explanation

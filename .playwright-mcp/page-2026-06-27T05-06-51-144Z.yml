@@ -1,0 +1,370 @@
+- generic [ref=e3]:
+  - link "Skip to content" [ref=e4] [cursor=pointer]:
+    - /url: "#content"
+  - banner "Nuviq coastal hero" [ref=e5]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - img [ref=e10]
+        - generic [ref=e12]: Coastal Luxury
+      - heading "Nuviq Menu" [level=1] [ref=e13]
+      - paragraph [ref=e14]: Summer, sip by sip.
+      - paragraph [ref=e15]: Specialty coffee, iced drinks, desserts, and refreshing signatures.
+      - generic [ref=e16]:
+        - button "Explore menu categories" [ref=e17] [cursor=pointer]:
+          - text: Explore Menu
+          - img [ref=e18]
+        - button "View featured signatures" [ref=e20] [cursor=pointer]:
+          - img [ref=e21]
+          - text: View Signatures
+  - navigation "Menu categories" [ref=e24]:
+    - list [ref=e26]:
+      - listitem [ref=e27]:
+        - button "Hot Drinks" [ref=e28] [cursor=pointer]:
+          - img [ref=e29]
+          - generic [ref=e31]: Hot Drinks
+      - listitem [ref=e32]:
+        - button "Cold Drinks" [ref=e33] [cursor=pointer]:
+          - img [ref=e34]
+          - generic [ref=e36]: Cold Drinks
+      - listitem [ref=e37]:
+        - button "Dessert" [ref=e38] [cursor=pointer]:
+          - img [ref=e39]
+          - generic [ref=e43]: Dessert
+      - listitem [ref=e44]:
+        - button "Other" [ref=e45] [cursor=pointer]:
+          - img [ref=e46]
+          - generic [ref=e48]: Other
+  - main [ref=e49]:
+    - region "Featured Signatures" [ref=e50]:
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - img [ref=e53]
+          - heading "Featured Signatures" [level=2] [ref=e55]
+        - paragraph [ref=e56]: Smooth, creamy, and made for warm beach days.
+        - list [ref=e58]:
+          - listitem [ref=e59]:
+            - generic [ref=e62]:
+              - generic [ref=e63]: Signature
+              - generic [ref=e64]: "27"
+            - heading "Ice Spanish Latte" [level=3] [ref=e65]
+            - paragraph [ref=e66]: Chill indulgence crafted for coastal afternoons.
+          - listitem [ref=e67]:
+            - generic [ref=e70]:
+              - generic [ref=e71]: Signature
+              - generic [ref=e72]: "28"
+            - heading "Iced Nuviq Macchiato" [level=3] [ref=e73]
+            - paragraph [ref=e74]: Chill indulgence crafted for coastal afternoons.
+          - listitem [ref=e75]:
+            - generic [ref=e78]:
+              - generic [ref=e79]: Signature
+              - generic [ref=e80]: "35"
+            - heading "Coconut Cloudy Matcha" [level=3] [ref=e81]
+            - paragraph [ref=e82]: Chill indulgence crafted for coastal afternoons.
+          - listitem [ref=e83]:
+            - generic [ref=e86]:
+              - generic [ref=e87]: Signature
+              - generic [ref=e88]: "40"
+            - heading "Coconut Mango Cake" [level=3] [ref=e89]
+            - paragraph [ref=e90]: Chill indulgence crafted for coastal afternoons.
+          - listitem [ref=e91]:
+            - generic [ref=e94]:
+              - generic [ref=e95]: Signature
+              - generic [ref=e96]: "38"
+            - heading "Acai Smoothie" [level=3] [ref=e97]
+            - paragraph [ref=e98]: Chill indulgence crafted for coastal afternoons.
+          - listitem [ref=e99]:
+            - generic [ref=e102]:
+              - generic [ref=e103]: Signature
+              - generic [ref=e104]: "32"
+            - heading "Creamy 60" [level=3] [ref=e105]
+            - paragraph [ref=e106]: Chill indulgence crafted for coastal afternoons.
+    - region "Hot Drinks" [ref=e107]:
+      - generic [ref=e108]:
+        - generic [ref=e109]:
+          - img [ref=e110]
+          - heading "Hot Drinks" [level=2] [ref=e112]
+        - list [ref=e113]:
+          - listitem [ref=e114]:
+            - generic [ref=e116]:
+              - heading "Hot Spanish" [level=3] [ref=e117]
+              - generic "Price 27" [ref=e118]: "27"
+            - generic [ref=e119]:
+              - generic [ref=e120]: Nuviq Selection
+              - generic [ref=e121]: Coastal crafted
+          - listitem [ref=e122]:
+            - generic [ref=e124]:
+              - heading "Hot Spanish Cortado" [level=3] [ref=e125]
+              - generic "Price 27" [ref=e126]: "27"
+            - generic [ref=e127]:
+              - generic [ref=e128]: Nuviq Selection
+              - generic [ref=e129]: Coastal crafted
+          - listitem [ref=e130]:
+            - generic [ref=e132]:
+              - heading "Hot Cortado" [level=3] [ref=e133]
+              - generic "Price 26" [ref=e134]: "26"
+            - generic [ref=e135]:
+              - generic [ref=e136]: Nuviq Selection
+              - generic [ref=e137]: Coastal crafted
+          - listitem [ref=e138]:
+            - generic [ref=e140]:
+              - heading "Hot Americano" [level=3] [ref=e141]
+              - generic "Price 25" [ref=e142]: "25"
+            - generic [ref=e143]:
+              - generic [ref=e144]: Nuviq Selection
+              - generic [ref=e145]: Coastal crafted
+          - listitem [ref=e146]:
+            - generic [ref=e148]:
+              - heading "Hot V60 Nutty Tobacco" [level=3] [ref=e149]
+              - generic "Price 37" [ref=e150]: "37"
+            - generic [ref=e151]:
+              - generic [ref=e152]: Nuviq Selection
+              - generic [ref=e153]: Coastal crafted
+          - listitem [ref=e154]:
+            - generic [ref=e156]:
+              - heading "Hot V60 Vimto" [level=3] [ref=e157]
+              - generic "Price 35" [ref=e158]: "35"
+            - generic [ref=e159]:
+              - generic [ref=e160]: Nuviq Selection
+              - generic [ref=e161]: Coastal crafted
+          - listitem [ref=e162]:
+            - generic [ref=e164]:
+              - heading "Hot V60 Candy" [level=3] [ref=e165]
+              - generic "Price 37" [ref=e166]: "37"
+            - generic [ref=e167]:
+              - generic [ref=e168]: Nuviq Selection
+              - generic [ref=e169]: Coastal crafted
+          - listitem [ref=e170]:
+            - generic [ref=e172]:
+              - heading "Hot V60 Coconut" [level=3] [ref=e173]
+              - generic "Price 36" [ref=e174]: "36"
+            - generic [ref=e175]:
+              - generic [ref=e176]: Nuviq Selection
+              - generic [ref=e177]: Coastal crafted
+          - listitem [ref=e178]:
+            - generic [ref=e180]:
+              - heading "Hot V60 Grape" [level=3] [ref=e181]
+              - generic "Price 35" [ref=e182]: "35"
+            - generic [ref=e183]:
+              - generic [ref=e184]: Nuviq Selection
+              - generic [ref=e185]: Coastal crafted
+          - listitem [ref=e186]:
+            - generic [ref=e188]:
+              - heading "Hot V60 Ethiopia" [level=3] [ref=e189]
+              - generic "Price 34" [ref=e190]: "34"
+            - generic [ref=e191]:
+              - generic [ref=e192]: Nuviq Selection
+              - generic [ref=e193]: Coastal crafted
+          - listitem [ref=e194]:
+            - generic [ref=e196]:
+              - heading "Cappuccino" [level=3] [ref=e197]
+              - generic "Price 26" [ref=e198]: "26"
+            - generic [ref=e199]:
+              - generic [ref=e200]: Nuviq Selection
+              - generic [ref=e201]: Coastal crafted
+          - listitem [ref=e202]:
+            - generic [ref=e204]:
+              - heading "Flat White" [level=3] [ref=e205]
+              - generic "Price 26" [ref=e206]: "26"
+            - generic [ref=e207]:
+              - generic [ref=e208]: Nuviq Selection
+              - generic [ref=e209]: Coastal crafted
+          - listitem [ref=e210]:
+            - generic [ref=e212]:
+              - heading "Espresso" [level=3] [ref=e213]
+              - generic "Price 20" [ref=e214]: "20"
+            - generic [ref=e215]:
+              - generic [ref=e216]: Nuviq Selection
+              - generic [ref=e217]: Coastal crafted
+          - listitem [ref=e218]:
+            - generic [ref=e220]:
+              - heading "Double Espresso" [level=3] [ref=e221]
+              - generic "Price 23" [ref=e222]: "23"
+            - generic [ref=e223]:
+              - generic [ref=e224]: Nuviq Selection
+              - generic [ref=e225]: Coastal crafted
+          - listitem [ref=e226]:
+            - generic [ref=e228]:
+              - heading "Piccolo" [level=3] [ref=e229]
+              - generic "Price 25" [ref=e230]: "25"
+            - generic [ref=e231]:
+              - generic [ref=e232]: Nuviq Selection
+              - generic [ref=e233]: Coastal crafted
+    - region "Cold Drinks" [ref=e234]:
+      - generic [ref=e235]:
+        - generic [ref=e236]:
+          - img [ref=e237]
+          - heading "Cold Drinks" [level=2] [ref=e239]
+        - list [ref=e240]:
+          - listitem [ref=e241]:
+            - generic [ref=e243]:
+              - heading "Hibiscus" [level=3] [ref=e244]
+              - generic "Price 31" [ref=e245]: "31"
+            - generic [ref=e246]:
+              - generic [ref=e247]: Nuviq Selection
+              - generic [ref=e248]: Coastal crafted
+          - listitem [ref=e249]:
+            - generic [ref=e251]:
+              - heading "Ice Americano" [level=3] [ref=e252]
+              - generic "Price 25" [ref=e253]: "25"
+            - generic [ref=e254]:
+              - generic [ref=e255]: Nuviq Selection
+              - generic [ref=e256]: Coastal crafted
+          - listitem [ref=e257]:
+            - generic [ref=e259]:
+              - heading "Ice Espresso" [level=3] [ref=e260]
+              - generic "Price 23" [ref=e261]: "23"
+            - generic [ref=e262]:
+              - generic [ref=e263]: Nuviq Selection
+              - generic [ref=e264]: Coastal crafted
+          - listitem [ref=e265]:
+            - generic [ref=e267]:
+              - heading "Ice Coconut V60" [level=3] [ref=e268]
+              - generic "Price 36" [ref=e269]: "36"
+            - generic [ref=e270]:
+              - generic [ref=e271]: Nuviq Selection
+              - generic [ref=e272]: Coastal crafted
+          - listitem [ref=e273]:
+            - generic [ref=e275]:
+              - heading "Ice Candy V60" [level=3] [ref=e276]
+              - generic "Price 37" [ref=e277]: "37"
+            - generic [ref=e278]:
+              - generic [ref=e279]: Nuviq Selection
+              - generic [ref=e280]: Coastal crafted
+          - listitem [ref=e281]:
+            - generic [ref=e283]:
+              - heading "Ice Grape V60" [level=3] [ref=e284]
+              - generic "Price 35" [ref=e285]: "35"
+            - generic [ref=e286]:
+              - generic [ref=e287]: Nuviq Selection
+              - generic [ref=e288]: Coastal crafted
+          - listitem [ref=e289]:
+            - generic [ref=e291]:
+              - heading "Ice Ethiopia V60" [level=3] [ref=e292]
+              - generic "Price 34" [ref=e293]: "34"
+            - generic [ref=e294]:
+              - generic [ref=e295]: Nuviq Selection
+              - generic [ref=e296]: Coastal crafted
+          - listitem [ref=e297]:
+            - generic [ref=e299]:
+              - heading "Ice Vimto V60" [level=3] [ref=e300]
+              - generic "Price 35" [ref=e301]: "35"
+            - generic [ref=e302]:
+              - generic [ref=e303]: Nuviq Selection
+              - generic [ref=e304]: Coastal crafted
+          - listitem [ref=e305]:
+            - generic [ref=e307]:
+              - heading "Ice Nutty Tobacco V60" [level=3] [ref=e308]
+              - generic "Price 37" [ref=e309]: "37"
+            - generic [ref=e310]:
+              - generic [ref=e311]: Nuviq Selection
+              - generic [ref=e312]: Coastal crafted
+          - listitem [ref=e313]:
+            - generic [ref=e315]:
+              - heading "Ice Spanish Latte" [level=3] [ref=e316]
+              - generic "Price 27" [ref=e317]: "27"
+            - generic [ref=e318]:
+              - generic [ref=e319]: Nuviq Selection
+              - generic [ref=e320]: Coastal crafted
+          - listitem [ref=e321]:
+            - generic [ref=e323]:
+              - heading "Iced Nuviq Macchiato" [level=3] [ref=e324]
+              - generic "Price 28" [ref=e325]: "28"
+            - generic [ref=e326]:
+              - generic [ref=e327]: Nuviq Selection
+              - generic [ref=e328]: Coastal crafted
+          - listitem [ref=e329]:
+            - generic [ref=e331]:
+              - heading "Iced Matcha" [level=3] [ref=e332]
+              - generic "Price 35" [ref=e333]: "35"
+            - generic [ref=e334]:
+              - generic [ref=e335]: Nuviq Selection
+              - generic [ref=e336]: Coastal crafted
+          - listitem [ref=e337]:
+            - generic [ref=e339]:
+              - heading "Coconut Cloudy Matcha" [level=3] [ref=e340]
+              - generic "Price 35" [ref=e341]: "35"
+            - generic [ref=e342]:
+              - generic [ref=e343]: Nuviq Selection
+              - generic [ref=e344]: Coastal crafted
+          - listitem [ref=e345]:
+            - generic [ref=e347]:
+              - heading "Coconut Cloudy Espresso" [level=3] [ref=e348]
+              - generic "Price 33" [ref=e349]: "33"
+            - generic [ref=e350]:
+              - generic [ref=e351]: Nuviq Selection
+              - generic [ref=e352]: Coastal crafted
+          - listitem [ref=e353]:
+            - generic [ref=e355]:
+              - heading "Acai Smoothie" [level=3] [ref=e356]
+              - generic "Price 38" [ref=e357]: "38"
+            - generic [ref=e358]:
+              - generic [ref=e359]: Nuviq Selection
+              - generic [ref=e360]: Coastal crafted
+          - listitem [ref=e361]:
+            - generic [ref=e363]:
+              - heading "Strawberry Mojito" [level=3] [ref=e364]
+              - generic "Price 24" [ref=e365]: "24"
+            - generic [ref=e366]:
+              - generic [ref=e367]: Nuviq Selection
+              - generic [ref=e368]: Coastal crafted
+          - listitem [ref=e369]:
+            - generic [ref=e371]:
+              - heading "Blueberry Mojito" [level=3] [ref=e372]
+              - generic "Price 24" [ref=e373]: "24"
+            - generic [ref=e374]:
+              - generic [ref=e375]: Nuviq Selection
+              - generic [ref=e376]: Coastal crafted
+          - listitem [ref=e377]:
+            - generic [ref=e379]:
+              - heading "Creamy 60" [level=3] [ref=e380]
+              - generic "Price 32" [ref=e381]: "32"
+            - generic [ref=e382]:
+              - generic [ref=e383]: Nuviq Selection
+              - generic [ref=e384]: Coastal crafted
+    - region "Dessert" [ref=e385]:
+      - generic [ref=e386]:
+        - generic [ref=e387]:
+          - img [ref=e388]
+          - heading "Dessert" [level=2] [ref=e392]
+        - list [ref=e393]:
+          - listitem [ref=e394]:
+            - generic [ref=e396]:
+              - heading "London Cheesecake" [level=3] [ref=e397]
+              - generic "Price 32" [ref=e398]: "32"
+            - generic [ref=e399]:
+              - generic [ref=e400]: Nuviq Selection
+              - generic [ref=e401]: Coastal crafted
+          - listitem [ref=e402]:
+            - generic [ref=e404]:
+              - heading "Marshmallow Nutella Cake" [level=3] [ref=e405]
+              - generic "Price 32" [ref=e406]: "32"
+            - generic [ref=e407]:
+              - generic [ref=e408]: Nuviq Selection
+              - generic [ref=e409]: Coastal crafted
+          - listitem [ref=e410]:
+            - generic [ref=e412]:
+              - heading "Coconut Mango Cake" [level=3] [ref=e413]
+              - generic "Price 40" [ref=e414]: "40"
+            - generic [ref=e415]:
+              - generic [ref=e416]: Nuviq Selection
+              - generic [ref=e417]: Coastal crafted
+    - region "Other" [ref=e418]:
+      - generic [ref=e419]:
+        - generic [ref=e420]:
+          - img [ref=e421]
+          - heading "Other" [level=2] [ref=e423]
+        - list [ref=e424]:
+          - listitem [ref=e425]:
+            - generic [ref=e427]:
+              - heading "Water" [level=3] [ref=e428]
+              - generic "Price 5" [ref=e429]: "5"
+            - generic [ref=e430]:
+              - generic [ref=e431]: Nuviq Selection
+              - generic [ref=e432]: Coastal crafted
+          - listitem [ref=e433]:
+            - generic [ref=e435]:
+              - heading "Sparkling Water" [level=3] [ref=e436]
+              - generic "Price 6" [ref=e437]: "6"
+            - generic [ref=e438]:
+              - generic [ref=e439]: Nuviq Selection
+              - generic [ref=e440]: Coastal crafted

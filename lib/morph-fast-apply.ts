@@ -117,9 +117,22 @@ async function readFileFromSandbox(sandbox: any, normalizedPath: string, fullPat
 
 // Write a file to sandbox and update cache
 async function writeFileToSandbox(sandbox: any, normalizedPath: string, fullPath: string, content: string): Promise<void> {
+  const updateCache = () => {
+    if ((global as any).sandboxState?.fileCache) {
+      (global as any).sandboxState.fileCache.files[normalizedPath] = {
+        content,
+        lastModified: Date.now()
+      };
+    }
+    if ((global as any).existingFiles) {
+      (global as any).existingFiles.add(normalizedPath);
+    }
+  };
+
   // Provider pattern (writeFile)
   if (typeof sandbox?.writeFile === 'function') {
     await sandbox.writeFile(normalizedPath, content);
+    updateCache();
     return;
   }
 
@@ -136,6 +149,7 @@ async function writeFileToSandbox(sandbox: any, normalizedPath: string, fullPath
     if (result?.stdout || result?.stderr) {
       // no-op
     }
+    updateCache();
     return;
   }
 
@@ -165,16 +179,7 @@ print("WROTE:${fullPath}")
     throw new Error('No available method to write files to sandbox');
   }
 
-  // Update backend cache if available
-  if ((global as any).sandboxState?.fileCache) {
-    (global as any).sandboxState.fileCache.files[normalizedPath] = {
-      content,
-      lastModified: Date.now()
-    };
-  }
-  if ((global as any).existingFiles) {
-    (global as any).existingFiles.add(normalizedPath);
-  }
+  updateCache();
 }
 
 export async function applyMorphEditToFile(params: {
@@ -203,8 +208,20 @@ export async function applyMorphEditToFile(params: {
       ]
     });
 
-    const mergedCode = (resp as any)?.choices?.[0]?.message?.content || '';
-    if (!mergedCode) {
+    const morphOutput = (resp as any)?.choices?.[0]?.message?.content || '';
+    const generatedUpdate = params.updateSnippet.trim();
+    const updateLooksComplete = generatedUpdate.length > 200 &&
+      /\b(import|export|function|const|let|var|class)\b/.test(generatedUpdate);
+
+    // Morph can occasionally return whitespace or a truncated merge. In that case,
+    // prefer a complete generated replacement over clobbering an existing file.
+    const mergedCode = morphOutput.trim()
+      ? morphOutput
+      : updateLooksComplete
+        ? generatedUpdate
+        : '';
+
+    if (!mergedCode.trim()) {
       return { success: false, error: 'Morph returned empty content', normalizedPath };
     }
 
@@ -215,5 +232,3 @@ export async function applyMorphEditToFile(params: {
     return { success: false, error: (error as Error).message };
   }
 }
-
-

@@ -1,0 +1,14 @@
+[   10570ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ https://www.networksolutions.com/my-account/:0
+[   12820ms] [VERBOSE] [DOM] Password forms should have (optionally hidden) username fields for accessibility: (More info: https://goo.gl/9p2vKq) %o @ https://www.networksolutions.com/my-account/login:0
+[   12820ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ https://www.networksolutions.com/my-account/login:0
+[   13584ms] [INFO] FS lazy-load event listeners attached. @ :26
+[   13632ms] [LOG] [MTA-SNIPPETS] (5:20:21 PM): Sending 0 queued logs... @ https://mta.newfold.com/snippets/loader.js?snippet=/js/web-chat.js:0
+[   13632ms] [LOG] NFDLB - version 1.1.4 @ :0
+[   13889ms] [ERROR] Framing 'https://www.google.com/' violates the following report-only Content Security Policy directive: "frame-ancestors 'self'". The violation has been logged, but no further action has been taken.
+ @ :0
+[   14139ms] [LOG] NS | SOFT-181844 - Auto-SSO for New Customers - Test B @ :1
+[   14140ms] [LOG] NS | In-Cart Add-Ons AdServer - TEST B @ :1
+[   14141ms] [LOG] Email Verification - Test B @ :1
+[   16242ms] [LOG] aaList:  chat-genesys-chat-right-bottom-corner @ :1
+[   19144ms] [WARNING] AT: Page load rendering failed {status: error, pageLoad: Object, data: Object} @ https://assets.adobedtm.com/530368109655/f1f8bc547915/launch-7859547d8660.min.js:5
+[   32449ms] [LOG] event type:  pointermove @ :13

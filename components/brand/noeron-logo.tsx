@@ -1,3 +1,7 @@
+"use client";
+
+import { useId } from "react";
+
 type NoeronLogoProps = {
   className?: string;
   iconClassName?: string;
@@ -8,6 +12,7 @@ type NoeronLogoProps = {
 
 function NoeronIcon({ className = "", variant = "dark" }: { className?: string; variant?: "light" | "dark" }) {
   const isLight = variant === "light";
+  const gradId = useId();
   return (
     <svg
       viewBox="0 0 100 100"
@@ -28,7 +33,7 @@ function NoeronIcon({ className = "", variant = "dark" }: { className?: string; 
       {/* Star / compass shape */}
       <path
         d="M50 18 L53 44 L76 50 L53 56 L50 82 L47 56 L24 50 L47 44 Z"
-        fill="url(#noeronGrad)"
+        fill={`url(#${gradId})`}
       />
       {/* Center glow */}
       <circle cx="50" cy="50" r="5" fill="white" opacity="0.9" />
@@ -37,7 +42,7 @@ function NoeronIcon({ className = "", variant = "dark" }: { className?: string; 
       {/* Wing right */}
       <path d="M64 44 L56 50 L64 56 L70 50 Z" fill={isLight ? "#1a2f5e" : "#1a3060"} opacity="0.85" />
       <defs>
-        <linearGradient id="noeronGrad" x1="50" y1="18" x2="50" y2="82" gradientUnits="userSpaceOnUse">
+        <linearGradient id={gradId} x1="50" y1="18" x2="50" y2="82" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor={isLight ? "#2a4db5" : "#2a6dd9"} />
           <stop offset="50%" stopColor={isLight ? "#4169e1" : "#4a90f5"} />
           <stop offset="100%" stopColor={isLight ? "#1a2f5e" : "#1a3060"} />

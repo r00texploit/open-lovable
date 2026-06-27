@@ -1,0 +1,5 @@
+[    4851ms] The requested module '/node_modules/.vite/deps/lucide-react.js?v=5d3c7d77' does not provide an export named 'Instagram'
+[    5452ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-xwvmfuneam8t.vercel.run/favicon.ico:0
+[   90618ms] [LOG] [vite] server connection lost. polling for restart... @ https://sb-xwvmfuneam8t.vercel.run/@vite/client:287
+[   91042ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-xwvmfuneam8t.vercel.run/:0
+[   91466ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-xwvmfuneam8t.vercel.run/:0
