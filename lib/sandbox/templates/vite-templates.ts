@@ -11,8 +11,8 @@ export interface ViteAppFiles {
   'tailwind.config.js': string;
   'postcss.config.js': string;
   'index.html': string;
-  'src/main.jsx': string;
-  'src/App.jsx': string;
+  'src/main.tsx': string;
+  'src/App.tsx': string;
   'src/index.css': string;
 }
 
@@ -45,7 +45,8 @@ export function getViteAppTemplates(provider: 'vercel' | 'e2b'): ViteAppFiles {
     },
     dependencies: {
       react: "^18.2.0",
-      "react-dom": "^18.2.0"
+      "react-dom": "^18.2.0",
+      "lucide-react": "^0.400.0"
     },
     devDependencies: {
       "@vitejs/plugin-react": "^4.0.0",
@@ -107,22 +108,22 @@ export default {
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>`;
 
-  const mainJsx = `import React from 'react'
+  const mainTsx = `import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
+import App from './App.tsx'
 import './index.css'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
 )`;
 
-  const appJsx = `function App() {
+  const appTsx = `function App(): JSX.Element {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
       <div className="text-center max-w-2xl">
@@ -152,8 +153,8 @@ body {
     'tailwind.config.js': tailwindConfig,
     'postcss.config.js': postcssConfig,
     'index.html': indexHtml,
-    'src/main.jsx': mainJsx,
-    'src/App.jsx': appJsx,
+    'src/main.tsx': mainTsx,
+    'src/App.tsx': appTsx,
     'src/index.css': indexCss,
   };
 }
@@ -163,8 +164,8 @@ body {
  */
 export function getInitialFilePaths(): string[] {
   return [
-    'src/App.jsx',
-    'src/main.jsx',
+    'src/App.tsx',
+    'src/main.tsx',
     'src/index.css',
     'index.html',
     'package.json',

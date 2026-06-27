@@ -167,32 +167,45 @@ export class VercelProvider extends BaseSandboxProvider {
   }
 
   protected async writeFilePrimary(path: string, content: string): Promise<void> {
+    console.log(`[VercelProvider] writeFilePrimary: ${path}`);
     if (!this.sandbox) {
+      console.error(`[VercelProvider] writeFilePrimary: No active sandbox`);
       throw new Error('No active sandbox');
     }
 
     const fullPath = this.getFullPath(path);
+    console.log(`[VercelProvider] Full path: ${fullPath}`);
     const buffer = Buffer.from(content, 'utf-8');
 
+    console.log(`[VercelProvider] Calling sandbox.writeFiles for ${fullPath}`);
     await this.sandbox.writeFiles([{
       path: fullPath,
       content: buffer
     }]);
+    console.log(`[VercelProvider] sandbox.writeFiles succeeded for ${fullPath}`);
 
     this.trackFile(path);
+    console.log(`[VercelProvider] Tracked file: ${path}`);
   }
 
   async writeFile(path: string, content: string): Promise<void> {
+    console.log(`[VercelProvider] writeFile called: ${path} (${content.length} chars)`);
     if (!this.sandbox) {
+      console.error(`[VercelProvider] writeFile failed: No active sandbox`);
       throw new Error('No active sandbox');
     }
 
     try {
+      console.log(`[VercelProvider] Calling writeFilePrimary for ${path}`);
       await this.writeFilePrimary(path, content);
+      console.log(`[VercelProvider] writeFilePrimary succeeded for ${path}`);
     } catch (error: unknown) {
+      console.error(`[VercelProvider] writeFilePrimary failed for ${path}:`, error);
       this.logger.error(`writeFiles failed for ${path}:`, error);
       const fullPath = this.getFullPath(path);
+      console.log(`[VercelProvider] Falling back to shell write for ${fullPath}`);
       await this.writeFileFallback(fullPath, content);
+      console.log(`[VercelProvider] Fallback write succeeded for ${path}`);
     }
   }
 
@@ -234,25 +247,52 @@ export class VercelProvider extends BaseSandboxProvider {
       throw new Error('No active sandbox');
     }
 
-    const flags = process.env.NPM_FLAGS || '';
-    const args = ['install'];
-    if (flags) {
-      args.push(...flags.split(' '));
+    const maxRetries = 3;
+    let lastResult: { stdout: string; stderr: string; exitCode: number } | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      this.logger.info(`Installing packages (attempt ${attempt}/${maxRetries}): ${packages.join(', ')}`);
+
+      const flags = process.env.NPM_FLAGS || '';
+      const args = ['install'];
+      if (flags) {
+        args.push(...flags.split(' '));
+      }
+      args.push(...packages);
+
+      const result = await this.executeCommand('npm', args, this.workingDirectory);
+      lastResult = result;
+
+      if (result.exitCode === 0) {
+        this.logger.info('Package installation successful');
+
+        // Restart Vite if configured and successful
+        if (appConfig.packages.autoRestartVite) {
+          await this.restartViteServer();
+        }
+
+        return {
+          stdout: result.stdout,
+          stderr: result.stderr,
+          exitCode: result.exitCode,
+          success: true
+        };
+      }
+
+      // If failed but not last attempt, wait before retry
+      if (attempt < maxRetries) {
+        this.logger.warn(`Package installation failed, retrying in ${attempt * 2}s...`, result.stderr);
+        await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+      }
     }
-    args.push(...packages);
 
-    const result = await this.executeCommand('npm', args, this.workingDirectory);
-
-    // Restart Vite if configured and successful
-    if (result.exitCode === 0 && appConfig.packages.autoRestartVite) {
-      await this.restartViteServer();
-    }
-
+    // All retries failed
+    this.logger.error('Package installation failed after all retries');
     return {
-      stdout: result.stdout,
-      stderr: result.stderr,
-      exitCode: result.exitCode,
-      success: result.exitCode === 0
+      stdout: lastResult?.stdout || '',
+      stderr: lastResult?.stderr || 'Package installation failed after retries',
+      exitCode: lastResult?.exitCode || 1,
+      success: false
     };
   }
 
@@ -301,6 +341,84 @@ export class VercelProvider extends BaseSandboxProvider {
 
     // Wait for Vite to be ready
     await new Promise(resolve => setTimeout(resolve, appConfig.vercelSandbox.devServerStartupDelay));
+
+    // NEW: Verify server is actually listening
+    const isReady = await this.verifyDevServerReady();
+    if (!isReady) {
+      // Check the log for errors
+      const logResult = await this.executeCommand('cat', ['/tmp/vite.log']);
+      this.logger.error('Vite server failed to start. Log output:', logResult.stdout + logResult.stderr);
+      throw new Error('Vite dev server failed to start - check logs at /tmp/vite.log');
+    }
+
+    this.logger.info('Vite server verified listening on port', appConfig.vercelSandbox.devPort);
+  }
+
+  /**
+   * Verify the dev server is actually listening and responding
+   */
+  protected async verifyDevServerReady(): Promise<boolean> {
+    const maxAttempts = 15;
+    const delay = 1000;
+    const port = appConfig.vercelSandbox.devPort;
+
+    this.logger.info(`Verifying dev server is ready on port ${port}...`);
+
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        // Try to connect to the dev server
+        const result = await this.executeCommand(
+          'sh',
+          ['-c', `curl -s -o /dev/null -w "%{http_code}" http://localhost:${port} || echo "000"`]
+        );
+
+        const statusCode = result.stdout.trim();
+
+        // 200 means server is ready, 000 means connection refused
+        if (statusCode === '200' || statusCode === '403' || statusCode === '404') {
+          this.logger.info(`Dev server ready (status: ${statusCode})`);
+          return true;
+        }
+
+        // Check if process is still running
+        const processCheck = await this.executeCommand('sh', ['-c', 'pgrep -f vite || echo "none"']);
+        if (processCheck.stdout.trim() === 'none') {
+          this.logger.error('Vite process not found');
+          return false;
+        }
+      } catch (error) {
+        // Not ready yet, continue waiting
+        this.logger.debug(`Health check attempt ${i + 1}/${maxAttempts} failed, retrying...`);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    this.logger.error(`Dev server failed to become ready after ${maxAttempts} attempts`);
+    return false;
+  }
+
+  /**
+   * Check if the sandbox is healthy and the dev server is responsive
+   */
+  async isHealthy(): Promise<boolean> {
+    if (!this.sandbox) {
+      return false;
+    }
+
+    try {
+      // Quick check if sandbox is responsive
+      const result = await this.executeCommand('echo', ['healthy']);
+      if (result.exitCode !== 0) {
+        return false;
+      }
+
+      // Check if dev server is listening
+      return await this.verifyDevServerReady();
+    } catch (error) {
+      this.logger.error('Health check failed:', error);
+      return false;
+    }
   }
 
   protected async killViteProcess(): Promise<void> {

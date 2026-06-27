@@ -52,93 +52,100 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
   };
 
   return (
-    <div className="w-full">
-      <div >
-        <div className="p-4 border-b border-gray-100">
-         {/* link to home page with button */}
-         <Link href="/">
-          <button className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
-            Generate a new website
-          </button>
-         </Link>
-        </div>
+    <div className="w-full p-4 space-y-4">
+      {/* URL Input */}
+      <div>
+        <label className="block text-xs font-medium text-warm-800 mb-2">Website URL</label>
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => {
+            setUrl(e.target.value);
+            setIsValidUrl(e.target.value.trim().length > 0);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && isValidUrl && !disabled) {
+              handleSubmit();
+            }
+          }}
+          disabled={disabled}
+          className="w-full rounded-xl border border-warm-750/12 bg-white px-3 py-2.5 text-sm text-warm-800 placeholder:text-warm-500 transition-colors focus:border-brand-orange focus:outline-none"
+          placeholder="https://example.com"
+        />
+      </div>
 
-        {/* Options Section - Show when valid URL */}
-        {isValidUrl && (
-          <div className="p-4 space-y-4">
-            {/* Style Selector */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">Style</label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {styles.map((style) => (
-                  <button
-                    key={style.id}
-                    onClick={() => setSelectedStyle(style.id)}
-                    disabled={disabled}
-                    className={`
-                      py-2 px-2 rounded text-xs font-medium border transition-all text-center
-                      ${selectedStyle === style.id
-                        ? 'border-orange-500 bg-orange-50 text-orange-900'
-                        : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
-                      }
-                      ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-                    `}
-                  >
-                    {style.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Model Selector */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">AI Model</label>
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                disabled={disabled}
-                className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              >
-                {models.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Additional Instructions */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">Additional Instructions (optional)</label>
-              <input
-                type="text"
-                value={additionalInstructions}
-                onChange={(e) => setAdditionalInstructions(e.target.value)}
-                disabled={disabled}
-                className="w-full px-3 py-2 text-xs text-gray-700 bg-gray-50 rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 placeholder:text-gray-400"
-                placeholder="e.g., make it more colorful, add animations..."
-              />
-            </div>
-
-            {/* Submit Button */}
-            <div className="pt-2">
-              <button
-                onClick={handleSubmit}
-                disabled={!isValidUrl || disabled}
-                className={`
-                  w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-all
-                  ${isValidUrl && !disabled
-                    ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }
-                `}
-              >
-                {disabled ? 'Scraping...' : 'Scrape Site'}
-              </button>
+      {/* Options Section - Show when valid URL */}
+      {isValidUrl && (
+        <div className="space-y-4">
+          {/* Style Selector */}
+          <div>
+            <label className="block text-xs font-medium text-warm-800 mb-2">Style</label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {styles.map((style) => (
+                <button
+                  key={style.id}
+                  onClick={() => setSelectedStyle(style.id)}
+                  disabled={disabled}
+                  className={`
+                    py-2 px-2 rounded-xl text-xs font-medium border transition-all text-center
+                    ${selectedStyle === style.id
+                      ? 'border-brand-orange bg-brand-orange/5 text-warm-800'
+                      : 'border-warm-750/12 hover:border-warm-750/30 bg-warm-025 text-warm-600'
+                    }
+                    ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  {style.name}
+                </button>
+              ))}
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Model Selector */}
+          <div>
+            <label className="block text-xs font-medium text-warm-800 mb-2">AI Model</label>
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              disabled={disabled}
+              className="w-full rounded-xl border border-warm-750/12 bg-white px-3 py-2 text-xs font-medium text-warm-800 focus:border-brand-orange focus:outline-none"
+            >
+              {models.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Additional Instructions */}
+          <div>
+            <label className="block text-xs font-medium text-warm-800 mb-2">Additional Instructions (optional)</label>
+            <input
+              type="text"
+              value={additionalInstructions}
+              onChange={(e) => setAdditionalInstructions(e.target.value)}
+              disabled={disabled}
+              className="w-full rounded-xl border border-warm-750/12 bg-white px-3 py-2 text-xs text-warm-800 placeholder:text-warm-500 focus:border-brand-orange focus:outline-none"
+              placeholder="e.g., make it more colorful, add animations..."
+            />
+          </div>
+
+          {/* Submit Button */}
+          <div className="pt-2">
+            <button
+              onClick={handleSubmit}
+              disabled={!isValidUrl || disabled}
+              className={`
+                ol-primary-button w-full py-2.5 px-4 text-sm
+                ${(!isValidUrl || disabled) ? 'opacity-50 cursor-not-allowed' : ''}
+              `}
+            >
+              {disabled ? 'Scraping...' : 'Scrape Site'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

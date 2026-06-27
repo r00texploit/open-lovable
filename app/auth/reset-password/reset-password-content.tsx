@@ -82,15 +82,15 @@ export function ResetPasswordContent() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[24px] bg-red-300 text-[#22100d]"
+            className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[24px] bg-red-300 text-warm-900"
           >
             <AlertCircle className="h-8 w-8" />
           </motion.div>
 
-          <h2 className="mb-3 text-3xl font-black tracking-[-0.045em] text-[#fff7e8]">
+          <h2 className="mb-3 text-3xl font-black tracking-[-0.045em] text-warm-100">
             Invalid or expired link
           </h2>
-          <p className="mb-6 text-[#d8c5a8]">
+          <p className="mb-6 text-warm-300">
             The password reset link is invalid or has expired. Please request a new one.
           </p>
 
@@ -119,15 +119,15 @@ export function ResetPasswordContent() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[24px] bg-[#8f9b5b] text-[#11100d]"
+            className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[24px] bg-brand-olive text-warm-900"
           >
             <CheckCircle2 className="h-8 w-8" />
           </motion.div>
 
-          <h2 className="mb-3 text-3xl font-black tracking-[-0.045em] text-[#fff7e8]">
+          <h2 className="mb-3 text-3xl font-black tracking-[-0.045em] text-warm-100">
             Password reset complete
           </h2>
-          <p className="mb-6 text-[#d8c5a8]">
+          <p className="mb-6 text-warm-300">
             Your password has been reset successfully. You can now sign in with your new password.
           </p>
 
@@ -150,7 +150,7 @@ export function ResetPasswordContent() {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-6 flex h-12 w-12 items-center justify-center rounded-[18px] bg-[#ff6728] text-[#211409]"
+          className="mb-6 flex h-12 w-12 items-center justify-center rounded-[18px] bg-brand-orange text-warm-800"
         >
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -161,7 +161,7 @@ export function ResetPasswordContent() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5 }}
-          className="mb-3 text-4xl font-black tracking-[-0.055em] text-[#fff7e8] sm:text-5xl"
+          className="mb-3 text-4xl font-black tracking-[-0.055em] text-warm-100 sm:text-5xl"
         >
           Create new password
         </motion.h1>
@@ -169,7 +169,7 @@ export function ResetPasswordContent() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-sm leading-6 text-[#d8c5a8]"
+          className="text-sm leading-6 text-warm-300"
         >
           Enter your new password below
         </motion.p>

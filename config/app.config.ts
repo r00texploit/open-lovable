@@ -5,8 +5,10 @@ export const appConfig = {
   // Vercel Sandbox Configuration
   vercelSandbox: {
     // Sandbox timeout in minutes. Override with SANDBOX_TIMEOUT_MINUTES.
-    // Plan caps: Hobby allows up to 45 minutes, Pro/Enterprise up to 5 hours.
-    timeoutMinutes: Number(process.env.SANDBOX_TIMEOUT_MINUTES) || 45,
+    // Plan caps: Hobby up to 45 minutes, Pro/Enterprise up to 24 hours.
+    // Defaults to 24 hours (1440 min) so Pro/Enterprise users get the maximum
+    // runtime without manual configuration. Hobby users should set this to 45.
+    timeoutMinutes: Number(process.env.SANDBOX_TIMEOUT_MINUTES) || 1440,
 
     // Convert to milliseconds for Vercel Sandbox API
     get timeoutMs() {
@@ -15,9 +17,9 @@ export const appConfig = {
 
     // How often the builder pings to keep an active sandbox alive. Each ping
     // extends the sandbox lifetime by this amount, so the remaining time stays
-    // roughly constant while the user is working. Extensions stop at the
-    // plan's maximum sandbox duration (45 min Hobby, 5 h Pro/Enterprise).
-    keepAliveIntervalMinutes: Number(process.env.SANDBOX_KEEPALIVE_INTERVAL_MINUTES) || 5,
+    // roughly constant while the user is working. With a 24-hour timeout, a
+    // 30-minute interval is plenty and reduces API calls.
+    keepAliveIntervalMinutes: Number(process.env.SANDBOX_KEEPALIVE_INTERVAL_MINUTES) || 30,
 
     get keepAliveIntervalMs() {
       return this.keepAliveIntervalMinutes * 60 * 1000;

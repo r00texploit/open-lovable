@@ -1,0 +1,23 @@
+[     103ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     160ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     164ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     178ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[     425ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     435ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     435ms] [LOG] [home] No sandbox in URL, creating new sandbox automatically... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     436ms] [LOG] [createSandbox] Starting sandbox creation... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     443ms] [LOG] [checkSandboxStatus] No existing sandboxData, clearing state @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     448ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[    7713ms] [ERROR] Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://react.dev/link/setstate-in-render AISandboxPage HeroInput HeroInput @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:3318
+[   24640ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   24684ms] [LOG] [Fast Refresh] done in 145ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   38313ms] [LOG] [createSandbox] Response data: {success: true, sessionId: cmqw1d5zl000pitm0vx2qvatn, sandboxId: sb_1782545160930_66374938, url: https://sb-o4b169w8flae.vercel.run, provider: vercel} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   38315ms] [LOG] [createSandbox] Setting sandboxData from creation: {success: true, sessionId: cmqw1d5zl000pitm0vx2qvatn, sandboxId: sb_1782545160930_66374938, url: https://sb-o4b169w8flae.vercel.run, provider: vercel} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   38319ms] [LOG] [createSandbox] Sandbox ready with Vite server running @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   38347ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   38447ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[   38450ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782545160930_66374938&model=openai%2Fgpt-5:0
+[   38640ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   39906ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_JNCqkMAeTTQTuaoVWbhM46dmD0hO, url: https://sb-o4b169w8flae.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T07:26:37.167Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   40200ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   43671ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477

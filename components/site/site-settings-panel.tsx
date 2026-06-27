@@ -284,8 +284,8 @@ export function SiteSettingsPanel() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-[#261e151f] bg-white p-8 text-center text-[#5f5343]">
-        <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin text-[#8c4b26]" />
+      <div className="rounded-2xl border border-warm-750/12 bg-white p-8 text-center text-warm-500">
+        <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin text-warm-600" />
         Loading site settings...
       </div>
     );
@@ -293,11 +293,11 @@ export function SiteSettingsPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-[#261e151f] bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-warm-750/12 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-[#17130f]">Sites</h3>
-            <p className="text-sm text-[#5f5343]">
+            <h3 className="text-lg font-semibold text-warm-800">Sites</h3>
+            <p className="text-sm text-warm-500">
               Manage subdomains, publish state, and optional custom domains for your tenant sites.
             </p>
           </div>
@@ -313,13 +313,13 @@ export function SiteSettingsPanel() {
                 }
               }}
               placeholder="New site name"
-              className="rounded-lg border border-[#261e151f] px-3 py-2 text-sm"
+              className="rounded-lg border border-warm-750/12 px-3 py-2 text-sm"
             />
             <input
               value={newSiteSlug}
               onChange={(event) => setNewSiteSlug(event.target.value.toLowerCase())}
               placeholder="new-site-slug"
-              className="rounded-lg border border-[#261e151f] px-3 py-2 text-sm"
+              className="rounded-lg border border-warm-750/12 px-3 py-2 text-sm"
             />
             <button
               onClick={createSite}
@@ -335,7 +335,7 @@ export function SiteSettingsPanel() {
           <select
             value={selectedSiteId}
             onChange={(event) => setSelectedSiteId(event.target.value)}
-            className="min-w-[260px] rounded-lg border border-[#261e151f] bg-[#fff7e8] px-3 py-2 text-sm"
+            className="min-w-[260px] rounded-lg border border-warm-750/12 bg-warm-100 px-3 py-2 text-sm"
           >
             <option value="">Select a site</option>
             {sites.map((site) => (
@@ -350,7 +350,7 @@ export function SiteSettingsPanel() {
               <Link
                 href={selectedSite.liveUrl}
                 target="_blank"
-                className="inline-flex items-center gap-2 rounded-lg border border-[#261e151f] px-4 py-2 text-sm text-[#17130f] hover:bg-[#17130f]/5"
+                className="inline-flex items-center gap-2 rounded-lg border border-warm-750/12 px-4 py-2 text-sm text-warm-800 hover:bg-warm-800/5"
               >
                 Open Live URL
                 <ExternalLink className="h-4 w-4" />
@@ -358,7 +358,7 @@ export function SiteSettingsPanel() {
               <Link
                 href={`/site-preview/${selectedSite.slug}`}
                 target="_blank"
-                className="inline-flex items-center gap-2 rounded-lg border border-[#261e151f] px-4 py-2 text-sm text-[#17130f] hover:bg-[#17130f]/5"
+                className="inline-flex items-center gap-2 rounded-lg border border-warm-750/12 px-4 py-2 text-sm text-warm-800 hover:bg-warm-800/5"
               >
                 Preview Snapshot
                 <Globe className="h-4 w-4" />
@@ -370,11 +370,11 @@ export function SiteSettingsPanel() {
 
       {selectedSite && (
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-2xl border border-[#261e151f] bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-warm-750/12 bg-white p-6 shadow-sm">
             <div className="mb-6 flex items-start justify-between">
               <div>
-                <h4 className="text-lg font-semibold text-[#17130f]">Site Identity</h4>
-                <p className="text-sm text-[#5f5343]">
+                <h4 className="text-lg font-semibold text-warm-800">Site Identity</h4>
+                <p className="text-sm text-warm-500">
                   Free URL: {selectedSite.liveUrl}
                 </p>
               </div>
@@ -387,38 +387,38 @@ export function SiteSettingsPanel() {
 
             <div className="space-y-4">
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#17130f]">Site name</span>
+                <span className="mb-2 block text-sm font-medium text-warm-800">Site name</span>
                 <input
                   value={name}
                   onChange={(event) => setName(event.target.value)}
-                  className="w-full rounded-lg border border-[#261e151f] px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-warm-750/12 px-3 py-2 text-sm"
                 />
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#17130f]">Subdomain slug</span>
+                <span className="mb-2 block text-sm font-medium text-warm-800">Subdomain slug</span>
                 <input
                   value={slug}
                   onChange={(event) => setSlug(event.target.value.toLowerCase())}
-                  className="w-full rounded-lg border border-[#261e151f] px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-warm-750/12 px-3 py-2 text-sm"
                 />
               </label>
 
-              <div className="rounded-xl border border-dashed border-[#261e151f] bg-[#fff7e8] p-4">
-                <p className="text-sm font-medium text-[#17130f]">Publishing</p>
-                <p className="mt-1 text-sm text-[#5f5343]">
+              <div className="rounded-xl border border-dashed border-warm-750/12 bg-warm-100 p-4">
+                <p className="text-sm font-medium text-warm-800">Publishing</p>
+                <p className="mt-1 text-sm text-warm-500">
                   Publish the current sandbox build from the generation workspace. After the first publish, you can toggle visibility here without losing the stored snapshot.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
                     onClick={togglePublished}
                     disabled={action !== null}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[#261e151f] px-4 py-2 text-sm text-[#17130f] hover:bg-[#17130f]/5 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-lg border border-warm-750/12 px-4 py-2 text-sm text-warm-800 hover:bg-warm-800/5 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {selectedSite.published ? 'Unpublish' : 'Enable Public Access'}
                   </button>
                   {selectedSite.lastPublishedAt && (
-                    <span className="text-sm text-[#5f5343]">
+                    <span className="text-sm text-warm-500">
                       Last published {new Date(selectedSite.lastPublishedAt).toLocaleString()}
                     </span>
                   )}
@@ -428,7 +428,7 @@ export function SiteSettingsPanel() {
               <button
                 onClick={saveSite}
                 disabled={action !== null}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#17130f] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-warm-800 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Save className="h-4 w-4" />
                 {action === 'save' ? 'Saving...' : 'Save Site Settings'}
@@ -436,22 +436,22 @@ export function SiteSettingsPanel() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#261e151f] bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-warm-750/12 bg-white p-6 shadow-sm">
             <div className="mb-6">
-              <h4 className="text-lg font-semibold text-[#17130f]">Custom Domain</h4>
-              <p className="text-sm text-[#5f5343]">
+              <h4 className="text-lg font-semibold text-warm-800">Custom Domain</h4>
+              <p className="text-sm text-warm-500">
                 Add an optional branded domain after your default `{selectedSite.slug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'mydomain.com'}` URL is working.
               </p>
             </div>
 
             <div className="space-y-4">
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#17130f]">Custom domain</span>
+                <span className="mb-2 block text-sm font-medium text-warm-800">Custom domain</span>
                 <input
                   value={customDomain}
                   onChange={(event) => setCustomDomain(event.target.value.toLowerCase())}
                   placeholder="customerbrand.com"
-                  className="w-full rounded-lg border border-[#261e151f] px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-warm-750/12 px-3 py-2 text-sm"
                 />
               </label>
 
@@ -459,14 +459,14 @@ export function SiteSettingsPanel() {
                 <button
                   onClick={connectDomain}
                   disabled={action !== null || !customDomain.trim()}
-                  className="rounded-lg bg-[#17130f] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-warm-800 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {action === 'connect-domain' ? 'Connecting...' : 'Add Domain'}
                 </button>
                 <button
                   onClick={refreshDomainStatus}
                   disabled={action !== null || !selectedSite.customDomain}
-                  className="inline-flex items-center gap-2 rounded-lg border border-[#261e151f] px-4 py-2 text-sm text-[#17130f] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-lg border border-warm-750/12 px-4 py-2 text-sm text-warm-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <RefreshCw className="h-4 w-4" />
                   Status
@@ -474,22 +474,22 @@ export function SiteSettingsPanel() {
                 <button
                   onClick={verifyDomain}
                   disabled={action !== null || !selectedSite.customDomain}
-                  className="inline-flex items-center gap-2 rounded-lg border border-[#261e151f] px-4 py-2 text-sm text-[#17130f] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-lg border border-warm-750/12 px-4 py-2 text-sm text-warm-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Check className="h-4 w-4" />
                   Verify
                 </button>
               </div>
 
-              <div className="rounded-xl border border-dashed border-[#261e151f] bg-[#fff7e8] p-4">
-                <p className="text-sm font-medium text-[#17130f]">
+              <div className="rounded-xl border border-dashed border-warm-750/12 bg-warm-100 p-4">
+                <p className="text-sm font-medium text-warm-800">
                   Verification status: {selectedSite.customDomainVerified ? 'Verified' : selectedSite.domainStatus}
                 </p>
-                <p className="mt-1 text-sm text-[#5f5343]">
+                <p className="mt-1 text-sm text-warm-500">
                   Point your DNS to Vercel, then refresh and verify here. Wildcard and root platform domains are configured once at the platform level; this screen is for per-site customer domains.
                 </p>
                 {verification.length > 0 && (
-                  <div className="mt-3 space-y-2 text-xs text-[#5f5343]">
+                  <div className="mt-3 space-y-2 text-xs text-warm-500">
                     {verification.map((item) => (
                       <div key={`${item.type}-${item.domain}-${item.value}`} className="rounded-lg bg-white p-3">
                         <p><strong>{item.type}</strong> record for {item.domain}</p>
@@ -501,7 +501,7 @@ export function SiteSettingsPanel() {
                 )}
               </div>
 
-              <div className="rounded-xl border border-[#261e151f] bg-[#17130f]/[0.03] p-4 text-sm text-[#5f5343]">
+              <div className="rounded-xl border border-warm-750/12 bg-warm-800/[0.03] p-4 text-sm text-warm-500">
                 DNS setup flow:
                 <div className="mt-2 space-y-1">
                   <p>1. Add the domain here.</p>
@@ -527,12 +527,12 @@ export function SiteSettingsPanel() {
       )}
 
       {sites.length === 0 && !loading && (
-        <div className="rounded-2xl border border-dashed border-[#261e151f] bg-white p-8 text-center">
-          <p className="text-[#17130f]">No sites yet.</p>
-          <p className="mt-2 text-sm text-[#5f5343]">
+        <div className="rounded-2xl border border-dashed border-warm-750/12 bg-white p-8 text-center">
+          <p className="text-warm-800">No sites yet.</p>
+          <p className="mt-2 text-sm text-warm-500">
             Create your first site here, then open the generation workspace to build and publish it.
           </p>
-          <Link href="/generation" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-[#8c4b26]">
+          <Link href="/generation" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-warm-600">
             Open Generation Workspace
             <ArrowRight className="h-4 w-4" />
           </Link>

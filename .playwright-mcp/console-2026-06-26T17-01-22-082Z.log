@@ -1,0 +1,16 @@
+[  175123ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=yRKzsY774IwQ0QeAFibQK' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  180130ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=yRKzsY774IwQ0QeAFibQK' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  181428ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  181432ms] [ERROR] WebSocket is already in CLOSING or CLOSED state. @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2836
+[  181434ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/sandbox-status?checkHealth=true:0
+[  181436ms] [ERROR] Failed to check sandbox status: TypeError: Failed to fetch
+    at checkSandboxStatus (http://localhost:3000/_next/static/chunks/_1cdqcqr._.js:2324:36)
+    at AISandboxPage.useEffect.intervalId (http://localhost:3000/_next/static/chunks/_1cdqcqr._.js:2149:25) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:3318
+[  181466ms] [ERROR] WebSocket is already in CLOSING or CLOSED state. @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2836
+[  181467ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/__nextjs_original-stack-frames:0
+[  185141ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=yRKzsY774IwQ0QeAFibQK' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  190157ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=yRKzsY774IwQ0QeAFibQK' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  195185ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=yRKzsY774IwQ0QeAFibQK' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  200209ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=yRKzsY774IwQ0QeAFibQK' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  205279ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=yRKzsY774IwQ0QeAFibQK' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  210479ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=yRKzsY774IwQ0QeAFibQK' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422

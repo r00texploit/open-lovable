@@ -46,9 +46,9 @@ export function ManageSubscriptionButton({
   };
 
   const variantClasses = {
-    default: 'bg-[#ff6728] hover:bg-[#ff7b3d] text-[#20130a]',
-    outline: 'bg-transparent border border-[#261e151f] text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f]',
-    ghost: 'bg-transparent text-[#8c4b26] hover:text-[#17130f] hover:bg-[#17130f]/5',
+    default: 'bg-brand-orange hover:bg-brand-orange-hover text-warm-900',
+    outline: 'bg-transparent border border-warm-750/12 text-warm-500 hover:bg-warm-800/5 hover:text-warm-800',
+    ghost: 'bg-transparent text-warm-600 hover:text-warm-800 hover:bg-warm-800/5',
   };
 
   return (

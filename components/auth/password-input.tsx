@@ -27,10 +27,10 @@ const strengthLabels = ['Very weak', 'Weak', 'Fair', 'Good', 'Strong', 'Very str
 const strengthColors = [
   'bg-red-500',
   'bg-red-400',
-  'bg-[#c9a557]',
-  'bg-[#d7b35d]',
-  'bg-[#8f9b5b]',
-  'bg-[#768548]',
+  'bg-password-weak',
+  'bg-password-fair',
+  'bg-brand-olive',
+  'bg-password-strong',
 ];
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
@@ -42,7 +42,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
     return (
       <div className="space-y-2">
         {label && (
-          <label className="block text-sm font-semibold text-[#ead7b8]">
+          <label className="block text-sm font-semibold text-warm-200">
             {label}
           </label>
         )}
@@ -58,7 +58,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
                   ? '!border-red-400/70 focus:!border-red-400'
                   : ''
                 }
-                ${isFocused ? 'bg-[#fff7e81c]' : ''}
+                ${isFocused ? 'bg-warm-100/11' : ''}
               `,
               className
             )}
@@ -72,8 +72,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             className="
               absolute right-3 top-1/2 -translate-y-1/2
               rounded-full p-2
-              text-[#ead7b899] hover:text-[#fff7e8]
-              hover:bg-[#fff7e814]
+              text-warm-200/60 hover:text-warm-100
+              hover:bg-warm-100/8
               transition-colors duration-300
             "
             aria-label={showPassword ? 'Hide password' : 'Show password'}
@@ -109,7 +109,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             <p className={cn(
               'text-xs',
               strength < 2 ? 'text-red-400' :
-              strength < 4 ? 'text-[#d7b35d]' : 'text-[#a9b56a]'
+              strength < 4 ? 'text-password-fair' : 'text-password-very-strong'
             )}>
               {strengthLabels[strength]}
             </p>

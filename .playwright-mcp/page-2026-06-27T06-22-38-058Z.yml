@@ -1,0 +1,118 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Noeron" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]:
+            - img [ref=e7]
+            - generic [ref=e14]: Noeron
+        - button "GPT-5" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: GPT-5
+          - img [ref=e19]
+        - generic [ref=e21]: Sandbox active
+      - generic [ref=e22]:
+        - button "New sandbox" [ref=e350] [cursor=pointer]:
+          - img [ref=e352]
+          - generic [ref=e354]: New sandbox
+        - button "Re-apply" [disabled] [ref=e355]:
+          - img [ref=e357]
+          - generic [ref=e359]: Re-apply
+        - button "Download ZIP" [ref=e360] [cursor=pointer]:
+          - img [ref=e362]
+          - generic [ref=e364]: Download ZIP
+        - link "My Websites" [ref=e365] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e367]
+          - generic [ref=e369]: My Websites
+        - link "Settings" [ref=e370] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e372]
+          - generic [ref=e375]: Settings
+        - button "Sign out" [ref=e376] [cursor=pointer]:
+          - img [ref=e378]
+          - generic [ref=e380]: Sign out
+    - generic [ref=e55]:
+      - generic [ref=e56]:
+        - button "No sites yet" [disabled] [ref=e157]:
+          - generic [ref=e59]: No sites yet
+          - img [ref=e60]
+        - generic [ref=e62]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=e63]:
+        - textbox "Site name" [ref=e64]
+        - textbox "site-slug" [ref=e65]
+        - button "Create site" [disabled] [ref=e66]
+    - generic [ref=e67]:
+      - generic [ref=e68]:
+        - generic [ref=e71]:
+          - generic [ref=e72]: Website URL
+          - textbox "https://example.com" [disabled] [ref=e73]
+        - generic [ref=e74]:
+          - generic [ref=e78]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+          - generic [ref=e202]: The sandbox preview is no longer responding. Creating a fresh sandbox and restoring your files...
+          - generic [ref=e347]: Create a modern restaurant website called "Nuviq" with elegant dark theme, featuring a hero section with large text and CTA, interactive food menu with categories and prices, reservation form with date/time picker, about section with chef profiles and restaurant story, contact section with map and hours, smooth scroll animations using Framer Motion. Include 10+ realistic Lebanese dishes with prices in the menu.
+          - generic [ref=e348]:
+            - generic [ref=e349]: Generating code...
+            - generic [ref=e381]:
+              - generic [ref=e382]:
+                - img [ref=e383]
+                - text: index.css
+              - generic [ref=e385]:
+                - img [ref=e386]
+                - text: main.tsx
+              - generic [ref=e388]:
+                - img [ref=e389]
+                - text: App.tsx
+              - generic [ref=e391]:
+                - img [ref=e392]
+                - text: Header.tsx
+              - generic [ref=e394]:
+                - img [ref=e395]
+                - text: Hero.tsx
+              - generic [ref=e397]:
+                - img [ref=e398]
+                - text: Reveal.tsx
+              - generic [ref=e400]:
+                - img [ref=e401]
+                - text: menu.ts
+              - generic [ref=e403]:
+                - img [ref=e404]
+                - text: Menu.tsx
+            - generic [ref=e406]:
+              - generic [ref=e410]: AI Response Stream
+              - code [ref=e414]: "<div className=\"grid grid-cols-1 sm:grid-cols-2 gap-4\"> <label className=\"block\"> <span className=\"flex items-center gap-2 text-sm text-gray-300\"> <Phone className=\"h-4 w-4\" aria-hidden=\"true\" /> Phone (optional) </span> <input type=\"tel\" inputMode=\"tel\" value={form.phone} onChange={onChange(\"phone\")} className=\"mt-1 w-full rounded-md border border-gray-700 bg-gray-800/50 px-3 py-2 text-white placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500\" placeholder=\"+961 12 345 678\" /> </label> <label className=\"block\"> <span className=\"text-sm text-gray-300\">Occasion</span> <select value={form.occasion} onChange={"
+        - generic [ref=e81]:
+          - generic [ref=e82]:
+            - img [ref=e84]
+            - textbox "Describe what you want to build..." [active] [ref=e87]
+          - generic [ref=e88]:
+            - button "Add image" [ref=e89] [cursor=pointer]:
+              - img [ref=e90]
+              - generic [ref=e94]: Add image
+            - button "Send" [disabled] [ref=e95]:
+              - generic [ref=e96]: Send
+              - img [ref=e97]
+      - generic [ref=e100]:
+        - generic [ref=e101]:
+          - generic [ref=e103]:
+            - button "Code" [ref=e104] [cursor=pointer]:
+              - generic [ref=e105]:
+                - img [ref=e106]
+                - generic [ref=e108]: Code
+            - button "View" [ref=e109] [cursor=pointer]:
+              - generic [ref=e110]:
+                - img [ref=e111]
+                - generic [ref=e114]: View
+          - generic [ref=e158]:
+            - generic [ref=e242]: Sandbox active
+            - link "Open in new tab" [ref=e244] [cursor=pointer]:
+              - /url: https://sb-77n35vcflhj1.vercel.run
+              - img [ref=e245]
+        - generic [ref=e116]:
+          - iframe [ref=e247]:
+            - paragraph [ref=f2e5]:
+              - text: Sandbox Ready
+              - text: Start building your React app with Vite and Tailwind CSS!
+          - button "Refresh sandbox" [ref=e248] [cursor=pointer]:
+            - img [ref=e249]
+  - alert [ref=e125]

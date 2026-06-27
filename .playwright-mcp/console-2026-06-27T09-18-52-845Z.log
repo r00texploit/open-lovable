@@ -1,0 +1,53 @@
+[     280ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     320ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     431ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     433ms] [LOG] [Fast Refresh] done in 102ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     447ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     570ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[     682ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     683ms] [LOG] [home] No sandbox in URL, creating new sandbox automatically... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     683ms] [LOG] [createSandbox] Starting sandbox creation... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     798ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     806ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[    1486ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_dd7qOTV0W3Do5pGt8uroP6O5qxBC, url: https://sb-1f14xmgksis7.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T09:18:53.541Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1497ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1895ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    2949ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_dd7qOTV0W3Do5pGt8uroP6O5qxBC, url: https://sb-1f14xmgksis7.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T09:18:55.103Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    5625ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    8352ms] [ERROR] Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://react.dev/link/setstate-in-render AISandboxPage HeroInput HeroInput @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:3318
+[   10287ms] [LOG] [vite] server connection lost. polling for restart... @ https://sb-1f14xmgksis7.vercel.run/@vite/client:287
+[   10518ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-1f14xmgksis7.vercel.run/:0
+[   10748ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-1f14xmgksis7.vercel.run/:0
+[   10753ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31500ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31870ms] [LOG] [checkSandboxStatus] Sandbox needs recreation, auto-recreating... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31872ms] [LOG] [createSandbox] Sandbox creation already in progress, skipping... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31900ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   40348ms] [LOG] [createSandbox] Response data: {success: true, sessionId: cmqw5egk30093itm0559731wi, sandboxId: sb_1782551939664_b0ea3f97, url: https://sb-6e68aluyg649.vercel.run, provider: vercel} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   40349ms] [LOG] [createSandbox] Setting sandboxData from creation: {success: true, sessionId: cmqw5egk30093itm0559731wi, sandboxId: sb_1782551939664_b0ea3f97, url: https://sb-6e68aluyg649.vercel.run, provider: vercel} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   40354ms] [LOG] [createSandbox] Sandbox ready with Vite server running @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   40385ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   40514ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[   40516ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782551939664_b0ea3f97&model=openai%2Fgpt-5:0
+[   40656ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   41900ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_WquvNU4QYPsIywHPpbe5wl6Mhyu3, url: https://sb-6e68aluyg649.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T09:19:33.999Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   42229ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   45044ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   67902ms] [LOG] [chat] Using backend file cache for context @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   67902ms] [LOG] [chat] Sending context to AI: @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   67902ms] [LOG] [chat] - sandboxId: sbx_WquvNU4QYPsIywHPpbe5wl6Mhyu3 @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   67902ms] [LOG] [chat] - isEdit: false @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   67940ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   67964ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   68716ms] [LOG] [health-check] Skipping initial health check - generation or code application in progress @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   71601ms] [ERROR] Failed to load resource: the server responded with a status of 429 (Too Many Requests) @ http://localhost:3000/api/generate-ai-code-stream:0
+[   71631ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   71633ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   71799ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   71865ms] [LOG] [Fast Refresh] done in 167ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   71937ms] [WARNING] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   71943ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   71994ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   72108ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[   72109ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/pricing:0
+[   72266ms] [LOG] [Fast Refresh] done in 372ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477

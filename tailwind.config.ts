@@ -77,7 +77,9 @@ const themeConfig: Config = {
       fontFamily: {
         sans: ["var(--font-geist-sans)", "var(--font-inter)", ...defaultTheme.fontFamily.sans],
         mono: ["var(--font-geist-mono)", ...defaultTheme.fontFamily.mono],
-        ascii: ["var(--font-roboto-mono)", ...defaultTheme.fontFamily.mono]
+        ascii: ["var(--font-roboto-mono)", ...defaultTheme.fontFamily.mono],
+        heading: ["var(--font-heading)", "Space Grotesk", ...defaultTheme.fontFamily.sans],
+        body: ["var(--font-body)", "Source Sans 3", ...defaultTheme.fontFamily.sans],
       },
       fontSize: {
         "title-h1": [
@@ -286,12 +288,9 @@ const themeConfig: Config = {
       opacity: opacities,
       spacing: {
         ...sizes,
+        ...defaultTheme.spacing,
         'root': 'var(--root-padding)'
       },
-      width: sizes,
-      maxWidth: sizes,
-      height: sizes,
-      inset: sizes,
       borderWidth: sizes,
       backdropBlur: Array.from({ length: 20 }, (_, i) => i).reduce(
         (acc, curr) => {

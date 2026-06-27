@@ -1,0 +1,56 @@
+[     650ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     712ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3000/auth/signup:0
+[     712ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3000/auth/signup:0
+[     713ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     713ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/auth/signup:0
+[     721ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     808ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     815ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/auth/signup:0
+[     865ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1188ms] [LOG] [Fast Refresh] done in 425ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31663ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31679ms] [LOG] [Fast Refresh] done in 117ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  122016ms] [LOG] [SignUp] Registration successful, calling signIn with callbackUrl: /generation @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  126027ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  126347ms] [LOG] [Fast Refresh] done in 422ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  126402ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  126417ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  126559ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  126559ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[  126633ms] [LOG] [checkSandboxStatus] No existing sandboxData, clearing state @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  126668ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  126672ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  126672ms] [LOG] [home] No sandbox in URL, creating new sandbox automatically... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  126672ms] [LOG] [createSandbox] Starting sandbox creation... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  126739ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  126743ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[  126776ms] [LOG] [Fast Refresh] done in 210ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  135242ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/create-ai-sandbox-v2:0
+[  135242ms] [LOG] [createSandbox] Response data: {error: Status code 400 is not ok, details: Error: Status code 400 is not ok
+    at parse (/Us…ules/next/dist/server/lib/start-server.js:225:13)} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  135244ms] [ERROR] [createSandbox] Error: Error: Status code 400 is not ok
+    at createSandbox (http://localhost:3000/_next/static/chunks/_1cdqcqr._.js:2318:23)
+    at async AISandboxPage.useEffect.initializePage (http://localhost:3000/_next/static/chunks/_1cdqcqr._.js:1846:29) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:3318
+[  135244ms] [ERROR] [ai-sandbox] Failed to create or restore sandbox: Error: Status code 400 is not ok
+    at createSandbox (http://localhost:3000/_next/static/chunks/_1cdqcqr._.js:2318:23)
+    at async AISandboxPage.useEffect.initializePage (http://localhost:3000/_next/static/chunks/_1cdqcqr._.js:1846:29) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:3318
+[  156945ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157004ms] [LOG] [Fast Refresh] done in 14ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157214ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  157216ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[  160688ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=F48LcRh0xAGDLy2eWh79G' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  161692ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=F48LcRh0xAGDLy2eWh79G' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  162694ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=F48LcRh0xAGDLy2eWh79G' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  164246ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  165363ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  165413ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  165437ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  165567ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[  165677ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  165724ms] [LOG] [Fast Refresh] done in 149ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  165762ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  165762ms] [LOG] [home] No sandbox in URL, creating new sandbox automatically... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  165762ms] [LOG] [createSandbox] Starting sandbox creation... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  165787ms] [LOG] [checkSandboxStatus] No existing sandboxData, clearing state @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  165815ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  165845ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0

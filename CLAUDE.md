@@ -1,172 +1,87 @@
-# CLAUDE.md
+# Frontend Engineering Rules
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+You are working as a senior frontend engineer, not a demo generator.
 
-## Project Overview
+## Core behavior
 
-Noeron is an AI-powered website builder that scrapes websites and rebuilds them as React applications. Users input a URL or describe what they want to build, and the AI generates a complete Vite + React + Tailwind CSS application running in a sandboxed environment.
+Before editing:
+- Inspect the existing codebase structure.
+- Identify the framework, routing system, styling system, component patterns, state management, and API conventions.
+- Do not invent architecture before reading the relevant files.
+- Never assume a component exists unless you have opened it.
 
-**Tech Stack**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Vercel Sandbox/E2B
+When implementing:
+- Make the smallest production-quality change that solves the task.
+- Preserve existing design language unless explicitly asked to redesign.
+- Reuse existing components, utilities, hooks, types, and styles.
+- Do not create duplicate components when an existing component can be extended cleanly.
+- Do not add unnecessary libraries.
+- Do not over-engineer abstractions for one-time use.
 
-## Development Commands
+## Frontend quality bar
 
-```bash
-# Install dependencies (uses pnpm preferred, npm/yarn also supported)
-pnpm install
+Every UI change must satisfy:
 
-# Start development server (uses Turbopack)
-pnpm dev
-# Server runs at http://localhost:3000
+- Responsive layout: mobile, tablet, desktop.
+- Real loading states.
+- Real empty states.
+- Real error states.
+- Accessible labels, keyboard navigation, semantic HTML.
+- Consistent spacing, typography, colors, borders, shadows, and motion.
+- No layout shift.
+- No broken dark/light mode if the app supports themes.
+- No hardcoded fake data unless the task explicitly asks for mockups.
 
-# Build for production
-pnpm build
+## Visual design rules
 
-# Run ESLint
-pnpm lint
+Avoid generic AI-looking UI:
+- No random purple gradients unless the brand already uses them.
+- No copy-paste SaaS cards everywhere.
+- No meaningless glassmorphism.
+- No inconsistent border radii.
+- No icon spam.
+- No oversized marketing text inside app screens.
 
-# Run tests
-pnpm run test:api      # API endpoint tests
-pnpm run test:code     # Code execution tests
-pnpm run test:all      # Run all tests
-```
+Use:
+- Clear visual hierarchy.
+- Strong alignment.
+- Consistent spacing scale.
+- Purposeful contrast.
+- Components that look like they belong to the same product.
+- Motion only when it improves comprehension.
 
-## Architecture Overview
+## Code rules
 
-### Frontend Structure
+For React / Next.js:
+- Prefer server components unless client interactivity is required.
+- Add `"use client"` only when needed.
+- Keep components small but not fragmented into pointless files.
+- Use TypeScript types properly.
+- Avoid `any` unless unavoidable and justified.
+- Avoid unnecessary global state.
+- Keep API calls, validation, and UI state clearly separated.
+- Handle loading, error, and success states explicitly.
 
-- **`/app/page.tsx`** - Landing page with URL input and style/model selection
-- **`/app/builder/page.tsx`** - Main builder interface with chat, code editor, and live preview
-- **`/app/layout.tsx`** - Root layout with Geist, Inter, and Roboto Mono fonts
-- **`/components/shared/`** - Reusable UI components organized by feature
-- **`/components/ui/shadcn/`** - Shadcn UI components (Button, Dialog, etc.)
-- **`/components/app/(home)/`** - Landing page specific components
+For styling:
+- Follow the existing styling system.
+- If Tailwind is used, use clean utility composition and avoid unreadable class soup.
+- Extract repeated style patterns only when repeated enough to justify it.
+- Do not mix styling systems unless already used in the project.
 
-### Backend API Routes (`/app/api/`)
+## Verification
 
-Key API endpoints:
-- **`create-ai-sandbox`** - Creates Vercel/E2B sandbox with Vite React template
-- **`generate-ai-code-stream`** - Streams AI-generated code from LLM providers
-- **`apply-ai-code-stream`** - Applies code changes to sandbox with live preview updates
-- **`get-sandbox-files`** - Retrieves file tree from sandbox
-- **`run-command`** / **`run-command-v2`** - Executes commands in sandbox
-- **`install-packages`** - Installs npm packages in sandbox
-- **`scrape-website`** / **`scrape-url-enhanced`** - Scrapes URLs using Firecrawl
-- **`extract-brand-styles`** - Extracts brand colors/styles from scraped content
-- **`search`** - Web search for discovering websites
+After changes:
+- Run lint/typecheck/build if available.
+- Use Playwright MCP or browser verification for visible UI changes.
+- Check at least one mobile width and one desktop width.
+- Check console errors.
+- Check broken links/buttons/forms.
+- Review the final diff before declaring done.
 
-### Core Libraries (`/lib/`)
+## Shipping standard
 
-- **`sandbox/`** - Sandbox abstraction layer
-  - `factory.ts` - Creates Vercel or E2B provider based on SANDBOX_PROVIDER env
-  - `sandbox-manager.ts` - Singleton for managing sandbox lifecycle
-  - `providers/vercel-provider.ts` - Vercel Sandbox implementation
-  - `providers/e2b-provider.ts` - E2B Sandbox implementation
-- **`ai/provider-manager.ts`** - Multi-provider AI SDK configuration (OpenAI, Anthropic, Google, Groq)
-- **`edit-intent-analyzer.ts`** - Analyzes user chat messages to determine file edits needed
-- **`context-selector.ts`** - Selects relevant files for AI context based on intent
-- **`file-parser.ts`** - Parses and validates AI-generated code blocks
-
-### Configuration
-
-- **`/config/app.config.ts`** - Central application configuration including:
-  - AI model defaults and available models
-  - Sandbox timeouts and settings
-  - UI behavior settings
-  - File management config
-
-### State Management
-
-- **`/atoms/`** - Jotai atoms for global state (sheets, UI state)
-- **Global variables** - Sandboxes are stored in `global.activeSandbox`, `global.sandboxState`
-
-### Types (`/types/`)
-
-- **`sandbox.ts`** - Sandbox state interfaces
-- **`conversation.ts`** - Chat message types
-- **`file-manifest.ts`** - File tracking for code generation
-
-## Key Environment Variables
-
-Create `.env.local` with:
-
-```env
-# Required
-FIRECRAWL_API_KEY=           # For website scraping
-
-# At least one AI provider
-GEMINI_API_KEY=              # Recommended default
-ANTHROPIC_API_KEY=
-OPENAI_API_KEY=
-GROQ_API_KEY=
-
-# Sandbox (choose one provider)
-SANDBOX_PROVIDER=vercel      # or 'e2b'
-
-# Vercel Sandbox auth (choose one method):
-# Method A: OIDC (run `vercel link` then `vercel env pull`)
-VERCEL_OIDC_TOKEN=
-# Method B: Personal Access Token
-VERCEL_TOKEN=
-VERCEL_TEAM_ID=
-VERCEL_PROJECT_ID=
-
-# Optional: Morph for faster edits
-MORPH_API_KEY=
-```
-
-## Code Patterns
-
-### Adding a New AI Model
-
-Edit `/config/app.config.ts`:
-1. Add model ID to `availableModels` array
-2. Add display name to `modelDisplayNames`
-3. If using custom provider config, add to `modelApiConfig`
-
-### Creating New API Routes
-
-Follow the pattern in existing routes:
-- Use `NextResponse` from `next/server`
-- Access global sandbox via `global.activeSandbox`
-- Return JSON with `{ success: boolean, ...data }`
-
-### Sandbox Operations
-
-Always use the sandbox abstraction:
-```typescript
-import { SandboxFactory } from '@/lib/sandbox/factory';
-const provider = SandboxFactory.create();
-await provider.createSandbox();
-await provider.writeFile('src/App.jsx', content);
-```
-
-### Component Structure
-
-Components follow path-based organization:
-- `/components/app/(home)/sections/hero/` - Hero section components
-- `/components/shared/header/` - Shared header components
-- `/components/shared/effects/` - Animation/visual effects
-
-## ESLint Configuration
-
-See `eslint.config.mjs`. Key rules:
-- `@typescript-eslint/no-explicit-any`: off
-- `@typescript-eslint/no-unused-vars`: off
-- `react-hooks/exhaustive-deps`: warn
-- `prefer-const`: warn
-
-## Tailwind Configuration
-
-See `tailwind.config.ts`:
-- Custom font sizes with specific line heights (e.g., `text-title-h1`)
-- Extended colors from `colors.json` mapped to CSS variables
-- Custom utilities: `center-x`, `center-y`, `flex-center`, `overlay`
-- Custom sizing from 0-1000px with pixel values
-
-## Important Notes
-
-- Sandboxes run Vite React apps on port 3000 (Vercel) or 5173 (E2B)
-- File changes are tracked in `global.existingFiles` to handle updates vs new files
-- The builder uses streaming for real-time code generation and preview updates
-- Brand styles are extracted and cached per session
-- Truncation recovery is disabled by default (too many false positives)
+Do not say the task is complete unless:
+- The code builds or you clearly explain why you could not run the build.
+- The UI was verified or you clearly explain why browser verification was not possible.
+- The diff contains only necessary changes.
+- No unrelated files were modified.

@@ -1,0 +1,22 @@
+[     153ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     170ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     170ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782519408909_092dd6ba:0
+[     181ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     340ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     351ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782519408909_092dd6ba:0
+[     447ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     447ms] [LOG] [home] Restoring session for sandbox: sb_1782519408909_092dd6ba @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1138ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_jNMBq9g9q5NeT3Urpkli85q21Zh2, url: https://sb-3cfpibtyv7tv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T00:23:38.986Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1149ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1519ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    2610ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_jNMBq9g9q5NeT3Urpkli85q21Zh2, url: https://sb-3cfpibtyv7tv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T00:23:40.446Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3053ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://sb-3cfpibtyv7tv.vercel.run/src/App.jsx?t=1782519786261:0
+[    3056ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3062ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://sb-3cfpibtyv7tv.vercel.run/src/index.css?t=1782519786602:0
+[    6115ms] [LOG] [home] Session restored (sandbox alive): sb_1782519408909_092dd6ba @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    6591ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31153ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31957ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_jNMBq9g9q5NeT3Urpkli85q21Zh2, url: https://sb-3cfpibtyv7tv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T00:24:09.731Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   32418ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   61152ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   61886ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_jNMBq9g9q5NeT3Urpkli85q21Zh2, url: https://sb-3cfpibtyv7tv.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T00:24:39.704Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477

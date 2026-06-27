@@ -9,6 +9,7 @@ import { requireUser } from '@/lib/auth/server';
 // Use session-scoped sandboxes via sandboxManager
 declare global {
   var activeSandboxProvider: any;
+  var activeSandbox: any;
   var sandboxData: any;
   var existingFiles: Set<string>;
   var sandboxState: SandboxState;
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
         console.error('Failed to terminate legacy global sandbox:', e);
       }
       global.activeSandboxProvider = null;
+      global.activeSandbox = null;
     }
     
     // Clear existing files tracking
@@ -83,6 +85,7 @@ export async function POST(request: Request) {
 
     // Also store in legacy global state for backward compatibility
     global.activeSandboxProvider = provider;
+    global.activeSandbox = provider;
     global.sandboxData = {
       sandboxId: session.sandboxId,
       url: sandboxInfo.url
@@ -125,6 +128,7 @@ export async function POST(request: Request) {
         console.error('Failed to terminate sandbox on error:', e);
       }
       global.activeSandboxProvider = null;
+      global.activeSandbox = null;
     }
     
     return NextResponse.json(

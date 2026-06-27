@@ -60,7 +60,9 @@ export default function PricingPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [currentTier, setCurrentTier] = useState<SubscriptionTier>('free');
+  const [isYearly, setIsYearly] = useState(false);
 
   useEffect(() => {
     if (session?.user?.subscription?.tier) {
@@ -79,23 +81,28 @@ export default function PricingPage() {
     }
 
     setLoading(tier);
+    setError(null);
 
     try {
       const response = await fetch('/api/stripe/checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ tier, billingCycle: isYearly ? 'yearly' : 'monthly' }),
       });
 
       const data = await response.json();
 
+      if (!response.ok) {
+        throw new Error(data.error || `Request failed (${response.status})`);
+      }
+
       if (data.url) {
         window.location.href = data.url;
-      } else {
-        console.error('Failed to create checkout session');
       }
-    } catch (error) {
-      console.error('Error:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      setError(message);
+      console.error('Checkout error:', err);
     } finally {
       setLoading(null);
     }
@@ -105,21 +112,21 @@ export default function PricingPage() {
     <div className="min-h-screen ol-shell">
       {/* Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#ff6728]/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#8c4b26]/10 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-orange/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-warm-600/10 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
-      <header className="relative z-10 border-b border-[#261e151f] bg-[#fff7e8]/80 backdrop-blur-xl">
+      <header className="relative z-10 border-b border-warm-750/12 bg-warm-100/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-[#17130f] hover:text-[#8c4b26] transition-colors">
-            <NoeronLogo iconClassName="h-[32px] w-[32px]" textClassName="text-[#17130f]" />
+          <Link href="/" className="flex items-center gap-2 text-warm-800 hover:text-warm-600 transition-colors">
+            <NoeronLogo iconClassName="h-[32px] w-[32px]" textClassName="text-warm-800" />
           </Link>
           <div className="flex items-center gap-4">
             {session ? (
               <Link
                 href="/generation"
-                className="flex items-center gap-2 rounded-full border border-[#261e151f] px-4 py-2 text-sm text-[#5f5343] transition-colors hover:bg-[#17130f]/5 hover:text-[#17130f]"
+                className="flex items-center gap-2 rounded-full border border-warm-750/12 px-4 py-2 text-sm text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800"
               >
                 <ArrowRight className="w-4 h-4 rotate-180" />
                 Back to App
@@ -127,7 +134,7 @@ export default function PricingPage() {
             ) : (
               <Link
                 href="/auth/signin"
-                className="rounded-full border border-[#261e151f] px-4 py-2 text-sm text-[#5f5343] transition-colors hover:bg-[#17130f]/5 hover:text-[#17130f]"
+                className="rounded-full border border-warm-750/12 px-4 py-2 text-sm text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800"
               >
                 Sign In
               </Link>
@@ -144,14 +151,14 @@ export default function PricingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#ff6728]/10 border border-[#ff6728]/30 text-[#8c4b26] text-sm font-semibold mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-orange/10 border border-brand-orange/30 text-warm-600 text-sm font-semibold mb-6">
               <Sparkles className="w-4 h-4" />
               Simple, transparent pricing
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-[-0.045em] text-[#17130f] mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-[-0.045em] text-warm-800 mb-6">
               Choose your plan
             </h1>
-            <p className="text-xl text-[#5f5343] max-w-2xl mx-auto">
+            <p className="text-xl text-warm-500 max-w-2xl mx-auto">
               Start with a monthly token pool and upgrade when your builds need more room. No hidden fees, cancel anytime.
             </p>
           </motion.div>
@@ -161,11 +168,42 @@ export default function PricingPage() {
       {/* Pricing Cards */}
       <section className="relative py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          {error && (
+            <div className="mb-8 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700 text-center" role="alert">
+              {error}
+            </div>
+          )}
+
+          {/* Billing Toggle */}
+          <div className="flex items-center justify-center gap-4 mb-10">
+            <span className={`text-sm ${!isYearly ? 'text-warm-800 font-semibold' : 'text-warm-500'}`}>Monthly</span>
+            <button
+              onClick={() => setIsYearly(!isYearly)}
+              aria-label="Switch to yearly billing"
+              aria-pressed={isYearly}
+              className={`relative w-14 h-7 rounded-full transition-colors duration-200 ${
+                isYearly ? 'bg-brand-orange' : 'bg-warm-800/10'
+              }`}
+            >
+              <span
+                className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                  isYearly ? 'translate-x-7' : ''
+                }`}
+              />
+            </button>
+            <span className={`text-sm ${isYearly ? 'text-warm-800 font-semibold' : 'text-warm-500'}`}>Yearly</span>
+            {isYearly && (
+              <span className="text-xs text-emerald-700 bg-emerald-500/10 px-2 py-1 rounded-full">Save 17%</span>
+            )}
+          </div>
+
+          {/* Responsive grid: 1 col mobile, 2 col tablet, 4 col desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {(['free', 'pro', 'plus', 'team'] as SubscriptionTier[]).map((tier, index) => (
               <PricingCard
                 key={tier}
                 tier={tier}
+                isYearly={isYearly}
                 isCurrent={currentTier === tier}
                 isLoading={loading === tier}
                 onSubscribe={() => handleSubscribe(tier)}
@@ -185,8 +223,8 @@ export default function PricingPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-black tracking-[-0.035em] text-[#17130f] mb-4">Compare Plans</h2>
-            <p className="text-[#5f5343]">Find the perfect plan for your needs</p>
+            <h2 className="text-3xl font-black tracking-[-0.035em] text-warm-800 mb-4">Compare Plans</h2>
+            <p className="text-warm-500">Find the perfect plan for your needs</p>
           </motion.div>
 
           <motion.div
@@ -197,18 +235,18 @@ export default function PricingPage() {
           >
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#261e151f]">
-                  <th className="text-left p-4 text-[#5f5343] font-medium">Feature</th>
-                  <th className="text-center p-4 text-[#5f5343] font-medium">Free</th>
-                  <th className="text-center p-4 text-[#ff6728] font-semibold">Pro</th>
-                  <th className="text-center p-4 text-[#8c4b26] font-semibold">Plus</th>
-                  <th className="text-center p-4 text-[#17130f] font-semibold">Team</th>
+                <tr className="border-b border-warm-750/12">
+                  <th className="text-left p-4 text-warm-500 font-medium">Feature</th>
+                  <th className="text-center p-4 text-warm-500 font-medium">Free</th>
+                  <th className="text-center p-4 text-brand-orange font-semibold">Pro</th>
+                  <th className="text-center p-4 text-warm-600 font-semibold">Plus</th>
+                  <th className="text-center p-4 text-warm-800 font-semibold">Team</th>
                 </tr>
               </thead>
               <tbody>
                 {features.map((feature, i) => (
-                  <tr key={feature.name} className={i % 2 === 0 ? 'bg-[#17130f]/[0.03]' : ''}>
-                    <td className="p-4 text-[#17130f]">{feature.name}</td>
+                  <tr key={feature.name} className={i % 2 === 0 ? 'bg-warm-800/[0.03]' : ''}>
+                    <td className="p-4 text-warm-800">{feature.name}</td>
                     <td className="p-4 text-center">
                       {renderFeatureValue(feature.free)}
                     </td>
@@ -238,8 +276,8 @@ export default function PricingPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-black tracking-[-0.035em] text-[#17130f] mb-4">Frequently Asked Questions</h2>
-            <p className="text-[#5f5343]">Everything you need to know about our pricing</p>
+            <h2 className="text-3xl font-black tracking-[-0.035em] text-warm-800 mb-4">Frequently Asked Questions</h2>
+            <p className="text-warm-500">Everything you need to know about our pricing</p>
           </motion.div>
 
           <div className="space-y-4">
@@ -260,10 +298,10 @@ export default function PricingPage() {
         >
           <div className="relative overflow-hidden rounded-3xl ol-ink-panel p-12">
             <div className="relative z-10">
-              <h2 className="text-3xl sm:text-4xl font-black tracking-[-0.035em] text-[#fff7e8] mb-4">
+              <h2 className="text-3xl sm:text-4xl font-black tracking-[-0.035em] text-warm-100 mb-4">
                 Ready to start building?
               </h2>
-              <p className="text-[#d8c5a8] mb-8 max-w-xl mx-auto">
+              <p className="text-warm-300 mb-8 max-w-xl mx-auto">
                 Scrape a site or describe an idea, and shape a working React app in the live sandbox.
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
@@ -278,20 +316,20 @@ export default function PricingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative border-t border-[#261e151f] py-12 px-4 sm:px-6 lg:px-8">
+      <footer className="relative border-t border-warm-750/12 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-[#5f5343]">
+          <div className="flex items-center gap-2 text-warm-500">
             <Sparkles className="w-4 h-4" />
             <span className="text-sm">© {new Date().getFullYear()} Noeron. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-6">
-            <Link href="/settings" className="text-sm text-[#5f5343] hover:text-[#17130f] transition-colors">
+            <Link href="/settings" className="text-sm text-warm-500 hover:text-warm-800 transition-colors">
               Settings
             </Link>
-            <Link href="#" className="text-sm text-[#5f5343] hover:text-[#17130f] transition-colors">
+            <Link href="#" className="text-sm text-warm-500 hover:text-warm-800 transition-colors">
               Privacy
             </Link>
-            <Link href="#" className="text-sm text-[#5f5343] hover:text-[#17130f] transition-colors">
+            <Link href="#" className="text-sm text-warm-500 hover:text-warm-800 transition-colors">
               Terms
             </Link>
           </div>
@@ -305,12 +343,14 @@ export default function PricingPage() {
 
 function PricingCard({
   tier,
+  isYearly,
   isCurrent,
   isLoading,
   onSubscribe,
   delay,
 }: {
   tier: SubscriptionTier;
+  isYearly: boolean;
   isCurrent: boolean;
   isLoading: boolean;
   onSubscribe: () => void;
@@ -318,10 +358,13 @@ function PricingCard({
 }) {
   const tierData = TIERS[tier];
   const isPopular = tier === 'pro';
+  const displayPrice = isYearly && tier !== 'free' ? tierData.price * 10 : tierData.price;
+  const priceSuffix = tier === 'free' ? '' : isYearly ? '/year' : '/month';
+  const yearlySavings = isYearly && tierData.price > 0 ? tierData.price * 2 : 0;
 
   // The popular tier sits on a dark ink card; the rest use the light bezel
-  const headingColor = isPopular ? 'text-[#fff7e8]' : 'text-[#17130f]';
-  const bodyColor = isPopular ? 'text-[#d8c5a8]' : 'text-[#5f5343]';
+  const headingColor = isPopular ? 'text-warm-100' : 'text-warm-800';
+  const bodyColor = isPopular ? 'text-warm-300' : 'text-warm-500';
 
   return (
     <motion.div
@@ -329,12 +372,12 @@ function PricingCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
       className={`relative rounded-3xl overflow-hidden transition-transform duration-300 hover:-translate-y-1 ${
-        isPopular ? 'border-2 border-[#ff6728] shadow-[0_24px_60px_rgba(255,103,40,0.22)]' : 'ol-bezel'
+        isPopular ? 'border-2 border-brand-orange shadow-[0_24px_60px_color-mix(in_srgb,var(--brand-orange)_22%,transparent)]' : 'ol-bezel'
       }`}
     >
       {/* Popular Badge */}
       {isPopular && (
-        <div className="absolute top-0 right-0 bg-[#ff6728] text-[#20130a] text-xs font-bold px-3 py-1 rounded-bl-lg z-10">
+        <div className="absolute top-0 right-0 bg-brand-orange text-warm-900 text-xs font-bold px-3 py-1 rounded-bl-lg z-10">
           MOST POPULAR
         </div>
       )}
@@ -344,18 +387,25 @@ function PricingCard({
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-2">
-            {tier === 'pro' && <Crown className="w-5 h-5 text-[#ff6728]" />}
-            {tier === 'team' && <Users className="w-5 h-5 text-[#8c4b26]" />}
+            {tier === 'pro' && <Crown className="w-5 h-5 text-brand-orange" />}
+            {tier === 'team' && <Users className="w-5 h-5 text-warm-600" />}
             <h3 className={`text-2xl font-bold ${headingColor}`}>{tierData.name}</h3>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className={`text-4xl font-black ${headingColor}`}>${tierData.price}</span>
-            <span className={bodyColor}>/month</span>
+            <span className={`text-4xl font-black ${headingColor}`}>{tier === 'free' ? 'Free' : `$${displayPrice}`}</span>
+            <span className={bodyColor}>{priceSuffix}</span>
           </div>
+          {isYearly && yearlySavings > 0 && (
+            <div className="mt-2">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 text-xs">
+                Save ${yearlySavings}/year
+              </span>
+            </div>
+          )}
           <p className={`mt-2 text-sm ${bodyColor}`}>
             {tierDescriptions[tier]}
           </p>
-          <p className={`mt-3 text-sm font-semibold ${isPopular ? 'text-[#ffb07f]' : 'text-[#8c4b26]'}`}>
+          <p className={`mt-3 text-sm font-semibold ${isPopular ? 'text-brand-orange-light' : 'text-warm-600'}`}>
             {formatTokenAmount(tierData.tokens)} tokens / month
           </p>
         </div>
@@ -364,7 +414,7 @@ function PricingCard({
         <ul className="space-y-3 mb-8 flex-1">
           {tierData.features.map((feature, i) => (
             <li key={i} className="flex items-start gap-3">
-              <Check className="w-5 h-5 flex-shrink-0 text-[#ff6728]" />
+              <Check className="w-5 h-5 flex-shrink-0 text-brand-orange" />
               <span className={`text-sm ${bodyColor}`}>{feature}</span>
             </li>
           ))}
@@ -374,8 +424,8 @@ function PricingCard({
         {isCurrent ? (
           <div className={`flex w-full items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold ${
             isPopular
-              ? 'bg-[#fff7e8]/10 text-[#fff7e8]'
-              : 'bg-[#17130f]/5 text-[#5f5343]'
+              ? 'bg-warm-100/10 text-warm-100'
+              : 'bg-warm-800/5 text-warm-500'
           }`}>
             Current Plan
           </div>
@@ -390,7 +440,7 @@ function PricingCard({
             className={`flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 ${
               isPopular
                 ? 'ol-primary-button'
-                : 'rounded-full bg-[#17130f] font-semibold text-[#fff7e8] transition-colors hover:bg-[#2a221a]'
+                : 'rounded-full bg-warm-800 font-semibold text-warm-100 transition-colors hover:bg-warm-700'
             }`}
           >
             {isLoading ? (
@@ -421,11 +471,11 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
     >
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 text-left transition-colors hover:bg-[#17130f]/[0.03]"
+        className="w-full flex items-center justify-between p-4 text-left transition-colors hover:bg-warm-800/[0.03]"
       >
-        <span className="font-semibold text-[#17130f]">{question}</span>
+        <span className="font-semibold text-warm-800">{question}</span>
         <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
-          <ArrowRight className="w-4 h-4 text-[#8c4b26] transform rotate-90" />
+          <ArrowRight className="w-4 h-4 text-warm-600 transform rotate-90" />
         </motion.div>
       </button>
       {isOpen && (
@@ -435,7 +485,7 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
           exit={{ height: 0, opacity: 0 }}
           className="px-4 pb-4"
         >
-          <p className="text-[#5f5343]">{answer}</p>
+          <p className="text-warm-500">{answer}</p>
         </motion.div>
       )}
     </motion.div>
@@ -444,10 +494,10 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
 
 function renderFeatureValue(value: boolean | string) {
   if (value === true) {
-    return <Check className="w-5 h-5 text-[#ff6728] mx-auto" />;
+    return <Check className="w-5 h-5 text-brand-orange mx-auto" />;
   }
   if (value === false) {
-    return <span className="text-[#5f534366]">—</span>;
+    return <span className="text-warm-500/40">—</span>;
   }
-  return <span className="text-[#5f5343]">{value}</span>;
+  return <span className="text-warm-500">{value}</span>;
 }

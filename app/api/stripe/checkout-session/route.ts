@@ -12,11 +12,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { tier } = await req.json();
-    const priceId = getPriceIdForTier(tier);
+    const { tier, billingCycle = 'monthly' } = await req.json();
 
-    if (!tier || !priceId) {
+    if (!tier || !['pro', 'plus', 'team'].includes(tier)) {
       return NextResponse.json({ error: 'Invalid subscription tier' }, { status: 400 });
+    }
+
+    const priceId = getPriceIdForTier(tier, billingCycle);
+    if (!priceId) {
+      return NextResponse.json(
+        { error: `Stripe price not configured for ${tier}/${billingCycle}. Check STRIPE_PRICE_${tier.toUpperCase()} env var.` },
+        { status: 400 }
+      );
     }
 
     // Get or create Stripe customer

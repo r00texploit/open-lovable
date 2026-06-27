@@ -55,22 +55,22 @@ export default function ForgotPassword() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[24px] bg-[#8f9b5b] text-[#11100d]"
+            className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[24px] bg-brand-olive text-warm-900"
           >
             <CheckCircle2 className="h-8 w-8" />
           </motion.div>
 
-          <h2 className="mb-3 text-3xl font-black tracking-[-0.045em] text-[#fff7e8]">
+          <h2 className="mb-3 text-3xl font-black tracking-[-0.045em] text-warm-100">
             Check your email
           </h2>
-          <p className="mb-6 text-[#d8c5a8]">
+          <p className="mb-6 text-warm-300">
             We've sent a password reset link to{' '}
-            <span className="font-semibold text-[#fff7e8]">{email}</span>
+            <span className="font-semibold text-warm-100">{email}</span>
           </p>
 
           <Link
             href="/auth/signin"
-            className="inline-flex items-center gap-2 rounded-full border border-[#fff7e824] bg-[#fff7e812] px-6 py-3 font-semibold text-[#fff7e8] transition-colors duration-300 hover:bg-[#fff7e81c]"
+            className="inline-flex items-center gap-2 rounded-full border border-warm-100/14 bg-warm-100/7 px-6 py-3 font-semibold text-warm-100 transition-colors duration-300 hover:bg-warm-100/11"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to sign in
@@ -89,7 +89,7 @@ export default function ForgotPassword() {
       >
         <Link
           href="/auth/signin"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[#d8c5a8] transition-colors hover:text-[#fff7e8]"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-warm-300 transition-colors hover:text-warm-100"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to sign in
@@ -101,7 +101,7 @@ export default function ForgotPassword() {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-6 flex h-12 w-12 items-center justify-center rounded-[18px] bg-[#ff6728] text-[#211409]"
+          className="mb-6 flex h-12 w-12 items-center justify-center rounded-[18px] bg-brand-orange text-warm-800"
         >
           <Mail className="h-6 w-6" />
         </motion.div>
@@ -110,7 +110,7 @@ export default function ForgotPassword() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5 }}
-          className="mb-3 text-4xl font-black tracking-[-0.055em] text-[#fff7e8] sm:text-5xl"
+          className="mb-3 text-4xl font-black tracking-[-0.055em] text-warm-100 sm:text-5xl"
         >
           Reset your password
         </motion.h1>
@@ -118,7 +118,7 @@ export default function ForgotPassword() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-sm leading-6 text-[#d8c5a8]"
+          className="text-sm leading-6 text-warm-300"
         >
           Enter your email and we'll send a reset link if the account exists.
         </motion.p>
@@ -137,11 +137,11 @@ export default function ForgotPassword() {
       <AuthForm onSubmit={handleSubmit}>
         <AuthFormItem>
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[#ead7b8]">
+            <label className="block text-sm font-semibold text-warm-200">
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#ead7b899]" />
+              <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-warm-200/60" />
               <input
                 type="email"
                 value={email}

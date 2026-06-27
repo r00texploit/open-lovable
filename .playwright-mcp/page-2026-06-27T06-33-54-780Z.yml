@@ -1,0 +1,352 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Skip to content" [ref=e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - link "Noeron Home" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e8]:
+            - img [ref=e9]
+            - generic [ref=e16]: Noeron
+        - navigation "Main navigation" [ref=e17]:
+          - link "Features" [ref=e18] [cursor=pointer]:
+            - /url: "#features"
+          - link "Pricing" [ref=e19] [cursor=pointer]:
+            - /url: "#pricing"
+          - link "FAQ" [ref=e20] [cursor=pointer]:
+            - /url: "#faq"
+        - link "Open Builder" [ref=e22] [cursor=pointer]:
+          - /url: /generation
+          - text: Open Builder
+          - img [ref=e23]
+    - main [ref=e25]:
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e31]:
+            - img [ref=e32]
+            - text: Powered by GPT-4o & Claude 3.5
+          - heading "Build websites with AI" [level=1] [ref=e35]:
+            - text: Build websites
+            - text: with AI
+          - paragraph [ref=e36]: Transform any idea into a production-ready React application. No coding required. Just describe what you want.
+          - generic [ref=e37]:
+            - link "Start building free" [ref=e38] [cursor=pointer]:
+              - /url: /auth/signin
+              - img [ref=e39]
+              - text: Start building free
+              - img [ref=e42]
+            - button "Watch demo" [ref=e44] [cursor=pointer]:
+              - img [ref=e45]
+              - text: Watch demo
+          - generic [ref=e47]:
+            - generic [ref=e48]:
+              - img [ref=e49]
+              - text: Free forever plan
+            - generic [ref=e51]:
+              - img [ref=e52]
+              - text: No credit card required
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - generic [ref=e57]:
+              - img [ref=e59]
+              - paragraph [ref=e63]: Hi! I'm your AI assistant. Describe the website you want to build, and I'll create it for you.
+            - generic [ref=e64]:
+              - paragraph [ref=e66]: Build me a modern SaaS landing page with hero, features, and pricing sections
+              - generic [ref=e68]: You
+            - generic [ref=e69]:
+              - img [ref=e71]
+              - generic [ref=e75]: Building your website...
+          - generic [ref=e78]:
+            - textbox "Describe your website..." [ref=e79]
+            - button "Send" [ref=e80] [cursor=pointer]:
+              - img [ref=e81]
+      - generic [ref=e84]:
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - img [ref=e87]
+            - text: Features
+          - heading "Everything you need to build faster" [level=2] [ref=e90]
+          - paragraph [ref=e91]: Powerful AI tools that transform your ideas into production-ready websites. No coding required.
+        - generic [ref=e92]:
+          - generic [ref=e96]:
+            - img [ref=e98]
+            - heading "AI-Powered Generation" [level=3] [ref=e101]
+            - paragraph [ref=e102]: Describe your website in natural language. Our AI generates production-ready React code in seconds using GPT-4o and Claude 3.5.
+          - generic [ref=e106]:
+            - img [ref=e108]
+            - heading "Real-time Preview" [level=3] [ref=e111]
+            - paragraph [ref=e112]: Watch your website come to life instantly with live preview updates as you chat with AI.
+          - generic [ref=e116]:
+            - img [ref=e118]
+            - heading "Multi-Model Support" [level=3] [ref=e122]
+            - paragraph [ref=e123]: Choose from GPT-4o, Claude 3.5, Gemini 1.5. Pick the best AI for your needs.
+          - generic [ref=e127]:
+            - img [ref=e129]
+            - heading "One-Click Deploy" [level=3] [ref=e134]
+            - paragraph [ref=e135]: Deploy to Vercel, Netlify, or export as clean code. Your website, your way.
+          - generic [ref=e139]:
+            - img [ref=e141]
+            - heading "Brand Extraction" [level=3] [ref=e147]
+            - paragraph [ref=e148]: Extract colors, fonts, and styles from any URL. Maintain brand consistency automatically.
+          - generic [ref=e152]:
+            - img [ref=e154]
+            - heading "Lightning Fast" [level=3] [ref=e156]
+            - paragraph [ref=e157]: Average build time of 2 minutes. From idea to deployment faster than ever before.
+      - generic [ref=e159]:
+        - generic [ref=e160]:
+          - generic [ref=e161]:
+            - img [ref=e162]
+            - text: How it works
+          - heading "From idea to website in minutes" [level=2] [ref=e165]
+          - paragraph [ref=e166]: Four simple steps to transform your vision into a production-ready website.
+        - generic [ref=e167]:
+          - generic [ref=e169]:
+            - generic [ref=e170]: "01"
+            - generic [ref=e172]:
+              - img [ref=e174]
+              - heading "Describe your vision" [level=3] [ref=e176]
+              - paragraph [ref=e177]: Tell our AI what you want to build. Use natural language - no technical jargon needed.
+          - generic [ref=e180]:
+            - generic [ref=e181]: "02"
+            - generic [ref=e183]:
+              - img [ref=e185]
+              - heading "AI generates code" [level=3] [ref=e188]
+              - paragraph [ref=e189]: Our AI builds a complete React application with Tailwind CSS in seconds.
+          - generic [ref=e192]:
+            - generic [ref=e193]: "03"
+            - generic [ref=e195]:
+              - img [ref=e197]
+              - heading "Preview instantly" [level=3] [ref=e200]
+              - paragraph [ref=e201]: Watch your website come to life with real-time preview as the AI builds it.
+          - generic [ref=e204]:
+            - generic [ref=e205]: "04"
+            - generic [ref=e207]:
+              - img [ref=e209]
+              - heading "Deploy & share" [level=3] [ref=e214]
+              - paragraph [ref=e215]: Deploy to Vercel, Netlify, or export clean code. Share your creation with the world.
+      - generic [ref=e217]:
+        - generic [ref=e218]:
+          - generic [ref=e219]:
+            - img [ref=e220]
+            - text: Pricing
+          - heading "Simple, transparent pricing" [level=2] [ref=e223]
+          - paragraph [ref=e224]: Start free, upgrade when you need more power.
+        - generic [ref=e225]:
+          - generic [ref=e226]: Monthly
+          - button "Switch to yearly billing" [ref=e227] [cursor=pointer]
+          - generic [ref=e229]: Yearly
+        - generic [ref=e230]:
+          - generic [ref=e232]:
+            - generic [ref=e233]:
+              - heading "Free" [level=3] [ref=e234]
+              - paragraph [ref=e235]: For hobby projects
+            - generic [ref=e238]: Free
+            - list [ref=e239]:
+              - listitem [ref=e240]:
+                - img [ref=e241]
+                - generic [ref=e243]: 50K tokens per month
+              - listitem [ref=e244]:
+                - img [ref=e245]
+                - generic [ref=e247]: Basic styles
+              - listitem [ref=e248]:
+                - img [ref=e249]
+                - generic [ref=e251]: Community support
+            - link "Get Started" [ref=e252] [cursor=pointer]:
+              - /url: /auth/signin?callbackUrl=/generation
+              - button "Get Started" [ref=e253]
+          - generic [ref=e255]:
+            - generic [ref=e257]:
+              - img [ref=e258]
+              - text: Most Popular
+            - generic [ref=e261]:
+              - heading "Pro" [level=3] [ref=e262]
+              - paragraph [ref=e263]: For professionals
+            - generic [ref=e265]:
+              - generic [ref=e266]: $29
+              - generic [ref=e267]: /month
+            - list [ref=e268]:
+              - listitem [ref=e269]:
+                - img [ref=e270]
+                - generic [ref=e272]: 500K tokens per month
+              - listitem [ref=e273]:
+                - img [ref=e274]
+                - generic [ref=e276]: All styles
+              - listitem [ref=e277]:
+                - img [ref=e278]
+                - generic [ref=e280]: Priority support
+              - listitem [ref=e281]:
+                - img [ref=e282]
+                - generic [ref=e284]: Export code
+            - button "Subscribe" [ref=e285] [cursor=pointer]
+          - generic [ref=e287]:
+            - generic [ref=e288]:
+              - heading "Plus" [level=3] [ref=e289]
+              - paragraph [ref=e290]: For power users
+            - generic [ref=e292]:
+              - generic [ref=e293]: $49
+              - generic [ref=e294]: /month
+            - list [ref=e295]:
+              - listitem [ref=e296]:
+                - img [ref=e297]
+                - generic [ref=e299]: 1.5M tokens per month
+              - listitem [ref=e300]:
+                - img [ref=e301]
+                - generic [ref=e303]: All styles
+              - listitem [ref=e304]:
+                - img [ref=e305]
+                - generic [ref=e307]: Priority support
+              - listitem [ref=e308]:
+                - img [ref=e309]
+                - generic [ref=e311]: Export code
+              - listitem [ref=e312]:
+                - img [ref=e313]
+                - generic [ref=e315]: API access
+            - button "Subscribe" [ref=e316] [cursor=pointer]
+          - generic [ref=e318]:
+            - generic [ref=e319]:
+              - heading "Team" [level=3] [ref=e320]
+              - paragraph [ref=e321]: For teams
+            - generic [ref=e323]:
+              - generic [ref=e324]: $99
+              - generic [ref=e325]: /month
+            - list [ref=e326]:
+              - listitem [ref=e327]:
+                - img [ref=e328]
+                - generic [ref=e330]: 5M tokens per month
+              - listitem [ref=e331]:
+                - img [ref=e332]
+                - generic [ref=e334]: All styles
+              - listitem [ref=e335]:
+                - img [ref=e336]
+                - generic [ref=e338]: Team collaboration
+              - listitem [ref=e339]:
+                - img [ref=e340]
+                - generic [ref=e342]: Priority support
+              - listitem [ref=e343]:
+                - img [ref=e344]
+                - generic [ref=e346]: API access
+              - listitem [ref=e347]:
+                - img [ref=e348]
+                - generic [ref=e350]: Custom integrations
+            - button "Subscribe" [ref=e351] [cursor=pointer]
+      - generic [ref=e354]:
+        - generic [ref=e355]:
+          - generic [ref=e356]:
+            - img [ref=e357]
+            - text: FAQ
+          - heading "Common questions, answered" [level=2] [ref=e360]
+          - paragraph [ref=e361]: Everything you need to know about Noeron.
+        - generic [ref=e363]:
+          - generic [ref=e364]:
+            - button "What is Noeron?" [expanded] [ref=e365] [cursor=pointer]:
+              - generic [ref=e366]: What is Noeron?
+              - img [ref=e368]
+            - paragraph [ref=e371]: Noeron is an open-source AI app builder that generates production-ready React code from natural language descriptions.
+          - button "How does AI code generation work?" [ref=e373] [cursor=pointer]:
+            - generic [ref=e374]: How does AI code generation work?
+            - img [ref=e376]
+          - button "Can I export the generated code?" [ref=e379] [cursor=pointer]:
+            - generic [ref=e380]: Can I export the generated code?
+            - img [ref=e382]
+          - button "Is there a free plan?" [ref=e385] [cursor=pointer]:
+            - generic [ref=e386]: Is there a free plan?
+            - img [ref=e388]
+      - generic [ref=e395]:
+        - generic [ref=e397]:
+          - img [ref=e398]
+          - text: Start building for free
+        - heading "Ready to build your next website?" [level=2] [ref=e401]:
+          - text: Ready to build your
+          - text: next website?
+        - paragraph [ref=e402]: Join thousands of creators building with AI. No credit card required. Get started in seconds.
+        - link "Start building free" [ref=e404] [cursor=pointer]:
+          - /url: /auth/signin
+          - img [ref=e405]
+          - text: Start building free
+          - img [ref=e408]
+        - generic [ref=e410]:
+          - generic [ref=e411]:
+            - img [ref=e412]
+            - text: Free forever plan
+          - generic [ref=e414]:
+            - img [ref=e415]
+            - text: No credit card required
+          - generic [ref=e417]:
+            - img [ref=e418]
+            - text: Cancel anytime
+    - contentinfo [ref=e420]:
+      - generic [ref=e421]:
+        - generic [ref=e422]:
+          - generic [ref=e423]:
+            - link "Noeron" [ref=e424] [cursor=pointer]:
+              - /url: /
+              - generic [ref=e425]:
+                - img [ref=e426]
+                - generic [ref=e433]: Noeron
+            - paragraph [ref=e434]: Building the future of web development with AI. Create stunning websites in minutes.
+            - generic [ref=e435]:
+              - link [ref=e436] [cursor=pointer]:
+                - /url: "#"
+                - img [ref=e437]
+              - link [ref=e439] [cursor=pointer]:
+                - /url: "#"
+                - img [ref=e440]
+              - link [ref=e442] [cursor=pointer]:
+                - /url: "#"
+                - img [ref=e443]
+          - generic [ref=e445]:
+            - heading "Product" [level=4] [ref=e446]
+            - list [ref=e447]:
+              - listitem [ref=e448]:
+                - link "Features" [ref=e449] [cursor=pointer]:
+                  - /url: "#features"
+              - listitem [ref=e450]:
+                - link "Pricing" [ref=e451] [cursor=pointer]:
+                  - /url: "#pricing"
+              - listitem [ref=e452]:
+                - link "Changelog" [ref=e453] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=e454]:
+                - link "Roadmap" [ref=e455] [cursor=pointer]:
+                  - /url: "#"
+          - generic [ref=e456]:
+            - heading "Resources" [level=4] [ref=e457]
+            - list [ref=e458]:
+              - listitem [ref=e459]:
+                - link "Documentation" [ref=e460] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=e461]:
+                - link "API Reference" [ref=e462] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=e463]:
+                - link "Guides" [ref=e464] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=e465]:
+                - link "Blog" [ref=e466] [cursor=pointer]:
+                  - /url: "#"
+          - generic [ref=e467]:
+            - heading "Company" [level=4] [ref=e468]
+            - list [ref=e469]:
+              - listitem [ref=e470]:
+                - link "About" [ref=e471] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=e472]:
+                - link "Contact" [ref=e473] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=e474]:
+                - link "Privacy" [ref=e475] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=e476]:
+                - link "Terms" [ref=e477] [cursor=pointer]:
+                  - /url: "#"
+        - generic [ref=e478]:
+          - paragraph [ref=e479]: © 2026 Noeron. All rights reserved.
+          - generic [ref=e480]:
+            - link "Privacy" [ref=e481] [cursor=pointer]:
+              - /url: "#"
+            - link "Terms" [ref=e482] [cursor=pointer]:
+              - /url: "#"
+            - link "Cookies" [ref=e483] [cursor=pointer]:
+              - /url: "#"
+  - alert [ref=e484]

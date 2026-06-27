@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
 import { NoeronLogo } from "@/components/brand/noeron-logo";
 
 const footerLinks = {
@@ -53,46 +52,32 @@ const socialLinks = [
       </svg>
     ),
   },
-  {
-    name: "Email",
-    href: "#",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-      </svg>
-    ),
-  },
 ];
 
 export function Footer() {
-  const shouldReduceMotion = useReducedMotion();
-
   return (
-    <footer className="bg-[#0A0A0B] border-t border-white/[0.08] text-white/60 py-16">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+    <footer className="bg-black border-t border-white/[0.06] text-white/60 py-16 lg:py-20">
+      <div className="container-modern">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12 mb-12">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1 mb-8 lg:mb-0">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <NoeronLogo iconClassName="h-[32px] w-[32px]" textClassName="text-lg text-white" />
+              <NoeronLogo iconClassName="h-8 w-8" textClassName="text-lg text-white" />
             </Link>
-            <p className="text-sm text-white/40 mb-4 max-w-xs">
+            <p className="text-sm text-white/40 mb-6 max-w-xs">
               Building the future of web development with AI. Create stunning websites in minutes.
             </p>
             <div className="flex gap-3">
               {socialLinks.map((social) => (
-                <motion.a
+                <a
                   key={social.name}
                   href={social.href}
-                  whileHover={shouldReduceMotion ? undefined : { scale: 1.1, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-10 h-10 rounded-lg bg-white/[0.15] border border-white/30 flex items-center justify-center text-white
-                           hover:bg-white/[0.25] hover:border-white/50
-                           hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]
-                           transition-all duration-300"
+                  className="w-10 h-10 rounded-lg bg-white/[0.05] border border-white/[0.1] flex items-center justify-center text-white/60
+                           hover:bg-white/[0.1] hover:border-white/[0.2] hover:text-white hover:-translate-y-1
+                           transition-all duration-200"
                 >
                   {social.icon}
-                </motion.a>
+                </a>
               ))}
             </div>
           </div>
@@ -105,7 +90,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-white/40 hover:text-white transition-colors"
+                    className="text-sm text-white/40 hover:text-white hover:translate-x-1 inline-block transition-all duration-200"
                   >
                     {link.name}
                   </Link>
@@ -122,7 +107,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-white/40 hover:text-white transition-colors"
+                    className="text-sm text-white/40 hover:text-white hover:translate-x-1 inline-block transition-all duration-200"
                   >
                     {link.name}
                   </Link>
@@ -139,7 +124,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-white/40 hover:text-white transition-colors"
+                    className="text-sm text-white/40 hover:text-white hover:translate-x-1 inline-block transition-all duration-200"
                   >
                     {link.name}
                   </Link>
@@ -150,16 +135,16 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-8 border-t border-white/[0.08] flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="pt-8 border-t border-white/[0.06] flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-white/40">
             &copy; {new Date().getFullYear()} Noeron. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-sm text-white/40">
             <Link href="#" className="hover:text-white transition-colors">
-              Privacy Policy
+              Privacy
             </Link>
             <Link href="#" className="hover:text-white transition-colors">
-              Terms of Service
+              Terms
             </Link>
             <Link href="#" className="hover:text-white transition-colors">
               Cookies

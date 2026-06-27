@@ -47,7 +47,7 @@ export function UsageBar({
   if (!mounted) {
     return (
       <div className="w-full">
-        <div className="h-2 bg-[#17130f]/10 rounded-full animate-pulse" />
+        <div className="h-2 bg-warm-800/10 rounded-full animate-pulse" />
       </div>
     );
   }
@@ -60,20 +60,20 @@ export function UsageBar({
 
   const getBarColor = () => {
     if (isAtLimit) return 'bg-red-500';
-    if (isNearLimit) return 'bg-[#fa5d19]';
-    return 'bg-gradient-to-r from-[#8c4b26] to-[#fa5d19]';
+    if (isNearLimit) return 'bg-heat-100';
+    return 'bg-gradient-to-r from-warm-600 to-heat-100';
   };
 
   if (variant === 'compact') {
     return (
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <Zap className={`w-4 h-4 ${isAtLimit ? 'text-red-500' : 'text-[#8c4b26]'}`} />
-          <span className={`text-sm font-medium ${isAtLimit ? 'text-red-500' : 'text-[#17130f]'}`}>
+          <Zap className={`w-4 h-4 ${isAtLimit ? 'text-red-500' : 'text-warm-600'}`} />
+          <span className={`text-sm font-medium ${isAtLimit ? 'text-red-500' : 'text-warm-800'}`}>
             {formatTokens(used)}/{formatTokens(limit)}
           </span>
         </div>
-        <div className={`w-24 ${sizeClasses[size].bar} bg-[#17130f]/10 rounded-full overflow-hidden`}>
+        <div className={`w-24 ${sizeClasses[size].bar} bg-warm-800/10 rounded-full overflow-hidden`}>
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${percentage}%` }}
@@ -87,18 +87,18 @@ export function UsageBar({
 
   if (variant === 'card') {
     return (
-      <div className="bg-white border border-[#261e151f] rounded-xl p-4">
+      <div className="bg-white border border-warm-750/12 rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Zap className={`w-5 h-5 ${isAtLimit ? 'text-red-500' : 'text-[#8c4b26]'}`} />
-            <span className="text-[#17130f] font-medium">Monthly Tokens</span>
+            <Zap className={`w-5 h-5 ${isAtLimit ? 'text-red-500' : 'text-warm-600'}`} />
+            <span className="text-warm-800 font-medium">Monthly Tokens</span>
           </div>
-          <span className={`text-lg font-bold ${isAtLimit ? 'text-red-500' : 'text-[#17130f]'}`}>
+          <span className={`text-lg font-bold ${isAtLimit ? 'text-red-500' : 'text-warm-800'}`}>
             {formatTokens(used)}/{formatTokens(limit)}
           </span>
         </div>
 
-        <div className={`${sizeClasses[size].bar} bg-[#17130f]/10 rounded-full overflow-hidden mb-3`}>
+        <div className={`${sizeClasses[size].bar} bg-warm-800/10 rounded-full overflow-hidden mb-3`}>
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${percentage}%` }}
@@ -108,11 +108,11 @@ export function UsageBar({
         </div>
 
         <div className="flex items-center justify-between text-sm">
-          <span className="text-[#5f5343]">
+          <span className="text-warm-500">
             {remaining > 0 ? `${formatTokens(remaining)} tokens remaining` : 'Token limit reached'}
           </span>
           {showTimer && (
-            <span className="text-[#5f5343]/70">Monthly reset in {resetTime}</span>
+            <span className="text-warm-500/70">Monthly reset in {resetTime}</span>
           )}
         </div>
 
@@ -137,21 +137,21 @@ export function UsageBar({
       {showLabel && (
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Zap className={`w-4 h-4 ${isAtLimit ? 'text-red-500' : 'text-[#8c4b26]'}`} />
-            <span className={`${sizeClasses[size].text} text-[#5f5343]`}>Monthly Tokens</span>
+            <Zap className={`w-4 h-4 ${isAtLimit ? 'text-red-500' : 'text-warm-600'}`} />
+            <span className={`${sizeClasses[size].text} text-warm-500`}>Monthly Tokens</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`${sizeClasses[size].text} font-medium ${isAtLimit ? 'text-red-500' : 'text-[#17130f]'}`}>
+            <span className={`${sizeClasses[size].text} font-medium ${isAtLimit ? 'text-red-500' : 'text-warm-800'}`}>
               {formatTokens(used)}/{formatTokens(limit)}
             </span>
             {showTimer && (
-              <span className="text-xs text-[#5f5343]/70">({resetTime})</span>
+              <span className="text-xs text-warm-500/70">({resetTime})</span>
             )}
           </div>
         </div>
       )}
 
-      <div className={`${sizeClasses[size].bar} bg-[#17130f]/10 rounded-full overflow-hidden`}>
+      <div className={`${sizeClasses[size].bar} bg-warm-800/10 rounded-full overflow-hidden`}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}

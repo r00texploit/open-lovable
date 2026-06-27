@@ -57,9 +57,9 @@ export default function BrandSelect({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#261e151f] bg-[#fffcf4]/80 px-3 py-2 text-sm text-[#17130f] transition-colors hover:border-[#ff672866] focus:outline-none focus-visible:border-[#ff6728] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-warm-750/12 bg-warm-025/80 px-3 py-2 text-sm text-warm-800 transition-colors hover:border-brand-orange/40 focus:outline-none focus-visible:border-brand-orange disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <span className={`truncate ${selected ? '' : 'text-[#5f534399]'}`}>
+        <span className={`truncate ${selected ? '' : 'text-warm-500/60'}`}>
           {selected ? selected.label : placeholder}
         </span>
         <svg
@@ -68,7 +68,7 @@ export default function BrandSelect({
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          className={`shrink-0 text-[#5f5343] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`shrink-0 text-warm-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
@@ -77,7 +77,7 @@ export default function BrandSelect({
       {open && (
         <ul
           role="listbox"
-          className="absolute left-0 top-full z-50 mt-2 max-h-72 w-full min-w-[220px] overflow-auto rounded-2xl border border-[#261e151f] bg-[#fffcf4] p-1.5 shadow-[0_24px_60px_rgba(74,54,28,0.18)]"
+          className="absolute left-0 top-full z-50 mt-2 max-h-72 w-full min-w-[220px] overflow-auto rounded-2xl border border-warm-750/12 bg-warm-025 p-1.5 shadow-[0_24px_60px_rgba(74,54,28,0.18)]"
         >
           {options.map((option) => {
             const isSelected = option.value === value;
@@ -91,13 +91,13 @@ export default function BrandSelect({
                   }}
                   className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
                     isSelected
-                      ? 'bg-[#17130f]/5 font-medium text-[#17130f]'
-                      : 'text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f]'
+                      ? 'bg-warm-800/5 font-medium text-warm-800'
+                      : 'text-warm-500 hover:bg-warm-800/5 hover:text-warm-800'
                   }`}
                 >
                   <span className="truncate">{option.label}</span>
                   {isSelected && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6728" className="shrink-0">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="shrink-0 text-brand-orange">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
                   )}

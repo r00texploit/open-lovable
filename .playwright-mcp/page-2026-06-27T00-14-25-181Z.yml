@@ -1,0 +1,237 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e125]
+  - generic [ref=e699]:
+    - banner [ref=e700]:
+      - generic [ref=e701]:
+        - link "Noeron" [ref=e702] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e703]:
+            - img [ref=e704]
+            - generic [ref=e711]: Noeron
+        - link "Back to App" [ref=e713] [cursor=pointer]:
+          - /url: /generation
+          - img [ref=e714]
+          - text: Back to App
+    - generic [ref=e718]:
+      - generic [ref=e719]:
+        - img [ref=e720]
+        - text: Simple, transparent pricing
+      - heading "Choose your plan" [level=1] [ref=e723]
+      - paragraph [ref=e724]: Start with a monthly token pool and upgrade when your builds need more room. No hidden fees, cancel anytime.
+    - generic [ref=e726]:
+      - generic [ref=e727]:
+        - generic [ref=e728]: Monthly
+        - button "Switch to yearly billing" [ref=e729] [cursor=pointer]
+        - generic [ref=e731]: Yearly
+      - generic [ref=e732]:
+        - generic [ref=e734]:
+          - generic [ref=e735]:
+            - heading "Free" [level=3] [ref=e737]
+            - generic [ref=e739]: Free
+            - paragraph [ref=e740]: Perfect for trying out Noeron
+            - paragraph [ref=e741]: 50K tokens / month
+          - list [ref=e742]:
+            - listitem [ref=e743]:
+              - img [ref=e744]
+              - generic [ref=e746]: 50K tokens per month
+            - listitem [ref=e747]:
+              - img [ref=e748]
+              - generic [ref=e750]: Basic styles
+            - listitem [ref=e751]:
+              - img [ref=e752]
+              - generic [ref=e754]: Community support
+          - generic [ref=e755]: Current Plan
+        - generic [ref=e756]:
+          - generic [ref=e757]: MOST POPULAR
+          - generic [ref=e758]:
+            - generic [ref=e759]:
+              - generic [ref=e760]:
+                - img [ref=e761]
+                - heading "Pro" [level=3] [ref=e763]
+              - generic [ref=e764]:
+                - generic [ref=e765]: $29
+                - generic [ref=e766]: /month
+              - paragraph [ref=e767]: Best for individual developers
+              - paragraph [ref=e768]: 500K tokens / month
+            - list [ref=e769]:
+              - listitem [ref=e770]:
+                - img [ref=e771]
+                - generic [ref=e773]: 500K tokens per month
+              - listitem [ref=e774]:
+                - img [ref=e775]
+                - generic [ref=e777]: All styles
+              - listitem [ref=e778]:
+                - img [ref=e779]
+                - generic [ref=e781]: Priority support
+              - listitem [ref=e782]:
+                - img [ref=e783]
+                - generic [ref=e785]: Export code
+            - button "Subscribe" [ref=e786] [cursor=pointer]:
+              - text: Subscribe
+              - img [ref=e787]
+        - generic [ref=e790]:
+          - generic [ref=e791]:
+            - heading "Plus" [level=3] [ref=e793]
+            - generic [ref=e794]:
+              - generic [ref=e795]: $49
+              - generic [ref=e796]: /month
+            - paragraph [ref=e797]: For power users and heavy builds
+            - paragraph [ref=e798]: 1.5M tokens / month
+          - list [ref=e799]:
+            - listitem [ref=e800]:
+              - img [ref=e801]
+              - generic [ref=e803]: 1.5M tokens per month
+            - listitem [ref=e804]:
+              - img [ref=e805]
+              - generic [ref=e807]: All styles
+            - listitem [ref=e808]:
+              - img [ref=e809]
+              - generic [ref=e811]: Priority support
+            - listitem [ref=e812]:
+              - img [ref=e813]
+              - generic [ref=e815]: Export code
+            - listitem [ref=e816]:
+              - img [ref=e817]
+              - generic [ref=e819]: API access
+          - button "Subscribe" [ref=e820] [cursor=pointer]:
+            - text: Subscribe
+            - img [ref=e821]
+        - generic [ref=e824]:
+          - generic [ref=e825]:
+            - generic [ref=e826]:
+              - img [ref=e827]
+              - heading "Team" [level=3] [ref=e832]
+            - generic [ref=e833]:
+              - generic [ref=e834]: $99
+              - generic [ref=e835]: /month
+            - paragraph [ref=e836]: For teams and agencies
+            - paragraph [ref=e837]: 5M tokens / month
+          - list [ref=e838]:
+            - listitem [ref=e839]:
+              - img [ref=e840]
+              - generic [ref=e842]: 5M tokens per month
+            - listitem [ref=e843]:
+              - img [ref=e844]
+              - generic [ref=e846]: All styles
+            - listitem [ref=e847]:
+              - img [ref=e848]
+              - generic [ref=e850]: Team collaboration
+            - listitem [ref=e851]:
+              - img [ref=e852]
+              - generic [ref=e854]: Priority support
+            - listitem [ref=e855]:
+              - img [ref=e856]
+              - generic [ref=e858]: API access
+            - listitem [ref=e859]:
+              - img [ref=e860]
+              - generic [ref=e862]: Custom integrations
+          - button "Subscribe" [ref=e863] [cursor=pointer]:
+            - text: Subscribe
+            - img [ref=e864]
+    - generic [ref=e867]:
+      - generic [ref=e868]:
+        - heading "Compare Plans" [level=2] [ref=e869]
+        - paragraph [ref=e870]: Find the perfect plan for your needs
+      - table [ref=e872]:
+        - rowgroup [ref=e873]:
+          - row "Feature Free Pro Plus Team" [ref=e874]:
+            - columnheader "Feature" [ref=e875]
+            - columnheader "Free" [ref=e876]
+            - columnheader "Pro" [ref=e877]
+            - columnheader "Plus" [ref=e878]
+            - columnheader "Team" [ref=e879]
+        - rowgroup [ref=e880]:
+          - row "Monthly Tokens 50K 500K 1.5M 5M" [ref=e881]:
+            - cell "Monthly Tokens" [ref=e882]
+            - cell "50K" [ref=e883]
+            - cell "500K" [ref=e884]
+            - cell "1.5M" [ref=e885]
+            - cell "5M" [ref=e886]
+          - row "Export Code —" [ref=e887]:
+            - cell "Export Code" [ref=e888]
+            - cell "—" [ref=e889]
+            - cell [ref=e890]:
+              - img [ref=e891]
+            - cell [ref=e893]:
+              - img [ref=e894]
+            - cell [ref=e896]:
+              - img [ref=e897]
+          - row "Priority Support —" [ref=e899]:
+            - cell "Priority Support" [ref=e900]
+            - cell "—" [ref=e901]
+            - cell [ref=e902]:
+              - img [ref=e903]
+            - cell [ref=e905]:
+              - img [ref=e906]
+            - cell [ref=e908]:
+              - img [ref=e909]
+          - row "API Access — —" [ref=e911]:
+            - cell "API Access" [ref=e912]
+            - cell "—" [ref=e913]
+            - cell "—" [ref=e914]
+            - cell [ref=e915]:
+              - img [ref=e916]
+            - cell [ref=e918]:
+              - img [ref=e919]
+          - row "Team Collaboration — — —" [ref=e921]:
+            - cell "Team Collaboration" [ref=e922]
+            - cell "—" [ref=e923]
+            - cell "—" [ref=e924]
+            - cell "—" [ref=e925]
+            - cell [ref=e926]:
+              - img [ref=e927]
+          - row "All Styles Basic" [ref=e929]:
+            - cell "All Styles" [ref=e930]
+            - cell "Basic" [ref=e931]
+            - cell [ref=e932]:
+              - img [ref=e933]
+            - cell [ref=e935]:
+              - img [ref=e936]
+            - cell [ref=e938]:
+              - img [ref=e939]
+          - row "Custom Integrations — — —" [ref=e941]:
+            - cell "Custom Integrations" [ref=e942]
+            - cell "—" [ref=e943]
+            - cell "—" [ref=e944]
+            - cell "—" [ref=e945]
+            - cell [ref=e946]:
+              - img [ref=e947]
+    - generic [ref=e950]:
+      - generic [ref=e951]:
+        - heading "Frequently Asked Questions" [level=2] [ref=e952]
+        - paragraph [ref=e953]: Everything you need to know about our pricing
+      - generic [ref=e954]:
+        - button "What happens when I use all my tokens?" [ref=e956] [cursor=pointer]:
+          - generic [ref=e957]: What happens when I use all my tokens?
+          - img [ref=e959]
+        - button "Can I cancel my subscription anytime?" [ref=e962] [cursor=pointer]:
+          - generic [ref=e963]: Can I cancel my subscription anytime?
+          - img [ref=e965]
+        - button "What payment methods do you accept?" [ref=e968] [cursor=pointer]:
+          - generic [ref=e969]: What payment methods do you accept?
+          - img [ref=e971]
+        - button "Is Free available without a card?" [ref=e974] [cursor=pointer]:
+          - generic [ref=e975]: Is Free available without a card?
+          - img [ref=e977]
+        - button "What's included in Team plan?" [ref=e980] [cursor=pointer]:
+          - generic [ref=e981]: What's included in Team plan?
+          - img [ref=e983]
+    - generic [ref=e988]:
+      - heading "Ready to start building?" [level=2] [ref=e989]
+      - paragraph [ref=e990]: Scrape a site or describe an idea, and shape a working React app in the live sandbox.
+      - link "Go to Dashboard" [ref=e992] [cursor=pointer]:
+        - /url: /generation
+        - text: Go to Dashboard
+        - img [ref=e993]
+    - contentinfo [ref=e995]:
+      - generic [ref=e996]:
+        - generic [ref=e997]:
+          - img [ref=e998]
+          - generic [ref=e1001]: © 2026 Noeron. All rights reserved.
+        - generic [ref=e1002]:
+          - link "Settings" [ref=e1003] [cursor=pointer]:
+            - /url: /settings
+          - link "Privacy" [ref=e1004] [cursor=pointer]:
+            - /url: "#"
+          - link "Terms" [ref=e1005] [cursor=pointer]:
+            - /url: "#"

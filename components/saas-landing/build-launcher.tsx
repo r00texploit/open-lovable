@@ -122,7 +122,7 @@ export function BuildLauncher() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-[34px] max-w-[620px] rounded-[28px] border border-[#2d21151a] bg-[#fff9efb8] p-[8px] shadow-[inset_0_1px_0_rgba(255,255,255,0.62),0_18px_44px_rgba(75,51,24,0.12)]"
+      className="mt-[34px] max-w-[620px] rounded-[28px] border border-warm-750/10 bg-warm-050/72 p-[8px] shadow-[inset_0_1px_0_color-mix(in_srgb,var(--accent-white)_62%,transparent),0_18px_44px_rgba(75,51,24,0.12)]"
     >
       <div className="flex flex-col gap-[8px]">
         {/* URL Input Row */}
@@ -138,7 +138,7 @@ export function BuildLauncher() {
               setError('');
             }}
             placeholder="Paste a website URL or describe what you want to build"
-            className="min-h-[54px] flex-1 rounded-[22px] border border-transparent bg-[#17130f0a] px-[20px] text-base font-semibold text-[#17130f] placeholder:text-[#6f6250] transition-colors duration-300 focus:border-[#ff6728] focus:bg-[#fffdf8] focus:outline-none"
+            className="min-h-[54px] flex-1 rounded-[22px] border border-transparent bg-warm-800/4 px-[20px] text-base font-semibold text-warm-800 placeholder:text-warm-450 transition-colors duration-300 focus:border-brand-orange focus:bg-warm-100 focus:outline-none"
           />
 
           {/* Image Upload Button */}
@@ -147,10 +147,10 @@ export function BuildLauncher() {
             onClick={() => fileInputRef.current?.click()}
             className={`flex min-h-[54px] shrink-0 items-center justify-center gap-2 rounded-[22px] border-2 border-dashed px-[16px] transition-all duration-300 ${
               uploadedImage
-                ? 'border-[#ff6728] bg-[#ff6728]/10 text-[#ff6728]'
+                ? 'border-brand-orange bg-brand-orange/10 text-brand-orange'
                 : isDragging
-                  ? 'border-[#ff6728] bg-[#ff6728]/5 text-[#ff6728]'
-                  : 'border-[#2d21151a] bg-[#17130f0a] text-[#6f6250] hover:border-[#ff6728] hover:text-[#ff6728]'
+                  ? 'border-brand-orange bg-brand-orange/5 text-brand-orange'
+                  : 'border-warm-750/10 bg-warm-800/4 text-warm-450 hover:border-brand-orange hover:text-brand-orange'
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -180,7 +180,7 @@ export function BuildLauncher() {
 
           <button type="submit" className="ol-primary-button group min-h-[54px] shrink-0 whitespace-nowrap px-[24px]">
             {uploadedImage && !value.trim() ? 'Build from Image' : 'Build from URL'}
-            <span className="ml-[4px] flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#25170e] text-[#fff7e8] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-[4px]">
+            <span className="ml-[4px] flex h-[32px] w-[32px] items-center justify-center rounded-full bg-warm-900 text-warm-100 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-[4px]">
               -&gt;
             </span>
           </button>
@@ -189,7 +189,7 @@ export function BuildLauncher() {
         {/* Image Preview */}
         {uploadedImage && (
           <div className="relative mx-[12px] mb-[4px]">
-            <div className="flex items-center gap-3 rounded-[16px] bg-[#17130f0a] p-[12px]">
+            <div className="flex items-center gap-3 rounded-[16px] bg-warm-800/4 p-[12px]">
               {/* Thumbnail */}
               <div className="relative h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[12px]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -202,13 +202,13 @@ export function BuildLauncher() {
 
               {/* File Info */}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-[#17130f]">
+                <p className="truncate text-sm font-medium text-warm-800">
                   {uploadedImage.file.name}
                 </p>
-                <p className="text-xs text-[#6f6250]">
+                <p className="text-xs text-warm-450">
                   {(uploadedImage.file.size / 1024 / 1024).toFixed(2)} MB • {uploadedImage.file.type.split('/')[1].toUpperCase()}
                 </p>
-                <p className="mt-1 text-xs text-[#8c4b26]">
+                <p className="mt-1 text-xs text-warm-600">
                   This image will guide the AI generation
                 </p>
               </div>
@@ -217,7 +217,7 @@ export function BuildLauncher() {
               <button
                 type="button"
                 onClick={removeImage}
-                className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-[#17130f0a] text-[#6f6250] transition-colors hover:bg-[#ff6728]/10 hover:text-[#ff6728]"
+                className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-warm-800/4 text-warm-450 transition-colors hover:bg-brand-orange/10 hover:text-brand-orange"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -227,9 +227,9 @@ export function BuildLauncher() {
       </div>
 
       {/* Helper Text */}
-      <div className="flex flex-col gap-[8px] px-[12px] pb-[4px] pt-[12px] text-sm text-[#655847] sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-[8px] px-[12px] pb-[4px] pt-[12px] text-sm text-warm-550 sm:flex-row sm:items-center sm:justify-between">
         <p>Scrape a URL, upload an image, or describe your idea.</p>
-        {error && <p className="font-semibold text-[#a2431c]">{error}</p>}
+        {error && <p className="font-semibold text-heat-110">{error}</p>}
       </div>
     </form>
   );

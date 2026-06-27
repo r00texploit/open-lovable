@@ -1,0 +1,5 @@
+[    4757ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ https://sb-77n35vcflhj1.vercel.run/node_modules/.vite/deps/chunk-YPSROYJW.js?v=47be3f82:21577
+[    5404ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-77n35vcflhj1.vercel.run/favicon.ico:0
+[  121771ms] [LOG] [vite] server connection lost. polling for restart... @ https://sb-77n35vcflhj1.vercel.run/@vite/client:287
+[  122019ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-77n35vcflhj1.vercel.run/:0
+[  122265ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-77n35vcflhj1.vercel.run/:0

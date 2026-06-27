@@ -1,0 +1,36 @@
+[      77ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     112ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     114ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     124ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?model=openai%2Fgpt-5:0
+[     280ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     280ms] [LOG] [home] No sandbox in URL, creating new sandbox automatically... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     280ms] [LOG] [createSandbox] Starting sandbox creation... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     321ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     332ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?model=openai%2Fgpt-5:0
+[    1036ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_ItRmY2LYACxYdjaqHH6YQl5Sgn19, url: https://sb-65sqfv3yxo9n.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T06:32:14.614Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1048ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    1782ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    2501ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_ItRmY2LYACxYdjaqHH6YQl5Sgn19, url: https://sb-65sqfv3yxo9n.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T06:32:16.139Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    2963ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    5834ms] [LOG] [vite] server connection lost. polling for restart... @ https://sb-65sqfv3yxo9n.vercel.run/@vite/client:287
+[    6082ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-65sqfv3yxo9n.vercel.run/:0
+[    6312ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://sb-65sqfv3yxo9n.vercel.run/:0
+[    6314ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31050ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31383ms] [LOG] [checkSandboxStatus] Sandbox needs recreation, auto-recreating... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31384ms] [LOG] [createSandbox] Sandbox creation already in progress, skipping... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   31407ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   38602ms] [LOG] [createSandbox] Response data: {success: true, sessionId: cmqvzg1ms00dvitoynuan8vej, sandboxId: sb_1782541936600_49b95f57, url: https://sb-2epi6jkec8pk.vercel.run, provider: vercel} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   38602ms] [LOG] [createSandbox] Setting sandboxData from creation: {success: true, sessionId: cmqvzg1ms00dvitoynuan8vej, sandboxId: sb_1782541936600_49b95f57, url: https://sb-2epi6jkec8pk.vercel.run, provider: vercel} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   38603ms] [LOG] [createSandbox] Sandbox ready with Vite server running @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   38626ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   38709ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[   38711ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?model=openai%2Fgpt-5&sandbox=sb_1782541936600_49b95f57:0
+[   38913ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   40083ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_1KDzHEpcoM7j33ABdzMD0MGbcxZt, url: https://sb-2epi6jkec8pk.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-27T06:32:53.724Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   40386ms] [LOG] [keep-alive] Sandbox lifetime not extended: Sandbox lifetime could not be extended (plan maximum reached or unsupported) @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   43591ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   45220ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   45364ms] [LOG] [Fast Refresh] done in 246ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   61387ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   61443ms] [LOG] [Fast Refresh] done in 157ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477

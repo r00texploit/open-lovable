@@ -4,10 +4,12 @@ import { parseMorphEdits, applyMorphEditToFile } from '@/lib/morph-fast-apply';
 import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
 import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
+import { sanitizeLucideImports } from '@/lib/ai/sanitize-lucide-imports';
 
 declare global {
   var conversationState: ConversationState | null;
   var activeSandboxProvider: any;
+  var activeSandbox: any;
   var existingFiles: Set<string>;
   var sandboxState: SandboxState;
 }
@@ -263,7 +265,7 @@ function parseAIResponse(response: string): ParsedResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { response, isEdit = false, packages = [], sandboxId } = await request.json();
+    const { response, isEdit = false, packages = [], sandboxId, uploadedImages } = await request.json();
 
     if (!response) {
       return NextResponse.json({
@@ -327,6 +329,7 @@ export async function POST(request: NextRequest) {
 
         // Update legacy global state
         global.activeSandboxProvider = provider;
+        global.activeSandbox = provider;
         console.log(`[apply-ai-code-stream] Successfully got provider for sandbox ${sandboxId}`);
       } catch (providerError) {
         console.error(`[apply-ai-code-stream] Failed to get or create provider for sandbox ${sandboxId}:`, providerError);
@@ -361,6 +364,7 @@ export async function POST(request: NextRequest) {
 
         // Store in legacy global state
         global.activeSandboxProvider = provider;
+        global.activeSandbox = provider;
         global.sandboxData = {
           sandboxId: sandboxInfo.sandboxId,
           url: sandboxInfo.url
@@ -410,10 +414,16 @@ export async function POST(request: NextRequest) {
       };
 
       try {
+        // DEBUG: Log provider state
+        console.log('[apply-ai-code-stream] DEBUG: Provider instance:', !!providerInstance);
+        console.log('[apply-ai-code-stream] DEBUG: Provider sandboxInfo:', providerInstance?.getSandboxInfo());
+        console.log('[apply-ai-code-stream] DEBUG: Provider isAlive:', providerInstance?.isAlive?.());
+
         await sendProgress({
           type: 'start',
           message: 'Starting code application...',
-          totalSteps: 3
+          totalSteps: 3,
+          debug: { hasProvider: !!providerInstance, sandboxInfo: providerInstance?.getSandboxInfo() }
         });
         if (morphEnabled) {
           await sendProgress({ type: 'info', message: 'Morph Fast Apply enabled' });
@@ -519,6 +529,7 @@ export async function POST(request: NextRequest) {
 
         // Step 2: Create/update files
         const filesArray = Array.isArray(parsed.files) ? parsed.files : [];
+        console.log(`[apply-ai-code-stream] DEBUG: Files to process: ${filesArray.length}`, filesArray.map((f: any) => f.path));
         await sendProgress({
           type: 'step',
           step: 2,
@@ -532,6 +543,71 @@ export async function POST(request: NextRequest) {
           const fileName = (file.path || '').split('/').pop() || '';
           return !configFiles.includes(fileName);
         });
+
+        // Handle file extension conflicts: delete .jsx files when .tsx files are being written
+        const tsxFiles = filteredFiles.filter(f => f.path.endsWith('.tsx'));
+        const jsxFilesToDelete: string[] = [];
+        let needsIndexHtmlUpdate = false;
+        let newEntryFile: string | null = null;
+
+        for (const tsxFile of tsxFiles) {
+          const jsxPath = tsxFile.path.replace(/\.tsx$/, '.jsx');
+          const normalizedJsxPath = jsxPath.startsWith('src/') ? jsxPath : 'src/' + jsxPath;
+          const normalizedTsxPath = tsxFile.path.startsWith('src/') ? tsxFile.path : 'src/' + tsxFile.path;
+
+          // Check if the .jsx version exists in tracked files
+          if (global.existingFiles.has(normalizedJsxPath) || global.existingFiles.has(jsxPath)) {
+            jsxFilesToDelete.push(normalizedJsxPath);
+            console.log(`[apply-ai-code-stream] Will delete conflicting .jsx file: ${normalizedJsxPath} (replacing with ${normalizedTsxPath})`);
+          }
+
+          // Check if this is the main entry file (App.tsx or main.tsx)
+          const fileName = tsxFile.path.split('/').pop() || '';
+          if (fileName === 'main.tsx' || fileName === 'App.tsx') {
+            needsIndexHtmlUpdate = true;
+            newEntryFile = fileName === 'main.tsx' ? '/src/main.tsx' : null;
+          }
+        }
+
+        // Delete conflicting .jsx files before writing new files
+        if (jsxFilesToDelete.length > 0) {
+          await sendProgress({
+            type: 'info',
+            message: `Cleaning up ${jsxFilesToDelete.length} conflicting JavaScript files...`
+          });
+
+          for (const jsxFile of jsxFilesToDelete) {
+            try {
+              await providerInstance.runCommand(`rm -f ${jsxFile}`);
+              global.existingFiles.delete(jsxFile);
+              console.log(`[apply-ai-code-stream] Deleted conflicting file: ${jsxFile}`);
+            } catch (err) {
+              console.warn(`[apply-ai-code-stream] Failed to delete ${jsxFile}:`, err);
+            }
+          }
+        }
+
+        // Update index.html to point to correct entry file if needed
+        if (needsIndexHtmlUpdate && newEntryFile) {
+          try {
+            const currentIndexHtml = await providerInstance.readFile('index.html');
+            const updatedIndexHtml = currentIndexHtml.replace(
+              /src\/(main|index)\.(jsx|tsx)/,
+              newEntryFile.replace(/^\//, '')
+            );
+
+            if (updatedIndexHtml !== currentIndexHtml) {
+              await providerInstance.writeFile('index.html', updatedIndexHtml);
+              console.log(`[apply-ai-code-stream] Updated index.html to point to ${newEntryFile}`);
+              await sendProgress({
+                type: 'info',
+                message: `Updated HTML entry point to ${newEntryFile}`
+              });
+            }
+          } catch (err) {
+            console.warn(`[apply-ai-code-stream] Failed to update index.html:`, err);
+          }
+        }
 
         // If Morph is enabled and we have edits, apply them before file writes
         const morphUpdatedPaths = new Set<string>();
@@ -616,6 +692,9 @@ export async function POST(request: NextRequest) {
             // Keep CSS imports - they are needed for custom styles alongside Tailwind
             let fileContent = file.content;
 
+            // Sanitize lucide-react imports so invalid icon names don't crash Vite
+            fileContent = sanitizeLucideImports(fileContent);
+
             // Fix common Tailwind CSS errors in CSS files
             if (file.path.endsWith('.css')) {
               // Replace shadow-3xl with shadow-2xl (shadow-3xl doesn't exist)
@@ -637,7 +716,14 @@ export async function POST(request: NextRequest) {
             }
 
             // Write the file using provider
-            await providerInstance.writeFile(normalizedPath, fileContent);
+            console.log(`[apply-ai-code-stream] DEBUG: Writing file ${normalizedPath} (${fileContent.length} chars)`);
+            try {
+              await providerInstance.writeFile(normalizedPath, fileContent);
+              console.log(`[apply-ai-code-stream] DEBUG: Successfully wrote ${normalizedPath}`);
+            } catch (writeErr) {
+              console.error(`[apply-ai-code-stream] DEBUG: Failed to write ${normalizedPath}:`, writeErr);
+              throw writeErr;
+            }
 
             // Update file cache
             if (global.sandboxState?.fileCache) {
@@ -667,6 +753,48 @@ export async function POST(request: NextRequest) {
               type: 'file-error',
               fileName: file.path,
               error: (error as Error).message
+            });
+          }
+        }
+
+        // Step 2.5: Save uploaded images to public/images directory
+        if (uploadedImages && uploadedImages.length > 0) {
+          await sendProgress({
+            type: 'step',
+            step: 2,
+            message: `Saving ${uploadedImages.length} uploaded images...`
+          });
+
+          try {
+            // Create public/images directory
+            await providerInstance.runCommand('mkdir -p public/images');
+
+            for (const img of uploadedImages) {
+              if (img.base64 && img.name) {
+                // Generate a clean filename from the original name
+                const cleanName = img.name
+                  .toLowerCase()
+                  .replace(/\s+/g, '-')
+                  .replace(/[^a-z0-9.-]/g, '');
+                const imagePath = `public/images/${cleanName}`;
+
+                // Decode base64 and write to file
+                const imageBuffer = Buffer.from(img.base64, 'base64');
+                await providerInstance.writeFile(imagePath, imageBuffer.toString('binary'));
+
+                console.log(`[apply-ai-code-stream] Saved uploaded image: ${imagePath}`);
+                await sendProgress({
+                  type: 'file-complete',
+                  fileName: imagePath,
+                  action: 'created'
+                });
+              }
+            }
+          } catch (imageError) {
+            console.error('[apply-ai-code-stream] Failed to save uploaded images:', imageError);
+            await sendProgress({
+              type: 'warning',
+              message: `Could not save all uploaded images: ${(imageError as Error).message}`
             });
           }
         }
@@ -738,24 +866,33 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        const changedFiles = [...results.filesCreated, ...results.filesUpdated];
+
+        console.log('[apply-ai-code-stream] DEBUG: Final results:', {
+          filesCreated: results.filesCreated,
+          filesUpdated: results.filesUpdated,
+          errors: results.errors,
+          errorCount: results.errors.length
+        });
+
         // Send final results
         await sendProgress({
           type: 'complete',
           results,
           explanation: parsed.explanation,
           structure: parsed.structure,
-          message: `Successfully applied ${results.filesCreated.length} files`
+          message: `Successfully applied ${changedFiles.length} files`
         });
 
         // Track applied files in conversation state
-        if (global.conversationState && results.filesCreated.length > 0) {
+        if (global.conversationState && changedFiles.length > 0) {
           const messages = global.conversationState.context.messages;
           if (messages.length > 0) {
             const lastMessage = messages[messages.length - 1];
             if (lastMessage.role === 'user') {
               lastMessage.metadata = {
                 ...lastMessage.metadata,
-                editedFiles: results.filesCreated
+                editedFiles: changedFiles
               };
             }
           }
@@ -765,7 +902,7 @@ export async function POST(request: NextRequest) {
             global.conversationState.context.projectEvolution.majorChanges.push({
               timestamp: Date.now(),
               description: parsed.explanation || 'Code applied',
-              filesAffected: results.filesCreated || []
+              filesAffected: changedFiles
             });
           }
 
@@ -773,6 +910,7 @@ export async function POST(request: NextRequest) {
         }
 
       } catch (error) {
+        console.error('[apply-ai-code-stream] DEBUG: Error in processing:', error);
         await sendProgress({
           type: 'error',
           error: (error as Error).message

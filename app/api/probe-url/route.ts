@@ -12,9 +12,20 @@ export async function GET(request: NextRequest) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch(url, { method: 'HEAD', signal: controller.signal, redirect: 'manual' });
+    const res = await fetch(url, {
+      method: 'HEAD',
+      signal: controller.signal,
+      redirect: 'manual',
+      cache: 'no-store',
+    });
     clearTimeout(timeout);
-    return NextResponse.json({ status: res.status, ok: res.status >= 200 && res.status < 400 });
+    return NextResponse.json({
+      status: res.status,
+      ok: res.status >= 200 && res.status < 400,
+      stopped: res.status === 410,
+      needsRecreation: [410, 502, 503].includes(res.status),
+      code: res.status === 410 ? 'SANDBOX_STOPPED' : undefined,
+    });
   } catch (err: any) {
     return NextResponse.json({ status: 0, ok: false, error: err.message });
   }

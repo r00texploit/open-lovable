@@ -67,17 +67,17 @@ export function SocialButton({ provider, onClick, loading = false }: SocialButto
       className="
         relative w-full flex items-center justify-center gap-3
         px-4 py-3.5
-        bg-[#fff7e812] hover:bg-[#fff7e81c]
-        border border-[#fff7e824] hover:border-[#ff672866]
+        bg-warm-100/7 hover:bg-warm-100/11
+        border border-warm-100/14 hover:border-brand-orange/40
         rounded-full
-        text-[#fff7e8] font-semibold
+        text-warm-100 font-semibold
         transition-colors duration-300
         disabled:opacity-50 disabled:cursor-not-allowed
         overflow-hidden
         group
       "
     >
-      <div className="absolute inset-0 bg-[#ff67280d] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      <div className="absolute inset-0 bg-brand-orange/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
       {loading ? (
         <motion.div
@@ -87,7 +87,7 @@ export function SocialButton({ provider, onClick, loading = false }: SocialButto
         />
       ) : (
         <>
-          <span className="text-[#fff7e8cc]">{config.icon}</span>
+          <span className="text-warm-100/80">{config.icon}</span>
           <span>Continue with {config.name}</span>
         </>
       )}

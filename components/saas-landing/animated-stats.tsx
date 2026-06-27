@@ -75,7 +75,7 @@ const stats = [
 
 export function AnimatedStats() {
   return (
-    <section className="py-20 lg:py-28 relative overflow-hidden bg-gradient-to-b from-[#0a0a0f] via-[#0c0c12] to-[#0a0a0f]">
+    <section className="py-20 lg:py-28 relative overflow-hidden bg-gradient-to-b from-dark-950 via-dark-900 to-dark-950">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet-500/5 rounded-full blur-[200px]" />

@@ -1,0 +1,92 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Noeron" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e8]:
+            - img [ref=e9]
+            - generic [ref=e16]: Noeron
+        - button "GPT-5" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: GPT-5
+          - img [ref=e21]
+        - generic [ref=e23]: Sandbox active
+      - generic [ref=e24]:
+        - button "New sandbox" [ref=e131] [cursor=pointer]:
+          - img [ref=e133]
+          - generic [ref=e135]: New sandbox
+        - button "Re-apply" [disabled] [ref=e136]:
+          - img [ref=e138]
+          - generic [ref=e140]: Re-apply
+        - button "Download ZIP" [ref=e141] [cursor=pointer]:
+          - img [ref=e143]
+          - generic [ref=e145]: Download ZIP
+        - link "My Websites" [ref=e146] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e148]
+          - generic [ref=e150]: My Websites
+        - link "Settings" [ref=e151] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e153]
+          - generic [ref=e156]: Settings
+        - button "Sign out" [ref=e157] [cursor=pointer]:
+          - img [ref=e159]
+          - generic [ref=e161]: Sign out
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - button "No sites yet" [disabled] [ref=e60]:
+          - generic [ref=e61]: No sites yet
+          - img [ref=e62]
+        - generic [ref=e64]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=e65]:
+        - textbox "Site name" [ref=e66]
+        - textbox "site-slug" [ref=e67]
+        - button "Create site" [disabled] [ref=e68]
+    - generic [ref=e69]:
+      - generic [ref=e70]:
+        - generic [ref=e73]:
+          - generic [ref=e74]: Website URL
+          - textbox "https://example.com" [ref=e75]
+        - generic [ref=e76]:
+          - generic [ref=e80]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+          - generic [ref=e84]: The sandbox preview is no longer responding. Creating a fresh sandbox and restoring your files...
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - img [ref=e90]
+            - textbox "Describe what you want to build..." [ref=e93]: test message
+          - generic [ref=e163]:
+            - img "Uploaded" [ref=e165]
+            - generic [ref=e166]:
+              - paragraph [ref=e167]: fixed-sandbox-preview.png
+              - paragraph [ref=e168]: 0.01 MB
+            - button [ref=e169] [cursor=pointer]:
+              - img [ref=e170]
+          - generic [ref=e94]:
+            - button "Image added" [active] [ref=e173] [cursor=pointer]:
+              - img [ref=e96]
+              - generic [ref=e100]: Image added
+            - button "Send" [ref=e101] [cursor=pointer]:
+              - generic [ref=e102]: Send
+              - img [ref=e103]
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - generic [ref=e109]:
+            - button "Code" [ref=e110] [cursor=pointer]:
+              - generic [ref=e111]:
+                - img [ref=e112]
+                - generic [ref=e114]: Code
+            - button "View" [ref=e115] [cursor=pointer]:
+              - generic [ref=e116]:
+                - img [ref=e117]
+                - generic [ref=e120]: View
+          - generic [ref=e174]:
+            - generic [ref=e175]: Sandbox active
+            - link "Open in new tab" [ref=e177] [cursor=pointer]:
+              - /url: https://sb-65sqfv3yxo9n.vercel.run
+              - img [ref=e178]
+        - generic [ref=e122]:
+          - iframe [ref=e180]:
+            
+          - button "Refresh sandbox" [ref=e181] [cursor=pointer]:
+            - img [ref=e182]
+  - alert [ref=e3]

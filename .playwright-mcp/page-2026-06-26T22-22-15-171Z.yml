@@ -1,0 +1,123 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Noeron" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e8]:
+            - img [ref=e9]
+            - generic [ref=e16]: Noeron
+        - button "GPT-5" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: GPT-5
+          - img [ref=e21]
+        - generic [ref=e23]: Sandbox active
+      - generic [ref=e24]:
+        - button "New sandbox" [ref=e320] [cursor=pointer]:
+          - img [ref=e322]
+          - generic [ref=e324]: New sandbox
+        - button "Re-apply" [disabled] [ref=e325]:
+          - img [ref=e327]
+          - generic [ref=e329]: Re-apply
+        - button "Download ZIP" [ref=e330] [cursor=pointer]:
+          - img [ref=e332]
+          - generic [ref=e334]: Download ZIP
+        - link "My Websites" [ref=e335] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e337]
+          - generic [ref=e339]: My Websites
+        - link "Settings" [ref=e340] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e342]
+          - generic [ref=e345]: Settings
+        - button "Sign out" [ref=e346] [cursor=pointer]:
+          - img [ref=e348]
+          - generic [ref=e350]: Sign out
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - button "No sites yet" [disabled] [ref=e158]:
+          - generic [ref=e61]: No sites yet
+          - img [ref=e62]
+        - generic [ref=e64]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=e65]:
+        - textbox "Site name" [ref=e66]
+        - textbox "site-slug" [ref=e67]
+        - button "Create site" [disabled] [ref=e68]
+    - generic [ref=e69]:
+      - generic [ref=e70]:
+        - generic [ref=e73]:
+          - generic [ref=e74]: Website URL
+          - textbox "https://example.com" [disabled] [ref=e75]
+        - generic [ref=e76]:
+          - generic [ref=e80]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+          - generic [ref=e224]: Create a simple landing page for a bakery with warm colors
+          - generic [ref=e228]: Creating sandbox while I plan your app...
+          - generic [ref=e229]:
+            - generic [ref=e230]: Generating code...
+            - generic [ref=e303]:
+              - generic [ref=e304]:
+                - img [ref=e305]
+                - text: index.css
+              - generic [ref=e307]:
+                - img [ref=e308]
+                - text: App.tsx
+              - generic [ref=e351]:
+                - img [ref=e352]
+                - text: Header.tsx
+              - generic [ref=e354]:
+                - img [ref=e355]
+                - text: Hero.tsx
+              - generic [ref=e357]:
+                - img [ref=e358]
+                - text: Features.tsx
+            - generic [ref=e310]:
+              - generic [ref=e314]: AI Response Stream
+              - code [ref=e318]:
+                - text: "<span className=\"inline-flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-700 ring-1 ring-orange-200\"> <r.icon className=\"h-5 w-5\" aria-hidden=\"true\" /> </span> <h3 className=\"mt-3 font-semibold text-gray-900\">{r.title}</h3> <p className=\"mt-1 text-sm text-gray-700\">{r.description}</p> </motion.div> ))} </div> </div> </div> </div> </section> );"
+                - text: "});"
+                - text: Features.displayName = 'Features';
+                - text: export default Features;
+                - text: </file>
+                - text: "<file path=\"src/components/Footer.tsx\"> import React from 'react'; import { MapPin, Phone, Mail, Clock } from 'lucide-react'; const Footer: React.FC = React.memo(() => { const year = new Date().getFullYear(); return ( <footer id=\"contact\" className=\"w-full bg-gray-900 text"
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - img [ref=e86]
+            - textbox "Describe what you want to build..." [ref=e89]
+          - generic [ref=e90]:
+            - button "Add image" [ref=e91] [cursor=pointer]:
+              - img [ref=e92]
+              - generic [ref=e96]: Add image
+            - button "Send" [disabled] [ref=e97]:
+              - generic [ref=e98]: Send
+              - img [ref=e99]
+      - generic [ref=e102]:
+        - generic [ref=e103]:
+          - generic [ref=e105]:
+            - button "Code" [ref=e106] [cursor=pointer]:
+              - generic [ref=e107]:
+                - img [ref=e108]
+                - generic [ref=e110]: Code
+            - button "View" [ref=e111] [cursor=pointer]:
+              - generic [ref=e112]:
+                - img [ref=e113]
+                - generic [ref=e116]: View
+          - generic [ref=e231]:
+            - generic [ref=e232]: Sandbox active
+            - link "Open in new tab" [ref=e234] [cursor=pointer]:
+              - /url: https://sb-1cwnvdr8midi.vercel.run
+              - img [ref=e235]
+        - generic [ref=e118]:
+          - iframe [ref=e237]:
+            - main [ref=f1e3]:
+              - paragraph [ref=f1e4]:
+                - generic [ref=f1e5]:
+                  - strong [ref=f1e6]: "502"
+                  - text: ": This sandbox is not listening on the requested port."
+                - generic [ref=f1e7]:
+                  - text: "Code:"
+                  - code [ref=f1e8]: "`SANDBOX_NOT_LISTENING`"
+                - generic [ref=f1e9]:
+                  - text: "ID:"
+                  - code [ref=f1e10]: "`bom1::g4tb2-1782512526799-f48d6d6fbb08`"
+          - button "Refresh sandbox" [ref=e238] [cursor=pointer]:
+            - img [ref=e239]
+  - alert [ref=e3]

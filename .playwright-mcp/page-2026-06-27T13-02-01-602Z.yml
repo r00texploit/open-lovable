@@ -1,0 +1,69 @@
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Noeron" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]:
+            - img [ref=e7]
+            - generic [ref=e14]: Noeron
+        - generic [ref=e15]:
+          - paragraph [ref=e16]: Builder access
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e25]: Noeron
+          - heading "Your next site starts with a working app." [level=2] [ref=e26]
+          - paragraph [ref=e27]: Sign in to continue from prompt, URL, or sandbox. The generated code stays visible, editable, and ready for export.
+        - generic [ref=e28]:
+          - generic [ref=e29]: URL scrape
+          - generic [ref=e30]: React files
+          - generic [ref=e31]: Live preview
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - img [ref=e39]
+          - heading "Create your account" [level=1] [ref=e42]
+          - paragraph [ref=e43]: Start with a URL, prompt your edits, and keep the React files.
+        - generic [ref=e44]:
+          - generic [ref=e46]:
+            - generic [ref=e47]: Full name
+            - generic [ref=e48]:
+              - img [ref=e49]
+              - textbox "Maya Chen" [ref=e52]: Nuviq Test User
+          - generic [ref=e54]:
+            - generic [ref=e55]: Email
+            - generic [ref=e56]:
+              - img [ref=e57]
+              - textbox "you@example.com" [ref=e60]: nuviq2@test.com
+          - generic [ref=e62]:
+            - generic [ref=e63]: Password
+            - generic [ref=e64]:
+              - textbox "Create a strong password" [ref=e65]: TestPass123!
+              - button "Show password" [ref=e66] [cursor=pointer]:
+                - img [ref=e67]
+            - paragraph [ref=e76]: Very strong
+          - generic [ref=e78]:
+            - generic [ref=e79]: Confirm password
+            - generic [ref=e80]:
+              - textbox "Confirm your password" [ref=e81]: TestPass123!
+              - button "Show password" [ref=e82] [cursor=pointer]:
+                - img [ref=e83]
+          - button "I agree to the Terms of Service and Privacy Policy" [ref=e87] [cursor=pointer]:
+            - generic [ref=e89]:
+              - text: I agree to the
+              - link "Terms of Service" [ref=e90]:
+                - /url: /terms
+              - text: and
+              - link "Privacy Policy" [ref=e91]:
+                - /url: /privacy
+          - button "Create account" [active] [ref=e93] [cursor=pointer]:
+            - text: Create account
+            - img [ref=e94]
+        - generic [ref=e100]: Or sign up with
+        - button "Continue with Google" [ref=e102] [cursor=pointer]:
+          - img [ref=e105]
+          - generic [ref=e110]: Continue with Google
+        - paragraph [ref=e111]:
+          - text: Already have an account?
+          - link "Sign in" [ref=e112] [cursor=pointer]:
+            - /url: /auth/signin
+  - alert [ref=e113]

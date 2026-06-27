@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense, type ReactNode } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
@@ -118,7 +118,7 @@ function AISandboxPage() {
   ]);
   const [aiChatInput, setAiChatInput] = useState('');
   const [aiEnabled] = useState(true);
-  const [chatUploadedImage, setChatUploadedImage] = useState<{ base64: string; type: string; name: string } | null>(null);
+  const [chatUploadedImages, setChatUploadedImages] = useState<{ base64: string; type: string; name: string }[]>([]);
   const searchParams = useSearchParams();
   const router = useRouter();
   const [aiModel, setAiModel] = useState(() => {
@@ -144,7 +144,7 @@ function AISandboxPage() {
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
   const [isPreparingDesign, setIsPreparingDesign] = useState(false);
   const [targetUrl, setTargetUrl] = useState<string>('');
-  const [uploadedImage, setUploadedImage] = useState<{ base64: string; type: string; name: string } | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<{ base64: string; type: string; name: string }[]>([]);
   const [sidebarScrolled, setSidebarScrolled] = useState(false);
   const [screenshotCollapsed, setScreenshotCollapsed] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'gathering' | 'planning' | 'generating' | null>(null);
@@ -180,6 +180,33 @@ function AISandboxPage() {
   const codeDisplayRef = useRef<HTMLDivElement>(null);
   const saveSessionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sandboxJustCreatedAt = useRef<number>(0);
+  const codeApplicationInProgress = useRef<boolean>(false);
+
+  const fileTypeFromPath = useCallback((path: string) => {
+    const fileExt = path.split('.').pop() || '';
+    return fileExt === 'jsx' || fileExt === 'js' || fileExt === 'tsx' || fileExt === 'ts' ? 'javascript' :
+      fileExt === 'css' ? 'css' :
+      fileExt === 'json' ? 'json' :
+      fileExt === 'html' ? 'html' : 'text';
+  }, []);
+
+  const filesArrayToCache = useCallback((files: Array<{ path: string; content: string }>) => {
+    return files.reduce<Record<string, string>>((acc, file) => {
+      if (file.path && typeof file.content === 'string') {
+        acc[file.path] = file.content;
+      }
+      return acc;
+    }, {});
+  }, []);
+
+  const filesCacheToProgressFiles = useCallback((files: Record<string, string>) => {
+    return Object.entries(files).map(([path, content]) => ({
+      path,
+      content,
+      type: fileTypeFromPath(path),
+      completed: true,
+    }));
+  }, [fileTypeFromPath]);
 
   const [codeApplicationState, setCodeApplicationState] = useState<CodeApplicationState>({
     stage: null
@@ -194,6 +221,8 @@ function AISandboxPage() {
     const sd = overrideSandbox ?? sandboxData;
     if (!sd?.sandboxId) return;
 
+    const fileCache = sandboxFiles;
+
     const payload = {
       sandboxId: sd.sandboxId,
       sandboxProvider: sd.provider ?? 'vercel',
@@ -203,6 +232,10 @@ function AISandboxPage() {
         type: m.type,
         timestamp: m.timestamp,
       })),
+      conversationCtx: conversationContext,
+      fileCache,
+      homeUrlInput,
+      homeContextInput,
       aiModel,
       siteId: overrideSiteId ?? activeSiteId ?? null,
     };
@@ -212,8 +245,8 @@ function AISandboxPage() {
     try {
       localStorage.setItem(`noeron_session_${sd.sandboxId}`, JSON.stringify(payload));
       localStorage.setItem('noeron_last_sandbox', sd.sandboxId);
-      if (Object.keys(sandboxFiles).length > 0) {
-        localStorage.setItem(`noeron_files_${sd.sandboxId}`, JSON.stringify(sandboxFiles));
+      if (Object.keys(fileCache).length > 0) {
+        localStorage.setItem(`noeron_files_${sd.sandboxId}`, JSON.stringify(fileCache));
       }
     } catch { /* quota exceeded — ignore */ }
 
@@ -228,7 +261,7 @@ function AISandboxPage() {
     } catch {
       // non-blocking — DB save failed, localStorage fallback already done
     }
-  }, [sandboxData, sandboxFiles, chatMessages, aiModel, activeSiteId, session?.user?.id]);
+  }, [sandboxData, sandboxFiles, chatMessages, conversationContext, homeUrlInput, homeContextInput, aiModel, activeSiteId, session?.user?.id]);
 
   const debouncedSave = useCallback((
     overrideSandbox?: typeof sandboxData,
@@ -295,11 +328,11 @@ function AISandboxPage() {
 
       // Store uploaded image in state if present
       if (uploadedImageBase64) {
-        setUploadedImage({
+        setUploadedImages([{
           base64: uploadedImageBase64,
           type: uploadedImageType || 'image/png',
           name: uploadedImageName || 'uploaded-image'
-        });
+        }]);
       }
 
       if (storedUrl || uploadedImageBase64) {
@@ -367,9 +400,6 @@ function AISandboxPage() {
         
         // Set flag to auto-trigger generation after component updates
         setShouldAutoGenerate(true);
-        
-        // Also set autoStart flag for the effect
-        sessionStorage.setItem('autoStart', 'true');
       }
       
       // Clear old conversation
@@ -423,6 +453,35 @@ function AISandboxPage() {
             }
             if (savedSession.siteId) setActiveSiteId(savedSession.siteId);
             if (savedSession.aiModel) setAiModel(savedSession.aiModel);
+            if (savedSession.conversationCtx) {
+              setConversationContext(prev => ({
+                ...prev,
+                ...savedSession.conversationCtx,
+                lastGeneratedCode: savedSession.conversationCtx.lastGeneratedCode ?? prev.lastGeneratedCode,
+              }));
+            }
+            const savedHomeUrl = savedSession.homeUrlInput ?? savedSession.conversationCtx?.homeUrlInput;
+            const savedHomeContext = savedSession.homeContextInput ?? savedSession.conversationCtx?.homeContextInput;
+            if (savedHomeUrl) setHomeUrlInput(savedHomeUrl);
+            if (savedHomeContext) setHomeContextInput(savedHomeContext);
+
+            const dbFileCache = savedSession.fileCache?.files ?? savedSession.fileCache;
+            if (dbFileCache && typeof dbFileCache === 'object' && Object.keys(dbFileCache).length > 0) {
+              const restoredFiles = Object.fromEntries(
+                Object.entries(dbFileCache).map(([path, value]: [string, any]) => [
+                  path,
+                  typeof value === 'string' ? value : value?.content ?? '',
+                ]).filter(([, content]) => typeof content === 'string')
+              ) as Record<string, string>;
+
+              if (Object.keys(restoredFiles).length > 0) {
+                setSandboxFiles(restoredFiles);
+                setGenerationProgress(prev => ({
+                  ...prev,
+                  files: filesCacheToProgressFiles(restoredFiles),
+                }));
+              }
+            }
           }
 
           // Probe the saved sandbox URL before loading it — Vercel sandboxes expire after 15 min
@@ -430,10 +489,15 @@ function AISandboxPage() {
           let sandboxAlive = false;
           if (savedUrl) {
             try {
-              // no-cors: won't throw on 2xx/4xx, only on network error or timeout
-              await fetch(savedUrl, { method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout(5000) });
-              sandboxAlive = true;
-            } catch { sandboxAlive = false; }
+              const probe = await fetch(`/api/probe-url?url=${encodeURIComponent(savedUrl)}`);
+              const result = await probe.json();
+              sandboxAlive = Boolean(result.ok);
+              if (result.needsRecreation || result.stopped) {
+                console.log('[home] Saved sandbox is stopped/unreachable:', result);
+              }
+            } catch {
+              sandboxAlive = false;
+            }
           }
 
           if (sandboxAlive && savedUrl && savedSession) {
@@ -460,6 +524,15 @@ function AISandboxPage() {
                 const raw = localStorage.getItem(`noeron_files_${sandboxIdParam}`);
                 if (raw) savedFiles = JSON.parse(raw);
               } catch { /* parse error */ }
+              if (!savedFiles && savedSession?.fileCache) {
+                const cachedFiles = savedSession.fileCache.files ?? savedSession.fileCache;
+                savedFiles = Object.fromEntries(
+                  Object.entries(cachedFiles).map(([path, value]: [string, any]) => [
+                    path,
+                    typeof value === 'string' ? value : value?.content ?? '',
+                  ]).filter(([, content]) => typeof content === 'string')
+                ) as Record<string, string>;
+              }
 
               if (savedFiles && Object.keys(savedFiles).length > 0) {
                 addChatMessage('♻️ Restoring your code files...', 'system');
@@ -492,12 +565,6 @@ function AISandboxPage() {
           await createSandbox(true);
         }
         
-        // If we have a URL from the home page, mark for automatic start
-        if (storedUrl && isMounted) {
-          // We'll trigger the generation after the component is fully mounted
-          // and the startGeneration function is defined
-          sessionStorage.setItem('autoStart', 'true');
-        }
       } catch (error) {
         console.error('[ai-sandbox] Failed to create or restore sandbox:', error);
         if (isMounted) {
@@ -567,7 +634,7 @@ function AISandboxPage() {
       // Small delay to ensure everything is ready
       setTimeout(() => {
         console.log('[generation] Auto-starting generation for URL:', homeUrlInput);
-        startGeneration();
+        startGeneration({ url: homeUrlInput, context: homeContextInput, model: aiModel });
       }, 1000);
     }
   }, [showHomeScreen, homeUrlInput]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -592,6 +659,12 @@ function AISandboxPage() {
     }
   }, [chatMessages]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (sandboxData?.sandboxId) {
+      debouncedSave(sandboxData, chatMessages, activeSiteId);
+    }
+  }, [sandboxFiles, generationProgress.files, conversationContext.lastGeneratedCode, homeUrlInput, homeContextInput]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Auto-trigger generation when flag is set (from home page navigation)
   useEffect(() => {
     if (shouldAutoGenerate && homeUrlInput && !showHomeScreen) {
@@ -601,7 +674,7 @@ function AISandboxPage() {
       // Trigger generation after a short delay to ensure everything is set up
       const timer = setTimeout(() => {
         console.log('[generation] Auto-triggering generation from URL params');
-        startGeneration();
+        startGeneration({ url: homeUrlInput, context: homeContextInput, model: aiModel });
       }, 1000);
 
       return () => clearTimeout(timer);
@@ -616,17 +689,29 @@ function AISandboxPage() {
 
     console.log('[health-check] Starting periodic sandbox health check');
 
+    const initialCheckId = setTimeout(() => {
+      // Skip health check if code application is in progress or generation is active
+      if (!generationProgress.isGenerating && !codeApplicationInProgress.current) {
+        checkSandboxStatus(true);
+      } else {
+        console.log('[health-check] Skipping initial health check - generation or code application in progress');
+      }
+    }, 750);
+
     // Check every 30 seconds
     const intervalId = setInterval(() => {
-      // Only check if we're not currently generating code
-      if (!generationProgress.isGenerating) {
+      // Only check if we're not currently generating code or applying code
+      if (!generationProgress.isGenerating && !codeApplicationInProgress.current) {
         console.log('[health-check] Running periodic health check...');
         checkSandboxStatus(true); // autoRecreate = true
+      } else {
+        console.log('[health-check] Skipping health check - generation or code application in progress');
       }
     }, 30000); // 30 seconds
 
     return () => {
       console.log('[health-check] Stopping periodic health check');
+      clearTimeout(initialCheckId);
       clearInterval(intervalId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -640,8 +725,7 @@ function AISandboxPage() {
     if (!sandboxData?.sandboxId) return;
 
     const intervalMs = appConfig.vercelSandbox.keepAliveIntervalMs;
-
-    const intervalId = setInterval(() => {
+    const extendSandbox = () => {
       fetch('/api/extend-sandbox-timeout', { method: 'POST' })
         .then(res => res.json())
         .then(data => {
@@ -652,7 +736,10 @@ function AISandboxPage() {
         .catch(() => {
           // Best-effort; the periodic health check handles a dead sandbox
         });
-    }, intervalMs);
+    };
+
+    extendSandbox();
+    const intervalId = setInterval(extendSandbox, intervalMs);
 
     return () => clearInterval(intervalId);
   }, [sandboxData?.sandboxId]);
@@ -660,6 +747,97 @@ function AISandboxPage() {
   const updateStatus = (text: string, active: boolean) => {
     setStatus({ text, active });
   };
+
+  const getRestorableFiles = () => {
+    if (Object.keys(sandboxFiles).length > 0) {
+      return sandboxFiles;
+    }
+
+    const generatedFiles = filesArrayToCache(generationProgress.files);
+    if (Object.keys(generatedFiles).length > 0) {
+      return generatedFiles;
+    }
+
+    return null;
+  };
+
+  const restoreFilesToSandbox = async (targetSandbox: SandboxData, files: Record<string, string>) => {
+    if (!targetSandbox?.sandboxId || Object.keys(files).length === 0) return false;
+
+    const res = await fetch('/api/restore-files', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sandboxId: targetSandbox.sandboxId, files }),
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      throw new Error(result.error || 'Failed to restore files');
+    }
+
+    setSandboxFiles(files);
+    return true;
+  };
+
+  const recoverStoppedSandbox = async (reason = 'The preview sandbox stopped.') => {
+    const filesToRestore = getRestorableFiles();
+
+    addChatMessage(`${reason} Creating a fresh sandbox and restoring your files...`, 'system');
+    setSandboxData(null);
+    updateStatus('Recreating sandbox...', false);
+
+    if (iframeRef.current) {
+      iframeRef.current.src = '';
+    }
+
+    const newSandbox = await createSandbox(true);
+    if (!newSandbox) return null;
+
+    if (filesToRestore && Object.keys(filesToRestore).length > 0) {
+      try {
+        await restoreFilesToSandbox(newSandbox, filesToRestore);
+        addChatMessage('Restored your files into the fresh sandbox.', 'system');
+
+        // Persist the new sandbox session with restored files so refresh can restore the Code tab.
+        setGenerationProgress(prev => ({
+          ...prev,
+          files: filesCacheToProgressFiles(filesToRestore),
+        }));
+        debouncedSave(newSandbox, chatMessages, activeSiteId);
+
+        setTimeout(() => {
+          if (iframeRef.current && newSandbox.url) {
+            iframeRef.current.src = `${newSandbox.url}?t=${Date.now()}&restored=true`;
+          }
+        }, appConfig.codeApplication.defaultRefreshDelay);
+      } catch (error: any) {
+        addChatMessage(`Fresh sandbox created, but file restore failed: ${error.message}`, 'system');
+      }
+    }
+
+    return newSandbox;
+  };
+
+  const refreshSandboxPreview = async (targetSandbox: SandboxData | null | undefined = sandboxData, reason = 'The preview sandbox stopped.') => {
+    if (!targetSandbox?.url) return;
+
+    try {
+      const probe = await fetch(`/api/probe-url?url=${encodeURIComponent(targetSandbox.url)}`);
+      const result = await probe.json();
+      if (result.needsRecreation || result.stopped) {
+        await recoverStoppedSandbox(reason);
+        return;
+      }
+    } catch {
+      // If the probe itself fails, fall back to the normal health check path.
+      checkSandboxStatus(true);
+      return;
+    }
+
+    if (iframeRef.current) {
+      iframeRef.current.src = `${targetSandbox.url}?t=${Date.now()}&manual=true`;
+    }
+  };
+
 
   const log = (message: string, type: 'info' | 'error' | 'command' = 'info') => {
     setResponseArea(prev => [...prev, `[${type}] ${message}`]);
@@ -775,23 +953,23 @@ function AISandboxPage() {
       const data = await response.json();
 
       if (data.needsRecreation && autoRecreate) {
+        // Safety check: don't recreate if code application is in progress
+        if (codeApplicationInProgress.current) {
+          console.log('[checkSandboxStatus] Sandbox needs recreation but code application is in progress, skipping recreation');
+          return;
+        }
         console.log('[checkSandboxStatus] Sandbox needs recreation, auto-recreating...');
-        addChatMessage(`⚠️ Sandbox timed out (${appConfig.vercelSandbox.timeoutMinutes} min limit). Creating a new sandbox...`, 'system');
-        setSandboxData(null);
-        updateStatus('Recreating sandbox...', false);
-
-        // Clear the iframe
-        if (iframeRef.current) {
-          iframeRef.current.src = '';
+        if (
+          data.healthDetails?.statusCode !== 410 &&
+          Date.now() - sandboxJustCreatedAt.current < 60_000
+        ) {
+          console.log('[checkSandboxStatus] Sandbox is still warming up, skipping recreation');
+          return;
         }
-
-        // Create new sandbox
-        const newSandbox = await createSandbox();
-
-        if (newSandbox) {
-          addChatMessage('✅ New sandbox created! You can continue building.', 'system');
-        }
-
+        const reason = data.healthDetails?.statusCode === 410
+          ? 'The Vercel sandbox session stopped.'
+          : 'The sandbox preview is no longer responding.';
+        await recoverStoppedSandbox(reason);
         return;
       }
 
@@ -942,8 +1120,15 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
   };
 
-  const applyGeneratedCode = async (code: string, isEdit: boolean = false, overrideSandboxData?: SandboxData) => {
+  const applyGeneratedCode = async (code: string, isEdit: boolean = false, overrideSandboxData?: SandboxData, images?: { base64: string; type: string; name: string }[]) => {
+    console.log('[applyGeneratedCode] STARTED:', {
+      codeLength: code?.length || 0,
+      isEdit,
+      hasOverrideSandboxData: !!overrideSandboxData,
+      currentSandboxDataId: sandboxData?.sandboxId
+    });
     setLoading(true);
+    codeApplicationInProgress.current = true; // Prevent health check from recreating sandbox
     log('Applying AI-generated code...');
     
     try {
@@ -960,16 +1145,25 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       
       // Use streaming endpoint for real-time feedback
       const effectiveSandboxData = overrideSandboxData || sandboxData;
+      console.log('[applyGeneratedCode] Fetching /api/apply-ai-code-stream:', {
+        hasCode: !!code,
+        codeLength: code?.length,
+        isEdit,
+        sandboxId: effectiveSandboxData?.sandboxId,
+        hasPendingPackages: pendingPackages.length > 0
+      });
       const response = await fetch('/api/apply-ai-code-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           response: code,
           isEdit: isEdit,
           packages: pendingPackages,
-          sandboxId: effectiveSandboxData?.sandboxId // Pass the sandbox ID to ensure proper connection
+          sandboxId: effectiveSandboxData?.sandboxId, // Pass the sandbox ID to ensure proper connection
+          uploadedImages: images && images.length > 0 ? images : undefined
         })
       });
+      console.log('[applyGeneratedCode] Fetch response status:', response.status, response.ok);
       
       if (!response.ok) {
         throw new Error(`Failed to apply code: ${response.statusText}`);
@@ -1211,11 +1405,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         // Set applying code state for edits to show loading overlay
         // Removed overlay - changes apply directly
         
-        if (results.filesCreated?.length > 0) {
+        const changedFiles = [...(results.filesCreated || []), ...(results.filesUpdated || [])];
+
+        if (changedFiles.length > 0) {
           setConversationContext(prev => ({
             ...prev,
             appliedCode: [...prev.appliedCode, {
-              files: results.filesCreated,
+              files: changedFiles,
               timestamp: new Date()
             }]
           }));
@@ -1234,10 +1430,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             
             // Don't show files if part of generation flow to avoid duplication
             if (isPartOfGeneration) {
-              addChatMessage(`Applied ${results.filesCreated.length} files successfully!`, 'system');
+              addChatMessage(`Applied ${changedFiles.length} files successfully!`, 'system');
             } else {
-              addChatMessage(`Applied ${results.filesCreated.length} files successfully!`, 'system', {
-                appliedFiles: results.filesCreated
+              addChatMessage(`Applied ${changedFiles.length} files successfully!`, 'system', {
+                appliedFiles: changedFiles
               });
             }
           }
@@ -1264,26 +1460,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           
           setTimeout(() => {
             const currentSandboxData = effectiveSandboxData;
-            if (iframeRef.current && currentSandboxData?.url) {
-              console.log('[home] Refreshing iframe after code application...');
-              
-              // Method 1: Change src with timestamp
-              const urlWithTimestamp = `${currentSandboxData.url}?t=${Date.now()}&applied=true`;
-              iframeRef.current.src = urlWithTimestamp;
-              
-              // Method 2: Force reload after a short delay
-              setTimeout(() => {
-                try {
-                  if (iframeRef.current?.contentWindow) {
-                    iframeRef.current.contentWindow.location.reload();
-                    console.log('[home] Force reloaded iframe content');
-                  }
-                } catch (e) {
-                  console.log('[home] Could not reload iframe (cross-origin):', e);
-                }
-                // Reload completed
-              }, 1000);
-            }
+            void refreshSandboxPreview(currentSandboxData, 'The preview sandbox stopped before it could refresh.');
           }, refreshDelay);
           
           // Vite error checking removed - handled by template setup
@@ -1298,71 +1475,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             const refreshDelay = packagesInstalled ? appConfig.codeApplication.packageInstallRefreshDelay : appConfig.codeApplication.defaultRefreshDelay;
             console.log(`[applyGeneratedCode] Packages installed: ${packagesInstalled}, refresh delay: ${refreshDelay}ms`);
             
-            setTimeout(async () => {
-            if (iframeRef.current && currentSandboxData?.url) {
-              console.log('[applyGeneratedCode] Starting iframe refresh sequence...');
-              console.log('[applyGeneratedCode] Current iframe src:', iframeRef.current.src);
-              console.log('[applyGeneratedCode] Sandbox URL:', currentSandboxData.url);
-              
-              // Method 1: Try direct navigation first
-              try {
-                const urlWithTimestamp = `${currentSandboxData.url}?t=${Date.now()}&force=true`;
-                console.log('[applyGeneratedCode] Attempting direct navigation to:', urlWithTimestamp);
-                
-                // Remove any existing onload handler
-                iframeRef.current.onload = null;
-                
-                // Navigate directly
-                iframeRef.current.src = urlWithTimestamp;
-                
-                // Wait a bit and check if it loaded
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                // Try to access the iframe content to verify it loaded
-                try {
-                  const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
-                  if (iframeDoc && iframeDoc.readyState === 'complete') {
-                    console.log('[applyGeneratedCode] Iframe loaded successfully');
-                    return;
-                  }
-                } catch {
-                  console.log('[applyGeneratedCode] Cannot access iframe content (CORS), assuming loaded');
-                  return;
-                }
-              } catch (e) {
-                console.error('[applyGeneratedCode] Direct navigation failed:', e);
-              }
-              
-              // Method 2: Force complete iframe recreation if direct navigation failed
-              console.log('[applyGeneratedCode] Falling back to iframe recreation...');
-              const parent = iframeRef.current.parentElement;
-              const newIframe = document.createElement('iframe');
-              
-              // Copy attributes
-              newIframe.className = iframeRef.current.className;
-              newIframe.title = iframeRef.current.title;
-              newIframe.allow = iframeRef.current.allow;
-              // Copy sandbox attributes
-              const sandboxValue = iframeRef.current.getAttribute('sandbox');
-              if (sandboxValue) {
-                newIframe.setAttribute('sandbox', sandboxValue);
-              }
-              
-              // Remove old iframe
-              iframeRef.current.remove();
-              
-              // Add new iframe
-              newIframe.src = `${currentSandboxData.url}?t=${Date.now()}&recreated=true`;
-              parent?.appendChild(newIframe);
-              
-              // Update ref
-              (iframeRef as any).current = newIframe;
-              
-              console.log('[applyGeneratedCode] Iframe recreated with new content');
-            } else {
-              console.error('[applyGeneratedCode] No iframe or sandbox URL available for refresh');
-            }
-          }, refreshDelay); // Dynamic delay based on whether packages were installed
+            setTimeout(() => {
+              void refreshSandboxPreview(currentSandboxData, 'The preview sandbox stopped before it could refresh.');
+            }, refreshDelay); // Dynamic delay based on whether packages were installed
         }
         
         } else {
@@ -1376,6 +1491,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       log(`Failed to apply code: ${error.message}`, 'error');
     } finally {
       setLoading(false);
+      codeApplicationInProgress.current = false; // Allow health check to run again
       // Clear isEdit flag after applying code
       setGenerationProgress(prev => ({
         ...prev,
@@ -1385,7 +1501,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   };
 
   const fetchSandboxFiles = async () => {
-    if (!sandboxData) return;
+    if (!sandboxData) return null;
     
     try {
       const response = await fetch('/api/get-sandbox-files', {
@@ -1401,11 +1517,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           setSandboxFiles(data.files || {});
           setFileStructure(data.structure || '');
           console.log('[fetchSandboxFiles] Updated file list:', Object.keys(data.files || {}).length, 'files');
+          return data.files || {};
         }
       }
     } catch (error) {
       console.error('[fetchSandboxFiles] Error fetching files:', error);
     }
+    return null;
   };
 
   const fetchSites = async () => {
@@ -1579,121 +1697,116 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         /* Generation Tab Content */
         <div className="absolute inset-0 flex overflow-hidden">
           {/* File Explorer - Hide during edits */}
-          {!generationProgress.isEdit && (
-            <div className="w-[250px] border-r border-gray-200 bg-white flex flex-col flex-shrink-0">
-            <div className="p-4 bg-gray-100 text-gray-900 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <BsFolderFill style={{ width: '16px', height: '16px' }} />
-                <span className="text-sm font-medium">Explorer</span>
-              </div>
-            </div>
-            
-            {/* File Tree */}
-            <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
-              <div className="text-sm">
-                {/* Root app folder */}
-                <div 
-                  className="flex items-center gap-2 py-0.5 px-3 hover:bg-gray-100 rounded cursor-pointer text-gray-700"
-                  onClick={() => toggleFolder('app')}
-                >
-                  {expandedFolders.has('app') ? (
-                    <FiChevronDown style={{ width: '16px', height: '16px' }} className="text-gray-600" />
-                  ) : (
-                    <FiChevronRight style={{ width: '16px', height: '16px' }} className="text-gray-600" />
-                  )}
-                  {expandedFolders.has('app') ? (
-                    <BsFolder2Open style={{ width: '16px', height: '16px' }} className="text-blue-500" />
-                  ) : (
-                    <BsFolderFill style={{ width: '16px', height: '16px' }} className="text-blue-500" />
-                  )}
-                  <span className="font-medium text-gray-800">app</span>
-                </div>
-                
-                {expandedFolders.has('app') && (
-                  <div className="ml-6">
-                    {/* Group files by directory */}
-                    {(() => {
-                      const fileTree: { [key: string]: Array<{ name: string; edited?: boolean }> } = {};
-                      
-                      // Create a map of edited files
-                      // const editedFiles = new Set(
-                      //   generationProgress.files
-                      //     .filter(f => f.edited)
-                      //     .map(f => f.path)
-                      // );
-                      
-                      // Process all files from generation progress
-                      generationProgress.files.forEach(file => {
-                        const parts = file.path.split('/');
-                        const dir = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
-                        const fileName = parts[parts.length - 1];
-                        
-                        if (!fileTree[dir]) fileTree[dir] = [];
-                        fileTree[dir].push({
-                          name: fileName,
-                          edited: file.edited || false
-                        });
-                      });
-                      
-                      return Object.entries(fileTree).map(([dir, files]) => (
-                        <div key={dir} className="mb-1">
-                          {dir && (
-                            <div 
-                              className="flex items-center gap-2 py-0.5 px-3 hover:bg-gray-100 rounded cursor-pointer text-gray-700"
-                              onClick={() => toggleFolder(dir)}
-                            >
-                              {expandedFolders.has(dir) ? (
-                                <FiChevronDown style={{ width: '16px', height: '16px' }} className="text-gray-600" />
-                              ) : (
-                                <FiChevronRight style={{ width: '16px', height: '16px' }} className="text-gray-600" />
-                              )}
-                              {expandedFolders.has(dir) ? (
-                                <BsFolder2Open style={{ width: '16px', height: '16px' }} className="text-yellow-600" />
-                              ) : (
-                                <BsFolderFill style={{ width: '16px', height: '16px' }} className="text-yellow-600" />
-                              )}
-                              <span className="text-gray-700">{dir.split('/').pop()}</span>
-                            </div>
-                          )}
-                          {(!dir || expandedFolders.has(dir)) && (
-                            <div className={dir ? 'ml-8' : ''}>
-                              {files.sort((a, b) => a.name.localeCompare(b.name)).map(fileInfo => {
-                                const fullPath = dir ? `${dir}/${fileInfo.name}` : fileInfo.name;
-                                const isSelected = selectedFile === fullPath;
-                                
-                                return (
-                                  <div 
-                                    key={fullPath} 
-                                    className={`flex items-center gap-2 py-0.5 px-3 rounded cursor-pointer transition-all ${
-                                      isSelected 
-                                        ? 'bg-blue-500 text-white' 
-                                        : 'text-gray-700 hover:bg-gray-100'
-                                    }`}
-                                    onClick={() => handleFileClick(fullPath)}
-                                  >
-                                    {getFileIcon(fileInfo.name)}
-                                    <span className={`text-xs flex items-center gap-1 ${isSelected ? 'font-medium' : ''}`}>
-                                      {fileInfo.name}
-                                      {fileInfo.edited && (
-                                        <span className={`text-[10px] px-1 rounded ${
-                                          isSelected ? 'bg-blue-400' : 'bg-orange-500 text-white'
-                                        }`}>✓</span>
-                                      )}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      ));
-                    })()}
+
+            {/* File Explorer - Hide during edits */}
+            {!generationProgress.isEdit && (
+              <div className="w-[250px] border-r border-border-muted bg-warm-025 flex flex-col flex-shrink-0">
+                <div className="p-4 bg-warm-100 text-warm-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <BsFolderFill style={{ width: '16px', height: '16px' }} className="text-warm-600" />
+                    <span className="text-sm font-medium">Explorer</span>
                   </div>
-                )}
+                </div>
+
+                {/* File Tree */}
+                <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
+                  <div className="text-sm">
+                    {/* Root app folder */}
+                    <div
+                      className="flex items-center gap-2 py-0.5 px-3 hover:bg-warm-800/5 rounded cursor-pointer text-warm-600"
+                      onClick={() => toggleFolder('app')}
+                    >
+                      {expandedFolders.has('app') ? (
+                        <FiChevronDown style={{ width: '16px', height: '16px' }} className="text-warm-500" />
+                      ) : (
+                        <FiChevronRight style={{ width: '16px', height: '16px' }} className="text-warm-500" />
+                      )}
+                      {expandedFolders.has('app') ? (
+                        <BsFolder2Open style={{ width: '16px', height: '16px' }} className="text-warm-600" />
+                      ) : (
+                        <BsFolderFill style={{ width: '16px', height: '16px' }} className="text-warm-600" />
+                      )}
+                      <span className="font-medium text-warm-800">app</span>
+                    </div>
+
+                    {expandedFolders.has('app') && (
+                      <div className="ml-6">
+                        {/* Group files by directory */}
+                        {(() => {
+                          const fileTree: { [key: string]: Array<{ name: string; edited?: boolean }> } = {};
+
+                          // Process all files from generation progress
+                          generationProgress.files.forEach(file => {
+                            const parts = file.path.split('/');
+                            const dir = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+                            const fileName = parts[parts.length - 1];
+
+                            if (!fileTree[dir]) fileTree[dir] = [];
+                            fileTree[dir].push({
+                              name: fileName,
+                              edited: file.edited || false
+                            });
+                          });
+
+                          return Object.entries(fileTree).map(([dir, files]) => (
+                            <div key={dir} className="mb-1">
+                              {dir && (
+                                <div
+                                  className="flex items-center gap-2 py-0.5 px-3 hover:bg-warm-800/5 rounded cursor-pointer text-warm-600"
+                                  onClick={() => toggleFolder(dir)}
+                                >
+                                  {expandedFolders.has(dir) ? (
+                                    <FiChevronDown style={{ width: '16px', height: '16px' }} className="text-warm-500" />
+                                  ) : (
+                                    <FiChevronRight style={{ width: '16px', height: '16px' }} className="text-warm-500" />
+                                  )}
+                                  {expandedFolders.has(dir) ? (
+                                    <BsFolder2Open style={{ width: '16px', height: '16px' }} className="text-warm-600" />
+                                  ) : (
+                                    <BsFolderFill style={{ width: '16px', height: '16px' }} className="text-warm-600" />
+                                  )}
+                                  <span className="text-warm-600">{dir.split('/').pop()}</span>
+                                </div>
+                              )}
+                              {(!dir || expandedFolders.has(dir)) && (
+                                <div className={dir ? 'ml-8' : ''}>
+                                  {files.sort((a, b) => a.name.localeCompare(b.name)).map(fileInfo => {
+                                    const fullPath = dir ? `${dir}/${fileInfo.name}` : fileInfo.name;
+                                    const isSelected = selectedFile === fullPath;
+
+                                    return (
+                                      <div
+                                        key={fullPath}
+                                        className={`flex items-center gap-2 py-0.5 px-3 rounded cursor-pointer transition-all ${
+                                          isSelected
+                                            ? 'bg-warm-800 text-warm-100'
+                                            : 'text-warm-600 hover:bg-warm-800/5'
+                                        }`}
+                                        onClick={() => handleFileClick(fullPath)}
+                                      >
+                                        {getFileIcon(fileInfo.name)}
+                                        <span className={`text-xs flex items-center gap-1 ${isSelected ? 'font-medium' : ''}`}>
+                                          {fileInfo.name}
+                                          {fileInfo.edited && (
+                                            <span className={`text-[10px] px-1 rounded ${
+                                              isSelected ? 'bg-warm-100 text-warm-800' : 'bg-brand-orange text-white'
+                                            }`}>✓</span>
+                                          )}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          )}
+            )}
           
           {/* Code Content */}
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -1701,23 +1814,24 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             {generationProgress.isGenerating && (generationProgress.isThinking || generationProgress.thinkingText) && (
               <div className="px-6 pb-6">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="text-purple-600 font-medium flex items-center gap-2">
+
+                  <div className="text-brand-orange font-medium flex items-center gap-2">
                     {generationProgress.isThinking ? (
                       <>
-                        <div className="w-3 h-3 bg-purple-600 rounded-full animate-pulse" />
+                        <div className="w-3 h-3 bg-brand-orange rounded-full animate-pulse" />
                         AI is thinking...
                       </>
                     ) : (
                       <>
-                        <span className="text-purple-600">✓</span>
+                        <span className="text-brand-orange">✓</span>
                         Thought for {generationProgress.thinkingDuration || 0} seconds
                       </>
                     )}
                   </div>
                 </div>
                 {generationProgress.thinkingText && (
-                  <div className="bg-purple-950 border border-purple-700 rounded-lg p-4 max-h-48 overflow-y-auto scrollbar-hide">
-                    <pre className="text-xs font-mono text-purple-300 whitespace-pre-wrap">
+                  <div className="bg-warm-900 border border-warm-750/20 rounded-xl p-4 max-h-48 overflow-y-auto scrollbar-hide">
+                    <pre className="text-xs font-mono text-warm-200 whitespace-pre-wrap">
                       {generationProgress.thinkingText}
                     </pre>
                   </div>
@@ -1731,22 +1845,22 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 {/* Show selected file if one is selected */}
                 {selectedFile ? (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="bg-black border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                      <div className="px-4 py-2 bg-[#36322F] text-white flex items-center justify-between">
+                    <div className="bg-warm-900 border border-warm-750/20 rounded-xl overflow-hidden shadow-sm">
+                      <div className="px-4 py-2 bg-warm-800 text-warm-100 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {getFileIcon(selectedFile)}
                           <span className="font-mono text-sm">{selectedFile}</span>
                         </div>
                         <button
                           onClick={() => setSelectedFile(null)}
-                          className="hover:bg-black/20 p-1 rounded transition-colors"
+                          className="hover:bg-warm-100/10 p-1 rounded transition-colors"
                         >
                           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
                       </div>
-                      <div className="bg-gray-900 border border-gray-700 rounded">
+                      <div className="bg-warm-900 border border-warm-750/20 rounded-xl overflow-hidden">
                         <SyntaxHighlighter
                           language={(() => {
                             const ext = selectedFile.split('.').pop()?.toLowerCase();
@@ -1786,12 +1900,12 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                           </div>
                         </div>
                         <h3 className="text-xl font-medium text-white mb-2">AI is analyzing your request</h3>
-                        <p className="text-gray-400 text-sm">{generationProgress.status || 'Preparing to generate code...'}</p>
+                        <p className="text-foreground-dimmer text-sm">{generationProgress.status || 'Preparing to generate code...'}</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-black border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="px-4 py-2 bg-gray-100 text-gray-900 flex items-center justify-between">
+                    <div className="bg-warm-900 border border-warm-750/20 rounded-xl overflow-hidden">
+                      <div className="px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-primary)] flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="w-16 h-16 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
                           <span className="font-mono text-sm">Streaming code...</span>
@@ -1819,8 +1933,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   <div className="space-y-4">
                     {/* Show current file being generated */}
                     {generationProgress.currentFile && (
-                      <div className="bg-black border-2 border-gray-400 rounded-lg overflow-hidden shadow-sm">
-                        <div className="px-4 py-2 bg-[#36322F] text-white flex items-center justify-between">
+                      <div className="bg-warm-900 border border-warm-750/20 rounded-xl overflow-hidden shadow-sm">
+                        <div className="px-4 py-2 bg-warm-800 text-warm-100 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-16 h-16 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             <span className="font-mono text-sm">{generationProgress.currentFile.path}</span>
@@ -1828,7 +1942,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                               generationProgress.currentFile.type === 'css' ? 'bg-blue-600 text-white' :
                               generationProgress.currentFile.type === 'javascript' ? 'bg-yellow-600 text-white' :
                               generationProgress.currentFile.type === 'json' ? 'bg-green-600 text-white' :
-                              'bg-gray-200 text-gray-700'
+                              'bg-[var(--bg-secondary)]-hover text-[var(--text-secondary)]'
                             }`}>
                               {generationProgress.currentFile.type === 'javascript' ? 'JSX' : generationProgress.currentFile.type.toUpperCase()}
                             </span>
@@ -1860,8 +1974,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     
                     {/* Show completed files */}
                     {generationProgress.files.map((file, idx) => (
-                      <div key={idx} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="px-4 py-2 bg-[#36322F] text-white flex items-center justify-between">
+                      <div key={idx} className="bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-lg overflow-hidden">
+                        <div className="px-4 py-2 bg-warm-800 text-warm-100 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-green-500">✓</span>
                             <span className="font-mono text-sm">{file.path}</span>
@@ -1870,12 +1984,12 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                             file.type === 'css' ? 'bg-blue-600 text-white' :
                             file.type === 'javascript' ? 'bg-yellow-600 text-white' :
                             file.type === 'json' ? 'bg-green-600 text-white' :
-                            'bg-gray-200 text-gray-700'
+                            'bg-[var(--bg-secondary)]-hover text-[var(--text-secondary)]'
                           }`}>
                             {file.type === 'javascript' ? 'JSX' : file.type.toUpperCase()}
                           </span>
                         </div>
-                        <div className="bg-gray-900 border border-gray-700  max-h-48 overflow-y-auto scrollbar-hide">
+                        <div className="bg-warm-900 border border-warm-750/20 rounded-xl overflow-hidden max-h-48 overflow-y-auto scrollbar-hide">
                           <SyntaxHighlighter
                             language={
                               file.type === 'css' ? 'css' :
@@ -1901,8 +2015,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     
                     {/* Show remaining raw stream if there's content after the last file */}
                     {!generationProgress.currentFile && generationProgress.streamedCode.length > 0 && (
-                      <div className="bg-black border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="px-4 py-2 bg-[#36322F] text-white flex items-center justify-between">
+                      <div className="bg-warm-900 border border-warm-750/20 rounded-xl overflow-hidden">
+                        <div className="px-4 py-2 bg-warm-800 text-warm-100 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-16 h-16 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                             <span className="font-mono text-sm">Processing...</span>
@@ -1946,7 +2060,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             {/* Progress indicator */}
             {generationProgress.components.length > 0 && (
               <div className="mx-6 mb-6">
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-2 bg-warm-200 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all duration-300"
                     style={{
@@ -2053,8 +2167,29 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             />
             
             {/* Package installation overlay - shows when installing packages or applying code */}
+
+            {/* Sandbox connection error overlay */}
+            {(status.text === 'Sandbox not responding' || status.text === 'Status check failed') && (
+              <div className="absolute inset-0 bg-background-lighter/95 backdrop-blur-sm flex items-center justify-center z-20">
+                <div className="max-w-sm rounded-2xl border border-warm-750/12 bg-white p-8 text-center shadow-sm">
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-foreground mb-1">Sandbox connection failed</h3>
+                  <p className="text-sm text-foreground-dimmer mb-4">The preview sandbox could not be reached. Try reloading it.</p>
+                  <button
+                    onClick={() => refreshSandboxPreview(sandboxData, 'The preview sandbox stopped.')}
+                    className="ol-primary-button px-4 py-2 text-sm"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            )}
             {codeApplicationState.stage && codeApplicationState.stage !== 'complete' && (
-              <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center z-10">
+              <div className="absolute inset-0 bg-[var(--bg-primary)]/95 backdrop-blur-sm flex items-center justify-center z-10">
                 <div className="text-center max-w-md">
                   <div className="mb-6">
                     {/* Animated icon based on stage */}
@@ -2068,7 +2203,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     ) : null}
                   </div>
                   
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
                     {codeApplicationState.stage === 'analyzing' && 'Analyzing code...'}
                     {codeApplicationState.stage === 'installing' && 'Installing packages...'}
                     {codeApplicationState.stage === 'applying' && 'Applying changes...'}
@@ -2084,7 +2219,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                             className={`px-2 py-1 text-xs rounded-full transition-all ${
                               codeApplicationState.installedPackages?.includes(pkg)
                                 ? 'bg-green-100 text-green-700'
-                                : 'bg-gray-100 text-gray-600'
+                                : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
                             }`}
                           >
                             {pkg}
@@ -2099,12 +2234,12 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   
                   {/* Files being generated */}
                   {codeApplicationState.stage === 'applying' && codeApplicationState.filesGenerated && (
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-[var(--text-secondary)]">
                       Creating {codeApplicationState.filesGenerated.length} files...
                     </div>
                   )}
                   
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-foreground-dimmer mt-2">
                     {codeApplicationState.stage === 'analyzing' && 'Parsing generated code and detecting dependencies...'}
                     {codeApplicationState.stage === 'installing' && 'This may take a moment while npm installs the required packages...'}
                     {codeApplicationState.stage === 'applying' && 'Writing files to your sandbox environment...'}
@@ -2123,14 +2258,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             
             {/* Refresh button */}
             <button
-              onClick={() => {
-                if (iframeRef.current && sandboxData?.url) {
-                  console.log('[Manual Refresh] Forcing iframe reload...');
-                  const newSrc = `${sandboxData.url}?t=${Date.now()}&manual=true`;
-                  iframeRef.current.src = newSrc;
-                }
-              }}
-              className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-gray-700 p-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
+              onClick={() => refreshSandboxPreview(sandboxData, 'The preview sandbox stopped.')}
+              className="absolute bottom-4 right-4 bg-[var(--bg-primary)]/90 hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] p-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
               title="Refresh sandbox"
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2142,21 +2271,54 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       }
       
       // Default state when no sandbox and no screenshot
+
       return (
-        <div className="flex items-center justify-center h-full bg-gray-50 text-gray-600 text-lg">
+        <div className="flex items-center justify-center h-full bg-background-base p-6">
           {screenshotError ? (
-            <div className="text-center">
-              <p className="mb-2">Failed to capture screenshot</p>
-              <p className="text-sm text-gray-500">{screenshotError}</p>
+            <div className="max-w-sm rounded-2xl border border-warm-750/12 bg-white p-8 text-center shadow-sm">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-1">Failed to capture screenshot</h3>
+              <p className="text-sm text-foreground-dimmer mb-4">{screenshotError}</p>
+              <button
+                onClick={() => {
+                  setScreenshotError(null);
+                  if (homeUrlInput) {
+                    let url = homeUrlInput.trim();
+                    if (!url.match(/^https?:\/\//i)) url = 'https://' + url;
+                    captureUrlScreenshot(url);
+                  }
+                }}
+                className="ol-primary-button px-4 py-2 text-sm"
+              >
+                Retry
+              </button>
             </div>
           ) : sandboxData ? (
-            <div className="text-gray-500">
-              <div className="w-16 h-16 border-2 border-gray-300 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <div className="text-foreground-dimmer text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-warm-100 text-warm-600">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
               <p className="text-sm">Loading preview...</p>
             </div>
           ) : (
-            <div className="text-gray-500 text-center">
-              <p className="text-sm">Start chatting to create your first app</p>
+            <div className="max-w-sm rounded-2xl border border-warm-750/12 bg-white p-8 text-center shadow-[0_24px_60px_rgba(74,54,28,0.12)]">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-warm-100 text-warm-600">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-1">Start building</h3>
+              <p className="text-sm text-foreground-dimmer mb-5">Paste a URL or describe what you want to create.</p>
+              <Link href="/" className="ol-primary-button inline-flex px-5 py-2.5 text-sm">
+                New website
+              </Link>
             </div>
           )}
         </div>
@@ -2177,9 +2339,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     addChatMessage(message, 'user');
     setAiChatInput('');
 
-    // Clear uploaded image after sending
-    const imageToSend = chatUploadedImage;
-    setChatUploadedImage(null);
+    // Clear uploaded images after sending
+    const imagesToSend = chatUploadedImages;
+    setChatUploadedImages([]);
 
     // Check for special commands
     const lowerMessage = message.toLowerCase().trim();
@@ -2256,7 +2418,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           model: aiModel,
           context: fullContext,
           isEdit: conversationContext.appliedCode.length > 0,
-          uploadedImage: imageToSend || undefined
+          uploadedImages: imagesToSend.length > 0 ? imagesToSend : undefined
         })
       });
       
@@ -2559,16 +2721,34 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           }
         }
         
+        console.log('[startGeneration] Checking conditions for applyGeneratedCode:', {
+          hasActiveSandboxData: !!activeSandboxData,
+          hasGeneratedCode: !!generatedCode,
+          generatedCodeLength: generatedCode?.length || 0,
+          sandboxCreating,
+          activeSandboxDataId: activeSandboxData?.sandboxId
+        });
+
         if (activeSandboxData && generatedCode) {
           // For new sandbox creations (especially Vercel), add a delay to ensure Vite is ready
           if (sandboxCreating) {
             console.log('[startGeneration] New sandbox created, waiting for services to be ready...');
             await new Promise(resolve => setTimeout(resolve, 2000));
           }
-          
+
           // Use isEdit flag that was determined at the start
           // Pass the sandbox data from the promise if it's different from the state
-          await applyGeneratedCode(generatedCode, isEdit, activeSandboxData !== sandboxData ? activeSandboxData : undefined);
+          console.log('[startGeneration] Calling applyGeneratedCode with:', {
+            generatedCodeLength: generatedCode.length,
+            isEdit,
+            sandboxId: activeSandboxData.sandboxId
+          });
+          await applyGeneratedCode(generatedCode, isEdit, activeSandboxData !== sandboxData ? activeSandboxData : undefined, uploadedImages);
+        } else {
+          console.error('[startGeneration] NOT calling applyGeneratedCode - missing:', {
+            activeSandboxData: !!activeSandboxData,
+            generatedCode: !!generatedCode
+          });
         }
       }
       
@@ -2618,10 +2798,15 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       return;
     }
 
-    const files = Object.entries(sandboxFiles);
+    let files: Array<[string, string]> = Object.entries(sandboxFiles);
     if (files.length === 0) {
-      addChatMessage('No files to download yet. Generate some code first.', 'system');
-      return;
+      addChatMessage('Preparing files from the active sandbox...', 'system');
+      const refreshedFiles = await fetchSandboxFiles();
+      files = Object.entries(refreshedFiles || filesArrayToCache(generationProgress.files)) as Array<[string, string]>;
+      if (files.length === 0) {
+        addChatMessage('No files to download yet. Generate some code first.', 'system');
+        return;
+      }
     }
 
     addChatMessage('Creating ZIP file...', 'system');
@@ -2662,7 +2847,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     
     addChatMessage('Re-applying last generation...', 'system');
     const isEdit = conversationContext.appliedCode.length > 0;
-    await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit);
+    await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit, undefined, uploadedImages);
   };
 
   // Auto-scroll code display to bottom when streaming
@@ -2697,9 +2882,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     } else if (ext === 'css') {
       return <SiCss3 style={{ width: '16px', height: '16px' }} className="text-blue-500" />;
     } else if (ext === 'json') {
-      return <SiJson style={{ width: '16px', height: '16px' }} className="text-gray-600" />;
+      return <SiJson style={{ width: '16px', height: '16px' }} className="text-[var(--text-secondary)]" />;
     } else {
-      return <FiFile style={{ width: '16px', height: '16px' }} className="text-gray-600" />;
+      return <FiFile style={{ width: '16px', height: '16px' }} className="text-[var(--text-secondary)]" />;
     }
   };
 
@@ -3080,12 +3265,26 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
   const handleHomeScreenSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await startGeneration();
+    await startGeneration({ url: homeUrlInput, context: homeContextInput, model: aiModel });
   };
 
-  const startGeneration = async () => {
-    // Allow generation from URL or uploaded image
-    if (!homeUrlInput.trim() && !uploadedImage) return;
+  const startGeneration = async (options: { url?: string; context?: string; model?: string } = {}) => {
+    const submittedUrl = options.url ?? homeUrlInput;
+    const submittedContext = options.context ?? homeContextInput;
+    const generationModel = options.model ?? aiModel;
+
+    sessionStorage.removeItem('autoStart');
+    sessionStorage.removeItem('targetUrl');
+    sessionStorage.removeItem('selectedStyle');
+    sessionStorage.removeItem('selectedModel');
+    sessionStorage.removeItem('additionalInstructions');
+
+    if (options.url !== undefined) setHomeUrlInput(options.url);
+    if (options.context !== undefined) setHomeContextInput(options.context);
+    if (options.model !== undefined) setAiModel(options.model);
+
+    // Allow generation from URL or uploaded images
+    if (!submittedUrl.trim() && uploadedImages.length === 0) return;
     
     setHomeScreenFading(true);
     
@@ -3101,7 +3300,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     
     // Clear messages and immediately show the initial message
     setChatMessages([]);
-    let displayUrl = homeUrlInput.trim();
+    let displayUrl = submittedUrl.trim();
     if (!displayUrl.match(/^https?:\/\//i)) {
       displayUrl = 'https://' + displayUrl;
     }
@@ -3143,13 +3342,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       const createdSandbox = await sandboxPromise;
       
       // Now start the clone process which will stream the generation
-      setUrlInput(homeUrlInput);
+      setUrlInput(submittedUrl);
       setUrlOverlayVisible(false); // Make sure overlay is closed
       setUrlStatus(['Scraping website content...']);
       
       try {
         // Scrape the website
-        let url = homeUrlInput.trim();
+        let url = submittedUrl.trim();
         if (!url.match(/^https?:\/\//i)) {
           url = 'https://' + url;
         }
@@ -3398,8 +3597,8 @@ Focus on building something NEW, minimal, and functional that perfectly matches 
 
           // Filter out style-related context when using screenshot/URL-based generation
           // Only keep user's explicit instructions, not inherited styles
-          let filteredContext = homeContextInput;
-          if (homeUrlInput && homeContextInput) {
+          let filteredContext = submittedContext;
+          if (submittedUrl && submittedContext) {
             // Check if the context contains default style names that shouldn't be inherited
             const stylePatterns = [
               'Glassmorphism style design',
@@ -3418,12 +3617,12 @@ Focus on building something NEW, minimal, and functional that perfectly matches 
 
             // If the context exactly matches or starts with a style pattern, filter it out
             const startsWithStyle = stylePatterns.some(pattern =>
-              homeContextInput.trim().startsWith(pattern)
+              submittedContext.trim().startsWith(pattern)
             );
 
             if (startsWithStyle) {
               // Extract only the additional instructions part after the style
-              const additionalMatch = homeContextInput.match(/\. (.+)$/);
+              const additionalMatch = submittedContext.match(/\. (.+)$/);
               filteredContext = additionalMatch ? additionalMatch[1] : '';
             }
           }
@@ -3472,17 +3671,13 @@ Focus on the key sections and content, making it clean and modern.`;
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt,
-            model: aiModel,
+            model: generationModel,
             context: {
               sandboxId: sandboxData?.sandboxId,
               structure: structureContent,
               conversationContext: conversationContext
             },
-            uploadedImage: uploadedImage ? {
-              base64: uploadedImage.base64,
-              type: uploadedImage.type,
-              name: uploadedImage.name
-            } : undefined
+            uploadedImages: uploadedImages.length > 0 ? uploadedImages : undefined
           })
         });
         
@@ -3660,6 +3855,22 @@ Focus on the key sections and content, making it clean and modern.`;
         
         if (generatedCode) {
           addChatMessage('AI recreation generated!', 'system');
+
+          const generatedFileMatches = Array.from(generatedCode.matchAll(/<file path="([^"]+)">([^]*?)<\/file>/g));
+          const generatedFiles = generatedFileMatches.map(match => ({
+            path: match[1],
+            content: match[2].trim(),
+            type: fileTypeFromPath(match[1]),
+            completed: true,
+          }));
+          const generatedFileCache = filesArrayToCache(generatedFiles);
+          if (Object.keys(generatedFileCache).length > 0) {
+            setSandboxFiles(generatedFileCache);
+            setGenerationProgress(prev => ({
+              ...prev,
+              files: generatedFiles,
+            }));
+          }
           
           // Add the explanation to chat if available
           if (explanation && explanation.trim()) {
@@ -3669,12 +3880,12 @@ Focus on the key sections and content, making it clean and modern.`;
           setPromptInput(generatedCode);
 
           // Apply the code (first time is not edit mode)
-          await applyGeneratedCode(generatedCode, false);
+          await applyGeneratedCode(generatedCode, false, undefined, uploadedImages);
 
           addChatMessage(
             brandExtensionMode
               ? `Successfully built your custom component using ${cleanUrl}'s brand guidelines! You can now ask me to modify it or add more features.`
-              : `Successfully recreated ${url} as a modern React app${homeContextInput ? ` with your requested context: "${homeContextInput}"` : ''}! The scraped content is now in my context, so you can ask me to modify specific sections or add features based on the original site.`,
+              : `Successfully recreated ${url} as a modern React app${submittedContext ? ` with your requested context: "${submittedContext}"` : ''}! The scraped content is now in my context, so you can ask me to modify specific sections or add features based on the original site.`,
             'ai',
             {
               scrapedUrl: url,
@@ -3747,100 +3958,90 @@ Focus on the key sections and content, making it clean and modern.`;
     }, 500);
   };
 
+
+  const ToolbarButton = ({ icon, label, onClick, disabled, href }: { icon: ReactNode; label: string; onClick?: () => void; disabled?: boolean; href?: string }) => {
+    const classes = 'inline-flex items-center gap-2 rounded-xl border border-warm-750/12 bg-warm-025 px-2.5 py-2 text-warm-600 transition-colors hover:bg-warm-800/5 hover:text-warm-800 disabled:cursor-not-allowed disabled:opacity-50';
+    const content = (
+      <>
+        <span className='flex items-center justify-center'>{icon}</span>
+        <span className='hidden sm:inline text-sm'>{label}</span>
+      </>
+    );
+    if (href) {
+      return <Link href={href} className={classes} title={label}>{content}</Link>;
+    }
+    return <button onClick={onClick} disabled={disabled} className={classes} title={label} type='button'>{content}</button>;
+  };
   return (
-      <div className="font-sans bg-background text-foreground h-screen flex flex-col">
-      <div className="bg-[#fff7e8]/90 backdrop-blur-xl px-4 py-2 border-b border-[#261e151f] flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 px-2 text-[#17130f] transition-colors hover:text-[#8c4b26]">
-          <NoeronLogo iconClassName="h-[28px] w-[28px]" textClassName="text-[#17130f]" />
-        </Link>
+      <div className="font-sans bg-[var(--bg-primary)] text-foreground h-screen flex flex-col">
+
+
+      <div className="bg-background-lighter/90 backdrop-blur-xl px-4 py-2 border-b border-border-muted flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2 px-2 text-foreground transition-colors hover:text-brand-orange">
+            <NoeronLogo iconClassName="h-[28px] w-[28px]" textClassName="text-foreground" />
+          </Link>
+          <div className="hidden sm:block w-[190px]">
+            <BrandSelect
+              value={aiModel}
+              onChange={(newModel) => {
+                setAiModel(newModel);
+                const params = new URLSearchParams(searchParams);
+                params.set('model', newModel);
+                if (sandboxData?.sandboxId) {
+                  params.set('sandbox', sandboxData.sandboxId);
+                }
+                router.push(`/generation?${params.toString()}`);
+              }}
+              options={appConfig.ai.availableModels.map(model => ({
+                value: model,
+                label: appConfig.ai.modelDisplayNames?.[model] || model,
+              }))}
+              className="w-full"
+            />
+          </div>
+          <span className={`hidden sm:inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${status.active ? 'bg-warm-100 text-warm-800' : 'bg-warm-200 text-warm-600'}`}>
+            {status.text}
+          </span>
+        </div>
         <div className="flex items-center gap-2">
-          {/* Model Selector - Left side */}
-          <BrandSelect
-            value={aiModel}
-            onChange={(newModel) => {
-              setAiModel(newModel);
-              const params = new URLSearchParams(searchParams);
-              params.set('model', newModel);
-              if (sandboxData?.sandboxId) {
-                params.set('sandbox', sandboxData.sandboxId);
-              }
-              router.push(`/generation?${params.toString()}`);
-            }}
-            options={appConfig.ai.availableModels.map(model => ({
-              value: model,
-              label: appConfig.ai.modelDisplayNames?.[model] || model,
-            }))}
-            className="w-[190px]"
-          />
-          <button 
+          <ToolbarButton
+            icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
+            label="New sandbox"
             onClick={() => createSandbox()}
-            className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f]"
-            title="Create new sandbox"
-          >
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-          <button 
+            disabled={loading}
+          />
+          <ToolbarButton
+            icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
+            label="Re-apply"
             onClick={reapplyLastGeneration}
-            className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f] disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Re-apply last generation"
             disabled={!conversationContext.lastGeneratedCode || !sandboxData}
-          >
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-          <button
+          />
+          <ToolbarButton
+            icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" /></svg>}
+            label="Download ZIP"
             onClick={downloadZip}
             disabled={!sandboxData}
-            className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f] disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Download your Vite app as ZIP"
-          >
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-            </svg>
-          </button>
-
-          {/* My Sites Button */}
-          <Link href="/sites">
-            <button
-              className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f]"
-              title="My Websites"
-            >
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-          </Link>
-
-          {/* Settings Button */}
-          <Link href="/settings">
-            <button
-              className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f]"
-              title="Settings & Subscription"
-            >
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
-          </Link>
-
-          {/* Sign Out Button */}
-          <button
+          />
+          <ToolbarButton
+            icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            label="My Websites"
+            href="/sites"
+          />
+          <ToolbarButton
+            icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+            label="Settings"
+            href="/settings"
+          />
+          <ToolbarButton
+            icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>}
+            label="Sign out"
             onClick={() => signOut({ callbackUrl: '/' })}
-            className="p-8 rounded-xl transition-colors border border-[#261e151f] bg-[#fffcf4]/60 text-[#5f5343] hover:bg-[#17130f]/5 hover:text-[#17130f]"
-            title="Sign out"
-          >
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
+          />
         </div>
       </div>
 
-      <div className="border-b border-[#261e151f] bg-[#fbf3e2] px-4 py-3">
+      <div className="border-b border-border-muted bg-warm-025 px-4 py-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <BrandSelect
@@ -3854,33 +4055,31 @@ Focus on the key sections and content, making it clean and modern.`;
                 ...(sites.length > 0 ? [{ value: '', label: 'Select a site' }] : []),
                 ...sites.map((site) => ({ value: site.id, label: `${site.name} (${site.slug})` })),
               ]}
-              className="min-w-[220px]"
+              className="min-w-[240px]"
               disabled={sitesLoading || sites.length === 0}
             />
 
             {activeSite ? (
               <div className="flex flex-wrap items-center gap-2 text-sm">
-                <span className={`rounded-full px-2.5 py-1 font-medium ${
-                  activeSite.published ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                }`}>
+                <span className={`rounded-full px-2.5 py-1 font-medium ${activeSite.published ? 'bg-warm-100 text-warm-800' : 'bg-warm-200 text-warm-800'}`}>
                   {activeSite.published ? 'Published' : 'Draft'}
                 </span>
                 <button
                   onClick={copyLiveUrl}
-                  className="rounded-full border border-[#261e151f] px-3 py-1.5 text-[#5f5343] transition-colors hover:bg-[#17130f]/5 hover:text-[#17130f]"
+                  className="rounded-full border border-warm-750/12 px-3 py-1.5 text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800"
                 >
                   Copy URL
                 </button>
                 <Link
                   href={`/site-preview/${activeSite.slug}`}
                   target="_blank"
-                  className="rounded-full border border-[#261e151f] px-3 py-1.5 text-[#5f5343] transition-colors hover:bg-[#17130f]/5 hover:text-[#17130f]"
+                  className="rounded-full border border-warm-750/12 px-3 py-1.5 text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800"
                 >
                   Preview Snapshot
                 </Link>
               </div>
             ) : (
-              <div className="text-sm text-[#5f5343]">
+              <div className="text-sm text-warm-500">
                 Create a site record to attach this build to a live tenant URL.
               </div>
             )}
@@ -3899,7 +4098,7 @@ Focus on the key sections and content, making it clean and modern.`;
                 <button
                   onClick={unpublishActiveSite}
                   disabled={siteActionLoading !== null || !activeSite.published}
-                  className="rounded-full border border-[#261e151f] px-4 py-2 text-sm text-[#5f5343] transition-colors hover:bg-[#17130f]/5 hover:text-[#17130f] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-full border border-warm-750/12 px-4 py-2 text-sm text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {siteActionLoading === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
                 </button>
@@ -3910,13 +4109,13 @@ Focus on the key sections and content, making it clean and modern.`;
                   value={newSiteName}
                   onChange={(e) => setNewSiteName(e.target.value)}
                   placeholder="Site name"
-                  className="rounded-xl border border-[#261e151f] bg-[#fffcf4] px-3 py-2 text-sm text-[#17130f] placeholder:text-[#5f534399] transition-colors focus:border-[#ff6728] focus:outline-none"
+                  className="rounded-xl border border-warm-750/12 bg-white px-3 py-2 text-sm text-warm-800 placeholder:text-warm-500 transition-colors focus:border-brand-orange focus:outline-none"
                 />
                 <input
                   value={newSiteSlug}
                   onChange={(e) => setNewSiteSlug(e.target.value.toLowerCase())}
                   placeholder="site-slug"
-                  className="rounded-xl border border-[#261e151f] bg-[#fffcf4] px-3 py-2 text-sm text-[#17130f] placeholder:text-[#5f534399] transition-colors focus:border-[#ff6728] focus:outline-none"
+                  className="rounded-xl border border-warm-750/12 bg-white px-3 py-2 text-sm text-warm-800 placeholder:text-warm-500 transition-colors focus:border-brand-orange focus:outline-none"
                 />
                 <button
                   onClick={createSite}
@@ -3931,135 +4130,133 @@ Focus on the key sections and content, making it clean and modern.`;
         </div>
 
         {activeSite && (
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-warm-500">
             Default URL: {activeSite.liveUrl}
             {activeSite.customDomain ? ` • Custom domain: ${activeSite.customDomain}` : ''}
           </p>
         )}
         {!activeSite && newSiteSlug && (
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-warm-500">
             Default URL: https://{newSiteSlug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'mydomain.com'}
           </p>
         )}
-        {siteStatusMessage && <p className="mt-2 text-sm text-green-700">{siteStatusMessage}</p>}
+        {siteStatusMessage && <p className="mt-2 text-sm text-brand-orange-dark">{siteStatusMessage}</p>}
         {siteError && <p className="mt-2 text-sm text-red-600">{siteError}</p>}
       </div>
 
       <div className="flex-1 flex overflow-hidden">
         {/* Center Panel - AI Chat (1/3 of remaining width) */}
-        <div className="flex-1 max-w-[400px] flex flex-col border-r border-border bg-background">
-          {/* Sidebar Input Component */}
-          {!hasInitialSubmission ? (
-            <div className="p-4 border-b border-border">
-              <SidebarInput
-                onSubmit={(url, style, model, instructions) => {
-                  // Mark that we've had an initial submission
-                  setHasInitialSubmission(true);
-                  
-                  // Store the configuration in sessionStorage (same as home page)
-                  sessionStorage.setItem('targetUrl', url);
-                  sessionStorage.setItem('selectedStyle', style);
-                  sessionStorage.setItem('selectedModel', model);
-                  if (instructions) {
-                    sessionStorage.setItem('additionalInstructions', instructions);
-                  }
-                  sessionStorage.setItem('autoStart', 'true');
-                  
-                  // Start generation using the existing logic
-                  setHomeUrlInput(url);
-                  setHomeContextInput(instructions || '');
-                  startGeneration();
-                }}
-                disabled={loading || generationProgress.isGenerating}
-              />
-            </div>
-          ) : null}
+        <div className="flex-1 max-w-[400px] flex flex-col border-r border-[var(--border-default)] bg-[var(--bg-primary)] overflow-hidden h-full">
+          {/* Scrollable Header Section - constrained height */}
+          <div className="flex-shrink-0 overflow-y-auto max-h-[35%] border-b border-[var(--border-default)] scrollbar-thin">
+            {/* Sidebar Input Component */}
+            {!hasInitialSubmission ? (
+              <div className="p-4 border-b border-[var(--border-default)]">
+                <SidebarInput
+                  onSubmit={(url, style, model, instructions) => {
+                    // Mark that we've had an initial submission
+                    setHasInitialSubmission(true);
 
-          {conversationContext.scrapedWebsites.length > 0 && (
-            <div className="p-4 bg-card border-b border-gray-200">
-              <div className="flex flex-col gap-4">
-                {conversationContext.scrapedWebsites.map((site, idx) => {
-                  // Extract favicon and site info from the scraped data
-                  const metadata = site.content?.metadata || {};
-                  const sourceURL = metadata.sourceURL || site.url;
-                  const favicon = metadata.favicon || `https://www.google.com/s2/favicons?domain=${new URL(sourceURL).hostname}&sz=128`;
-                  const siteName = metadata.ogSiteName || metadata.title || new URL(sourceURL).hostname;
-                  const screenshot = site.content?.screenshot || sessionStorage.getItem('websiteScreenshot');
-                  
-                  return (
-                    <div key={idx} className="flex flex-col gap-3">
-                      {/* Site info with favicon */}
-                      <div className="flex items-center gap-4 text-sm">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={favicon} 
-                          alt={siteName}
-                          className="w-16 h-16 rounded"
-                          onError={(e) => {
-                            e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${new URL(sourceURL).hostname}&sz=128`;
-                          }}
-                        />
-                        <a 
-                          href={sourceURL} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-black hover:text-gray-700 truncate max-w-[250px] font-medium"
-                          title={sourceURL}
-                        >
-                          {siteName}
-                        </a>
-                      </div>
-                      
-                      {/* Pinned screenshot */}
-                      {screenshot && (
-                        <div className="w-full">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-gray-600">Screenshot Preview</span>
-                            <button
-                              onClick={() => setScreenshotCollapsed(!screenshotCollapsed)}
-                              className="text-gray-500 hover:text-gray-700 transition-colors p-1"
-                              aria-label={screenshotCollapsed ? 'Expand screenshot' : 'Collapse screenshot'}
-                            >
-                              <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                className={`transition-transform duration-300 ${screenshotCollapsed ? 'rotate-180' : ''}`}
-                              >
-                                <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                            </button>
-                          </div>
-                          <div
-                            className="w-full rounded-lg overflow-hidden border border-gray-200 transition-all duration-300"
-                            style={{
-                              opacity: screenshotCollapsed ? 0 : 1,
-                              transform: screenshotCollapsed ? 'translateY(-20px)' : 'translateY(0)',
-                              pointerEvents: screenshotCollapsed ? 'none' : 'auto',
-                              maxHeight: screenshotCollapsed ? '0' : '200px'
-                            }}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={screenshot}
-                              alt={`${siteName} preview`}
-                              className="w-full h-auto object-cover"
-                              style={{ maxHeight: '200px' }}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    // Store the configuration in sessionStorage (same as home page)
+                    // Start generation using the existing logic
+                    setHomeUrlInput(url);
+                    setHomeContextInput(instructions || '');
+                    setAiModel(model);
+                    setSelectedStyle(style);
+                    startGeneration({ url, context: instructions || '', model });
+                  }}
+                  disabled={loading || generationProgress.isGenerating}
+                />
               </div>
-            </div>
-          )}
+            ) : null}
 
+            {conversationContext.scrapedWebsites.length > 0 && (
+              <div className="p-4 bg-[var(--bg-secondary)]">
+                <div className="flex flex-col gap-4">
+                  {conversationContext.scrapedWebsites.map((site, idx) => {
+                    // Extract favicon and site info from the scraped data
+                    const metadata = site.content?.metadata || {};
+                    const sourceURL = metadata.sourceURL || site.url;
+                    const favicon = metadata.favicon || `https://www.google.com/s2/favicons?domain=${new URL(sourceURL).hostname}&sz=128`;
+                    const siteName = metadata.ogSiteName || metadata.title || new URL(sourceURL).hostname;
+                    const screenshot = site.content?.screenshot || sessionStorage.getItem('websiteScreenshot');
+
+                    return (
+                      <div key={idx} className="flex flex-col gap-3">
+                        {/* Site info with favicon */}
+                        <div className="flex items-center gap-3 text-sm">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={favicon}
+                            alt={siteName}
+                            className="w-10 h-10 rounded"
+                            onError={(e) => {
+                              e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${new URL(sourceURL).hostname}&sz=128`;
+                            }}
+                          />
+                          <a
+                            href={sourceURL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-black hover:text-[var(--text-secondary)] truncate max-w-[200px] font-medium text-xs"
+                            title={sourceURL}
+                          >
+                            {siteName}
+                          </a>
+                        </div>
+
+                        {/* Pinned screenshot - compact */}
+                        {screenshot && (
+                          <div className="w-full">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] font-medium text-[var(--text-secondary)]">Screenshot</span>
+                              <button
+                                onClick={() => setScreenshotCollapsed(!screenshotCollapsed)}
+                                className="text-foreground-dimmer hover:text-[var(--text-secondary)] transition-colors p-0.5"
+                                aria-label={screenshotCollapsed ? 'Expand screenshot' : 'Collapse screenshot'}
+                              >
+                                <svg
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 16 16"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className={`transition-transform duration-300 ${screenshotCollapsed ? 'rotate-180' : ''}`}
+                                >
+                                  <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              </button>
+                            </div>
+                            <div
+                              className="w-full rounded overflow-hidden border border-[var(--border-default)] transition-all duration-300"
+                              style={{
+                                opacity: screenshotCollapsed ? 0 : 1,
+                                transform: screenshotCollapsed ? 'translateY(-10px)' : 'translateY(0)',
+                                pointerEvents: screenshotCollapsed ? 'none' : 'auto',
+                                maxHeight: screenshotCollapsed ? '0' : '120px'
+                              }}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={screenshot}
+                                alt={`${siteName} preview`}
+                                className="w-full h-auto object-cover"
+                                style={{ maxHeight: '120px' }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Chat Messages - takes remaining space */}
           <div
-            className="flex-1 overflow-y-auto p-6 flex flex-col gap-4 scrollbar-hide"
+            className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 scrollbar-hide min-h-0"
             ref={chatMessagesRef}>
             {chatMessages.map((msg, idx) => {
               // Check if this message is from a successful generation
@@ -4074,39 +4271,42 @@ Focus on the key sections and content, making it clean and modern.`;
                 <div key={idx} className="block">
                   <div className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className="block">
-                      <div className={`block rounded-[10px] px-14 py-8 ${
-                        msg.type === 'user' ? 'bg-[#36322F] text-white ml-auto max-w-[80%]' :
-                        msg.type === 'ai' ? 'bg-gray-100 text-gray-900 mr-auto max-w-[80%]' :
-                        msg.type === 'system' ? 'bg-[#36322F] text-white text-sm' :
-                        msg.type === 'command' ? 'bg-[#36322F] text-white font-mono text-sm' :
-                        msg.type === 'error' ? 'bg-red-900 text-red-100 text-sm border border-red-700' :
-                        'bg-[#36322F] text-white text-sm'
+
+                      <div className={`block rounded-xl px-4 py-3 ${
+                        msg.type === 'user' ? 'bg-warm-800 text-warm-100 ml-auto max-w-[80%]' :
+                        msg.type === 'ai' ? 'bg-white border border-border-muted text-foreground mr-auto max-w-[80%]' :
+                        msg.type === 'system' ? 'bg-white border border-border-muted text-foreground text-sm' :
+                        msg.type === 'command' ? 'bg-white border border-border-muted text-foreground font-mono text-sm' :
+                        msg.type === 'error' ? 'bg-red-50 text-red-800 text-sm border border-red-200' :
+                        'bg-white border border-border-muted text-foreground text-sm'
                       }`}>
                     {msg.type === 'command' ? (
                       <div className="flex items-start gap-2">
+
                         <span className={`text-xs ${
-                          msg.metadata?.commandType === 'input' ? 'text-blue-400' :
-                          msg.metadata?.commandType === 'error' ? 'text-red-400' :
-                          msg.metadata?.commandType === 'success' ? 'text-green-400' :
-                          'text-gray-400'
+                          msg.metadata?.commandType === 'input' ? 'text-brand-orange' :
+                          msg.metadata?.commandType === 'error' ? 'text-red-500' :
+                          msg.metadata?.commandType === 'success' ? 'text-green-600' :
+                          'text-foreground-dimmer'
                         }`}>
                           {msg.metadata?.commandType === 'input' ? '$' : '>'}
                         </span>
-                        <span className="flex-1 whitespace-pre-wrap text-white">{msg.content}</span>
+                        <span className="flex-1 whitespace-pre-wrap text-foreground">{msg.content}</span>
                       </div>
                     ) : msg.type === 'error' ? (
+
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-red-800 rounded-full flex items-center justify-center">
-                            <svg className="w-6 h-6 text-red-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                            <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                           </div>
                         </div>
                         <div className="flex-1">
-                          <div className="font-semibold mb-1">Build Errors Detected</div>
-                          <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
-                          <div className="mt-2 text-xs opacity-70">Press 'F' or click the Fix button above to resolve</div>
+                          <div className="font-semibold mb-1 text-foreground">Build Errors Detected</div>
+                          <div className="whitespace-pre-wrap text-sm text-foreground-dimmer">{msg.content}</div>
+                          <div className="mt-2 text-xs text-foreground-dimmer">Press 'F' or click the Fix button above to resolve</div>
                         </div>
                       </div>
                     ) : (
@@ -4116,8 +4316,8 @@ Focus on the key sections and content, making it clean and modern.`;
                   
                       {/* Show branding data if this is a brand extraction message */}
                       {msg.metadata?.brandingData && (
-                        <div className="mt-3 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl overflow-hidden max-w-[500px] shadow-sm">
-                          <div className="bg-[#36322F] px-16 py-12">
+                        <div className="mt-3 bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--bg-primary)] border-2 border-[var(--border-default)] rounded-xl overflow-hidden max-w-[500px] shadow-sm">
+                          <div className="bg-warm-800 px-16 py-12">
                             <div className="flex items-center gap-8">
                               <Image
                                 src={`https://www.google.com/s2/favicons?domain=${msg.metadata.sourceUrl}&sz=32`}
@@ -4126,7 +4326,7 @@ Focus on the key sections and content, making it clean and modern.`;
                                 height={64}
                                 className="w-16 h-16"
                               />
-                              <div className="text-sm font-semibold text-white">
+                              <div className="text-sm font-semibold text-warm-100">
                                 Brand Guidelines
                               </div>
                             </div>
@@ -4137,8 +4337,8 @@ Focus on the key sections and content, making it clean and modern.`;
                             {msg.metadata.brandingData.colorScheme && (
                               <div className="mb-16">
                                 <div className="text-sm">
-                                  <span className="text-gray-600 font-medium">Mode:</span>{' '}
-                                  <span className="font-semibold text-gray-900 capitalize">{msg.metadata.brandingData.colorScheme}</span>
+                                  <span className="text-[var(--text-secondary)] font-medium">Mode:</span>{' '}
+                                  <span className="font-semibold text-[var(--text-primary)] capitalize">{msg.metadata.brandingData.colorScheme}</span>
                                 </div>
                               </div>
                             )}
@@ -4146,41 +4346,41 @@ Focus on the key sections and content, making it clean and modern.`;
                             {/* Colors */}
                             {msg.metadata.brandingData.colors && (
                               <div className="mb-16">
-                                <div className="text-sm font-semibold text-gray-900 mb-8">Colors</div>
+                                <div className="text-sm font-semibold text-[var(--text-primary)] mb-8">Colors</div>
                                 <div className="flex flex-wrap gap-12">
                                   {msg.metadata.brandingData.colors.primary && (
                                     <div className="flex items-center gap-8">
-                                      <div className="w-32 h-32 rounded border border-gray-300" style={{ backgroundColor: msg.metadata.brandingData.colors.primary }} />
+                                      <div className="w-32 h-32 rounded border border-[var(--border-default)]" style={{ backgroundColor: msg.metadata.brandingData.colors.primary }} />
                                       <div className="text-sm">
-                                        <div className="font-semibold text-gray-900">Primary</div>
-                                        <div className="text-gray-600 font-mono text-xs">{msg.metadata.brandingData.colors.primary}</div>
+                                        <div className="font-semibold text-[var(--text-primary)]">Primary</div>
+                                        <div className="text-[var(--text-secondary)] font-mono text-xs">{msg.metadata.brandingData.colors.primary}</div>
                                       </div>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.colors.accent && (
                                     <div className="flex items-center gap-8">
-                                      <div className="w-32 h-32 rounded border border-gray-300" style={{ backgroundColor: msg.metadata.brandingData.colors.accent }} />
+                                      <div className="w-32 h-32 rounded border border-[var(--border-default)]" style={{ backgroundColor: msg.metadata.brandingData.colors.accent }} />
                                       <div className="text-sm">
-                                        <div className="font-semibold text-gray-900">Accent</div>
-                                        <div className="text-gray-600 font-mono text-xs">{msg.metadata.brandingData.colors.accent}</div>
+                                        <div className="font-semibold text-[var(--text-primary)]">Accent</div>
+                                        <div className="text-[var(--text-secondary)] font-mono text-xs">{msg.metadata.brandingData.colors.accent}</div>
                                       </div>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.colors.background && (
                                     <div className="flex items-center gap-8">
-                                      <div className="w-32 h-32 rounded border border-gray-300" style={{ backgroundColor: msg.metadata.brandingData.colors.background }} />
+                                      <div className="w-32 h-32 rounded border border-[var(--border-default)]" style={{ backgroundColor: msg.metadata.brandingData.colors.background }} />
                                       <div className="text-sm">
-                                        <div className="font-semibold text-gray-900">Background</div>
-                                        <div className="text-gray-600 font-mono text-xs">{msg.metadata.brandingData.colors.background}</div>
+                                        <div className="font-semibold text-[var(--text-primary)]">Background</div>
+                                        <div className="text-[var(--text-secondary)] font-mono text-xs">{msg.metadata.brandingData.colors.background}</div>
                                       </div>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.colors.textPrimary && (
                                     <div className="flex items-center gap-8">
-                                      <div className="w-32 h-32 rounded border border-gray-300" style={{ backgroundColor: msg.metadata.brandingData.colors.textPrimary }} />
+                                      <div className="w-32 h-32 rounded border border-[var(--border-default)]" style={{ backgroundColor: msg.metadata.brandingData.colors.textPrimary }} />
                                       <div className="text-sm">
-                                        <div className="font-semibold text-gray-900">Text</div>
-                                        <div className="text-gray-600 font-mono text-xs">{msg.metadata.brandingData.colors.textPrimary}</div>
+                                        <div className="font-semibold text-[var(--text-primary)]">Text</div>
+                                        <div className="text-[var(--text-secondary)] font-mono text-xs">{msg.metadata.brandingData.colors.textPrimary}</div>
                                       </div>
                                     </div>
                                   )}
@@ -4191,36 +4391,36 @@ Focus on the key sections and content, making it clean and modern.`;
                             {/* Typography */}
                             {msg.metadata.brandingData.typography && (
                               <div className="mb-16">
-                                <div className="text-sm font-semibold text-gray-900 mb-8">Typography</div>
+                                <div className="text-sm font-semibold text-[var(--text-primary)] mb-8">Typography</div>
                                 <div className="grid grid-cols-2 gap-12 text-sm">
                                   {msg.metadata.brandingData.typography.fontFamilies?.primary && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">Primary:</span>{' '}
-                                      <span className="font-semibold text-gray-900">{msg.metadata.brandingData.typography.fontFamilies.primary}</span>
+                                      <span className="text-[var(--text-secondary)] font-medium">Primary:</span>{' '}
+                                      <span className="font-semibold text-[var(--text-primary)]">{msg.metadata.brandingData.typography.fontFamilies.primary}</span>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.typography.fontFamilies?.heading && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">Heading:</span>{' '}
-                                      <span className="font-semibold text-gray-900">{msg.metadata.brandingData.typography.fontFamilies.heading}</span>
+                                      <span className="text-[var(--text-secondary)] font-medium">Heading:</span>{' '}
+                                      <span className="font-semibold text-[var(--text-primary)]">{msg.metadata.brandingData.typography.fontFamilies.heading}</span>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.typography.fontSizes?.h1 && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">H1 Size:</span>{' '}
-                                      <span className="font-semibold text-gray-900">{msg.metadata.brandingData.typography.fontSizes.h1}</span>
+                                      <span className="text-[var(--text-secondary)] font-medium">H1 Size:</span>{' '}
+                                      <span className="font-semibold text-[var(--text-primary)]">{msg.metadata.brandingData.typography.fontSizes.h1}</span>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.typography.fontSizes?.h2 && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">H2 Size:</span>{' '}
-                                      <span className="font-semibold text-gray-900">{msg.metadata.brandingData.typography.fontSizes.h2}</span>
+                                      <span className="text-[var(--text-secondary)] font-medium">H2 Size:</span>{' '}
+                                      <span className="font-semibold text-[var(--text-primary)]">{msg.metadata.brandingData.typography.fontSizes.h2}</span>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.typography.fontSizes?.body && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">Body Size:</span>{' '}
-                                      <span className="font-semibold text-gray-900">{msg.metadata.brandingData.typography.fontSizes.body}</span>
+                                      <span className="text-[var(--text-secondary)] font-medium">Body Size:</span>{' '}
+                                      <span className="font-semibold text-[var(--text-primary)]">{msg.metadata.brandingData.typography.fontSizes.body}</span>
                                     </div>
                                   )}
                                 </div>
@@ -4230,18 +4430,18 @@ Focus on the key sections and content, making it clean and modern.`;
                             {/* Spacing */}
                             {msg.metadata.brandingData.spacing && (
                               <div className="mb-16">
-                                <div className="text-sm font-semibold text-gray-900 mb-8">Spacing</div>
+                                <div className="text-sm font-semibold text-[var(--text-primary)] mb-8">Spacing</div>
                                 <div className="flex flex-wrap gap-16 text-sm">
                                   {msg.metadata.brandingData.spacing.baseUnit && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">Base Unit:</span>{' '}
-                                      <span className="font-semibold text-gray-900">{msg.metadata.brandingData.spacing.baseUnit}px</span>
+                                      <span className="text-[var(--text-secondary)] font-medium">Base Unit:</span>{' '}
+                                      <span className="font-semibold text-[var(--text-primary)]">{msg.metadata.brandingData.spacing.baseUnit}px</span>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.spacing.borderRadius && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">Border Radius:</span>{' '}
-                                      <span className="font-semibold text-gray-900">{msg.metadata.brandingData.spacing.borderRadius}</span>
+                                      <span className="text-[var(--text-secondary)] font-medium">Border Radius:</span>{' '}
+                                      <span className="font-semibold text-[var(--text-primary)]">{msg.metadata.brandingData.spacing.borderRadius}</span>
                                     </div>
                                   )}
                                 </div>
@@ -4251,10 +4451,10 @@ Focus on the key sections and content, making it clean and modern.`;
                             {/* Button Styles */}
                             {msg.metadata.brandingData.components?.buttonPrimary && (
                               <div className="mb-16">
-                                <div className="text-sm font-semibold text-gray-900 mb-8">Button Styles</div>
+                                <div className="text-sm font-semibold text-[var(--text-primary)] mb-8">Button Styles</div>
                                 <div className="flex flex-wrap gap-12">
                                   <div>
-                                    <div className="text-xs text-gray-600 mb-6 font-medium">Primary Button</div>
+                                    <div className="text-xs text-[var(--text-secondary)] mb-6 font-medium">Primary Button</div>
                                     <button
                                       className="px-16 py-8 text-sm font-medium"
                                       style={{
@@ -4269,7 +4469,7 @@ Focus on the key sections and content, making it clean and modern.`;
                                   </div>
                                   {msg.metadata.brandingData.components?.buttonSecondary && (
                                     <div>
-                                      <div className="text-xs text-gray-600 mb-6 font-medium">Secondary Button</div>
+                                      <div className="text-xs text-[var(--text-secondary)] mb-6 font-medium">Secondary Button</div>
                                       <button
                                         className="px-16 py-8 text-sm font-medium"
                                         style={{
@@ -4290,8 +4490,8 @@ Focus on the key sections and content, making it clean and modern.`;
                             {/* Personality */}
                             {msg.metadata.brandingData.personality && (
                               <div className="text-sm">
-                                <span className="text-gray-600 font-medium">Personality:</span>{' '}
-                                <span className="font-semibold text-gray-900 capitalize">
+                                <span className="text-[var(--text-secondary)] font-medium">Personality:</span>{' '}
+                                <span className="font-semibold text-[var(--text-primary)] capitalize">
                                   {msg.metadata.brandingData.personality.tone} tone, {msg.metadata.brandingData.personality.energy} energy
                                 </span>
                               </div>
@@ -4300,8 +4500,8 @@ Focus on the key sections and content, making it clean and modern.`;
                             {/* Target Audience */}
                             {msg.metadata.brandingData.personality?.targetAudience && (
                               <div className="text-sm mt-8">
-                                <span className="text-gray-600 font-medium">Target:</span>{' '}
-                                <span className="text-gray-900">{msg.metadata.brandingData.personality.targetAudience}</span>
+                                <span className="text-[var(--text-secondary)] font-medium">Target:</span>{' '}
+                                <span className="text-[var(--text-primary)]">{msg.metadata.brandingData.personality.targetAudience}</span>
                               </div>
                             )}
                           </div>
@@ -4310,8 +4510,8 @@ Focus on the key sections and content, making it clean and modern.`;
 
                       {/* Show applied files if this is an apply success message */}
                       {msg.metadata?.appliedFiles && msg.metadata.appliedFiles.length > 0 && (
-                    <div className="mt-3 inline-block bg-gray-100 rounded-[10px] p-5">
-                      <div className="text-sm font-medium mb-3 text-gray-700">
+                    <div className="mt-3 inline-block bg-[var(--bg-secondary)] rounded-[10px] p-5">
+                      <div className="text-sm font-medium mb-3 text-[var(--text-secondary)]">
                         {msg.content.includes('Applied') ? 'Files Updated:' : 'Generated Files:'}
                       </div>
                       <div className="flex flex-wrap items-start gap-2">
@@ -4325,7 +4525,7 @@ Focus on the key sections and content, making it clean and modern.`;
                           return (
                             <div
                               key={`applied-${fileIdx}`}
-                              className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#36322F] text-white rounded-[10px] text-sm animate-fade-in-up"
+                              className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-warm-800 text-warm-100 rounded-[10px] text-sm animate-fade-in-up"
                               style={{ animationDelay: `${fileIdx * 30}ms` }}
                             >
                               <span className={`inline-block w-1.5 h-1.5 rounded-full ${
@@ -4344,13 +4544,13 @@ Focus on the key sections and content, making it clean and modern.`;
                   
                       {/* Show generated files for completion messages - but only if no appliedFiles already shown */}
                       {isGenerationComplete && generationProgress.files.length > 0 && idx === chatMessages.length - 1 && !msg.metadata?.appliedFiles && !chatMessages.some(m => m.metadata?.appliedFiles) && (
-                    <div className="mt-2 inline-block bg-gray-100 rounded-[10px] p-3">
-                      <div className="text-xs font-medium mb-1 text-gray-700">Generated Files:</div>
+                    <div className="mt-2 inline-block bg-[var(--bg-secondary)] rounded-[10px] p-3">
+                      <div className="text-xs font-medium mb-1 text-[var(--text-secondary)]">Generated Files:</div>
                       <div className="flex flex-wrap items-start gap-1">
                         {generationProgress.files.map((file, fileIdx) => (
                           <div
                             key={`complete-${fileIdx}`}
-                            className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#36322F] text-white rounded-[10px] text-xs animate-fade-in-up"
+                            className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-warm-800 text-warm-100 rounded-[10px] text-xs animate-fade-in-up"
                             style={{ animationDelay: `${fileIdx * 30}ms` }}
                           >
                             <span className={`inline-block w-1.5 h-1.5 rounded-full ${
@@ -4378,8 +4578,8 @@ Focus on the key sections and content, making it clean and modern.`;
             
             {/* File generation progress - inline display (during generation) */}
             {generationProgress.isGenerating && (
-              <div className="inline-block bg-gray-100 rounded-lg p-3">
-                <div className="text-sm font-medium mb-2 text-gray-700">
+              <div className="inline-block bg-[var(--bg-secondary)] rounded-lg p-3">
+                <div className="text-sm font-medium mb-2 text-[var(--text-secondary)]">
                   {generationProgress.status}
                 </div>
                 <div className="flex flex-wrap items-start gap-1">
@@ -4387,7 +4587,7 @@ Focus on the key sections and content, making it clean and modern.`;
                   {generationProgress.files.map((file, idx) => (
                     <div
                       key={`file-${idx}`}
-                      className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#36322F] text-white rounded-[10px] text-xs animate-fade-in-up"
+                      className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-warm-800 text-warm-100 rounded-[10px] text-xs animate-fade-in-up"
                       style={{ animationDelay: `${idx * 30}ms` }}
                     >
                       <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -4399,7 +4599,7 @@ Focus on the key sections and content, making it clean and modern.`;
                   
                   {/* Show current file being generated */}
                   {generationProgress.currentFile && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-[#36322F]/70 text-white rounded-[10px] text-sm animate-pulse"
+                    <div className="flex items-center gap-1 px-2 py-1 bg-warm-800/70 text-warm-100 rounded-[10px] text-sm animate-pulse"
                       style={{ animationDelay: `${generationProgress.files.length * 30}ms` }}>
                       <div className="w-16 h-16 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       {generationProgress.currentFile.path.split('/').pop()}
@@ -4414,16 +4614,16 @@ Focus on the key sections and content, making it clean and modern.`;
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="mt-3 border-t border-gray-300 pt-3"
+                    className="mt-3 border-t border-[var(--border-default)] pt-3"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex items-center gap-1">
                         <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                        <span className="text-xs font-medium text-gray-600">AI Response Stream</span>
+                        <span className="text-xs font-medium text-[var(--text-secondary)]">AI Response Stream</span>
                       </div>
                       <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent" />
                     </div>
-                    <div className="bg-gray-900 border border-gray-700 rounded max-h-128 overflow-y-auto scrollbar-hide">
+                    <div className="bg-warm-900 border border-warm-750/20 rounded-xl overflow-hidden max-h-128 overflow-y-auto scrollbar-hide">
                       <SyntaxHighlighter
                         language="jsx"
                         style={vscDarkPlus}
@@ -4452,30 +4652,32 @@ Focus on the key sections and content, making it clean and modern.`;
             )}
           </div>
 
-          <div className="p-4 border-t border-border bg-background-base">
+          {/* Input Area - fixed at bottom */}
+          <div className="flex-shrink-0 p-4 border-t border-[var(--border-default)] bg-[var(--bg-primary)] max-h-[40%] overflow-y-auto">
             <HeroInput
               value={aiChatInput}
               onChange={setAiChatInput}
               onSubmit={sendChatMessage}
               placeholder="Describe what you want to build..."
               showSearchFeatures={false}
-              onImageUpload={(image) => setChatUploadedImage(image)}
+              onImageUpload={(images) => setChatUploadedImages(images || [])}
             />
           </div>
         </div>
 
         {/* Right Panel - Preview or Generation (2/3 of remaining width) */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-3 pt-4 pb-4 bg-white border-b border-gray-200 flex justify-between items-center">
+          <div className="px-3 pt-4 pb-4 bg-[var(--bg-primary)] border-b border-[var(--border-default)] flex justify-between items-center">
             <div className="flex items-center gap-2">
               {/* Toggle-style Code/View switcher */}
-              <div className="inline-flex bg-gray-100 border border-gray-200 rounded-md p-0.5">
+
+              <div className="inline-flex bg-warm-100 border border-warm-750/12 rounded-xl p-1">
                 <button
                   onClick={() => setActiveTab('generation')}
-                  className={`px-3 py-1 rounded transition-all text-xs font-medium ${
-                    activeTab === 'generation' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'bg-transparent text-gray-600 hover:text-gray-900'
+                  className={`px-3 py-1.5 rounded-lg transition-all text-xs font-medium ${
+                    activeTab === 'generation'
+                      ? 'bg-white text-warm-800 shadow-sm'
+                      : 'text-warm-500 hover:text-warm-800'
                   }`}
                 >
                   <div className="flex items-center gap-1.5">
@@ -4487,10 +4689,10 @@ Focus on the key sections and content, making it clean and modern.`;
                 </button>
                 <button
                   onClick={() => setActiveTab('preview')}
-                  className={`px-3 py-1 rounded transition-all text-xs font-medium ${
-                    activeTab === 'preview' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'bg-transparent text-gray-600 hover:text-gray-900'
+                  className={`px-3 py-1.5 rounded-lg transition-all text-xs font-medium ${
+                    activeTab === 'preview'
+                      ? 'bg-white text-warm-800 shadow-sm'
+                      : 'text-warm-500 hover:text-warm-800'
                   }`}
                 >
                   <div className="flex items-center gap-1.5">
@@ -4506,14 +4708,14 @@ Focus on the key sections and content, making it clean and modern.`;
             <div className="flex gap-2 items-center">
               {/* Files generated count */}
               {activeTab === 'generation' && !generationProgress.isEdit && generationProgress.files.length > 0 && (
-                <div className="text-gray-500 text-xs font-medium">
+                <div className="text-foreground-dimmer text-xs font-medium">
                   {generationProgress.files.length} files generated
                 </div>
               )}
               
               {/* Live Code Generation Status */}
               {activeTab === 'generation' && generationProgress.isGenerating && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 border border-gray-200 rounded-md text-xs font-medium text-gray-700">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-md text-xs font-medium text-[var(--text-secondary)]">
                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                   {generationProgress.isEdit ? 'Editing code' : 'Live generation'}
                 </div>
@@ -4521,7 +4723,7 @@ Focus on the key sections and content, making it clean and modern.`;
               
               {/* Sandbox Status Indicator */}
               {sandboxData && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 border border-gray-200 rounded-md text-xs font-medium text-gray-700">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-md text-xs font-medium text-[var(--text-secondary)]">
                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
                   Sandbox active
                 </div>
@@ -4534,7 +4736,7 @@ Focus on the key sections and content, making it clean and modern.`;
                   target="_blank" 
                   rel="noopener noreferrer"
                   title="Open in new tab"
-                  className="p-1.5 rounded-md transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  className="p-1.5 rounded-md transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
                 >
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />

@@ -25,9 +25,16 @@ export const stripe = new Proxy({} as Stripe, {
 });
 
 export const STRIPE_PRICE_IDS = {
-  pro: process.env.STRIPE_PRICE_PRO!,
-  plus: process.env.STRIPE_PRICE_PLUS!,
-  team: process.env.STRIPE_PRICE_TEAM!,
+  monthly: {
+    pro: process.env.STRIPE_PRICE_PRO!,
+    plus: process.env.STRIPE_PRICE_PLUS!,
+    team: process.env.STRIPE_PRICE_TEAM!,
+  },
+  yearly: {
+    pro: process.env.STRIPE_PRICE_PRO_YEARLY!,
+    plus: process.env.STRIPE_PRICE_PLUS_YEARLY!,
+    team: process.env.STRIPE_PRICE_TEAM_YEARLY!,
+  },
 };
 
 export type SubscriptionTier = 'free' | 'pro' | 'plus' | 'team';
@@ -59,19 +66,30 @@ export const TIERS = {
   },
 };
 
-export function getPriceIdForTier(tier: string): string | null {
+export function getPriceIdForTier(tier: string, billingCycle: 'monthly' | 'yearly' = 'monthly'): string | null {
   if (tier !== 'pro' && tier !== 'plus' && tier !== 'team') return null;
-  return STRIPE_PRICE_IDS[tier] || null;
+  return STRIPE_PRICE_IDS[billingCycle][tier] || null;
 }
 
 export function getTierForPriceId(priceId?: string | null): SubscriptionTier {
-  if (priceId && STRIPE_PRICE_IDS.pro && priceId === STRIPE_PRICE_IDS.pro) {
+  // Check monthly prices
+  if (priceId && STRIPE_PRICE_IDS.monthly.pro && priceId === STRIPE_PRICE_IDS.monthly.pro) {
     return 'pro';
   }
-  if (priceId && STRIPE_PRICE_IDS.plus && priceId === STRIPE_PRICE_IDS.plus) {
+  if (priceId && STRIPE_PRICE_IDS.monthly.plus && priceId === STRIPE_PRICE_IDS.monthly.plus) {
     return 'plus';
   }
-  if (priceId && STRIPE_PRICE_IDS.team && priceId === STRIPE_PRICE_IDS.team) {
+  if (priceId && STRIPE_PRICE_IDS.monthly.team && priceId === STRIPE_PRICE_IDS.monthly.team) {
+    return 'team';
+  }
+  // Check yearly prices
+  if (priceId && STRIPE_PRICE_IDS.yearly.pro && priceId === STRIPE_PRICE_IDS.yearly.pro) {
+    return 'pro';
+  }
+  if (priceId && STRIPE_PRICE_IDS.yearly.plus && priceId === STRIPE_PRICE_IDS.yearly.plus) {
+    return 'plus';
+  }
+  if (priceId && STRIPE_PRICE_IDS.yearly.team && priceId === STRIPE_PRICE_IDS.yearly.team) {
     return 'team';
   }
   return 'free';

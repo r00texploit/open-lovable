@@ -1,0 +1,68 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Noeron" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]:
+            - img [ref=e7]
+            - generic [ref=e14]: Noeron
+        - generic [ref=e15]:
+          - paragraph [ref=e16]: Builder access
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e25]: Noeron
+          - heading "Your next site starts with a working app." [level=2] [ref=e26]
+          - paragraph [ref=e27]: Sign in to continue from prompt, URL, or sandbox. The generated code stays visible, editable, and ready for export.
+        - generic [ref=e28]:
+          - generic [ref=e29]: URL scrape
+          - generic [ref=e30]: React files
+          - generic [ref=e31]: Live preview
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - img [ref=e49]
+          - heading "Create your account" [level=1] [ref=e52]
+          - paragraph [ref=e53]: Start with a URL, prompt your edits, and keep the React files.
+        - generic [ref=e54]:
+          - generic [ref=e56]:
+            - generic [ref=e57]: Full name
+            - generic [ref=e58]:
+              - img [ref=e59]
+              - textbox "Maya Chen" [ref=e62]
+          - generic [ref=e64]:
+            - generic [ref=e65]: Email
+            - generic [ref=e66]:
+              - img [ref=e67]
+              - textbox "you@example.com" [ref=e70]: testuser_fix_2025@example.com
+          - generic [ref=e72]:
+            - generic [ref=e73]: Password
+            - generic [ref=e74]:
+              - textbox "Create a strong password" [ref=e75]: TestPass123!
+              - button "Show password" [ref=e76] [cursor=pointer]:
+                - img [ref=e77]
+          - generic [ref=e81]:
+            - generic [ref=e82]: Confirm password
+            - generic [ref=e83]:
+              - textbox "Confirm your password" [ref=e84]
+              - button "Show password" [ref=e85] [cursor=pointer]:
+                - img [ref=e86]
+          - button "I agree to the Terms of Service and Privacy Policy" [ref=e90] [cursor=pointer]:
+            - generic [ref=e92]:
+              - text: I agree to the
+              - link "Terms of Service" [ref=e93]:
+                - /url: /terms
+              - text: and
+              - link "Privacy Policy" [ref=e94]:
+                - /url: /privacy
+          - button "Create account" [ref=e96] [cursor=pointer]:
+            - text: Create account
+            - img [ref=e97]
+        - generic [ref=e103]: Or sign up with
+        - button "Continue with Google" [ref=e105] [cursor=pointer]:
+          - img [ref=e108]
+          - generic [ref=e113]: Continue with Google
+        - paragraph [ref=e114]:
+          - text: Already have an account?
+          - link "Sign in" [ref=e115] [cursor=pointer]:
+            - /url: /auth/signin
+  - alert [ref=e43]
