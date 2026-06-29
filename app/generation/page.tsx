@@ -612,7 +612,26 @@ function AISandboxPage() {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ siteId: firstSiteId }),
-        }).catch(err => console.error('[site auto-select] Failed to update session:', err));
+        })
+          .then(async (res) => {
+            if (res.ok) {
+              const data = await res.json();
+              console.log('[site auto-select] Session updated:', data);
+              // Update sandboxData with the custom preview URL
+              if (data.session?.siteId) {
+                const selectedSite = sites.find(s => s.id === data.session.siteId);
+                if (selectedSite?.subdomain) {
+                  const customPreviewUrl = `https://${selectedSite.subdomain}.noeron.net`;
+                  console.log('[site auto-select] Updating sandboxData previewUrl:', customPreviewUrl);
+                  setSandboxData(prev => prev ? {
+                    ...prev,
+                    previewUrl: customPreviewUrl,
+                  } : prev);
+                }
+              }
+            }
+          })
+          .catch(err => console.error('[site auto-select] Failed to update session:', err));
       }
     }
   }, [activeSiteId, sites, sandboxData]);
