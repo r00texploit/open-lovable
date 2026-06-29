@@ -23,6 +23,7 @@ import {
   incrementTokenUsage,
 } from '@/lib/usage/token-usage';
 import { getEnhancedSystemPrompt, enhanceUserPrompt } from '@/lib/ai/prompts';
+import { getFeaturedNuviqImages } from '@/lib/ai/nuviq-images';
 import {
   getSandboxState,
   setSandboxState,
@@ -123,7 +124,15 @@ export async function POST(request: NextRequest) {
     const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false, uploadedImage, uploadedImages, aiImagesEnabled = false } = await request.json();
 
     // Support both single uploadedImage and array uploadedImages for backwards compatibility
-    const imagesToProcess = uploadedImages || (uploadedImage ? [uploadedImage] : []);
+    const userImages = uploadedImages || (uploadedImage ? [uploadedImage] : []);
+
+    // Auto-include Nuviq product images (featured selection from each category)
+    const nuviqImages = getFeaturedNuviqImages();
+    const imagesToProcess = [...userImages, ...nuviqImages];
+
+    if (nuviqImages.length > 0) {
+      console.log(`[generate-ai-code-stream] Auto-included ${nuviqImages.length} Nuviq product images`);
+    }
 
     // Get sandbox-scoped state for multi-sandbox support
     const sandboxId = context?.sandboxId || 'default';
@@ -1275,6 +1284,17 @@ It's better to have 3 complete files than 10 incomplete files.`;
 
           const pathList = imagePaths.map((p, i) => `IMAGE_${i + 1}_PATH: ${p}`).join('\n');
 
+          // Count user-uploaded vs Nuviq images
+          const userImageCount = userImages.length;
+          const nuviqImageCount = nuviqImages.length;
+
+          const nuviqInstruction = nuviqImageCount > 0 ? `
+
+NUVIQ PRODUCT IMAGES (${nuviqImageCount} images from the coffee shop menu):
+- These are REAL product photos from Nuviq coffee shop (hot drinks, cold drinks, desserts).
+- Use these images directly in your design to showcase actual menu items.
+- First ${userImageCount} images are user uploads, remaining ${nuviqImageCount} are Nuviq product photos.` : '';
+
           const dataUrlInstruction = `
 
 UPLOADED IMAGE PATHS (use these exact paths as <img src="..."> values):
@@ -1285,14 +1305,14 @@ CRITICAL IMAGE ASSET RULES:
 - Use the exact paths above (e.g. src="/images/image-1.jpg") in every <img> tag or CSS url() that shows one of the uploaded images.
 - Do NOT use data: URIs, do NOT use picsum.photos or placeholder URLs, do NOT invent filenames.
 - Make every used image responsive with className="w-full h-full object-cover" or equivalent.
-- Add meaningful alt text describing the image content.`;
+- Add meaningful alt text describing the image content.${nuviqInstruction}`;
 
           userMessageContent = [
             {
               type: 'text',
               text: fullPrompt + `
 
-I have uploaded ${imagesToProcess.length} image${imagesToProcess.length > 1 ? 's' : ''} for reference. Please analyze these images and use them as visual references for the design, layout, colors, and style when generating the website.${dataUrlInstruction}
+I have uploaded ${imagesToProcess.length} image${imagesToProcess.length > 1 ? 's' : ''} for reference${nuviqImageCount > 0 ? ` (including ${nuviqImageCount} Nuviq product photos)` : ''}. Please analyze these images and use them as visual references for the design, layout, colors, and style when generating the website.${dataUrlInstruction}
 
 CRITICAL: You MUST complete EVERY file you start. If you write:
 <file path="src/components/Hero.jsx">

@@ -348,8 +348,8 @@
   "hotPaths": [
     {
       "path": "lib/sandbox/providers/vercel-provider.ts",
-      "accessCount": 32,
-      "lastAccessed": 1782735370859,
+      "accessCount": 33,
+      "lastAccessed": 1782748473428,
       "type": "file"
     },
     {
@@ -408,8 +408,8 @@
     },
     {
       "path": "lib/tenancy/hostname.ts",
-      "accessCount": 9,
-      "lastAccessed": 1782735393256,
+      "accessCount": 10,
+      "lastAccessed": 1782746799166,
       "type": "file"
     },
     {
@@ -419,15 +419,15 @@
       "type": "file"
     },
     {
-      "path": "lib/request-context.ts",
-      "accessCount": 4,
-      "lastAccessed": 1782269010018,
+      "path": "lib/sandbox/factory.ts",
+      "accessCount": 5,
+      "lastAccessed": 1782748470088,
       "type": "file"
     },
     {
-      "path": "lib/sandbox/factory.ts",
+      "path": "lib/request-context.ts",
       "accessCount": 4,
-      "lastAccessed": 1782494858720,
+      "lastAccessed": 1782269010018,
       "type": "file"
     },
     {
