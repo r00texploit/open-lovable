@@ -211,6 +211,36 @@ export class VercelProvider extends BaseSandboxProvider {
     }
   }
 
+  // Write multiple files with Buffer support for binary files (images)
+  async writeFiles(files: Array<{ path: string; content: Buffer }>): Promise<void> {
+    console.log(`[VercelProvider] writeFiles called: ${files.length} files`);
+    if (!this.sandbox) {
+      console.error(`[VercelProvider] writeFiles failed: No active sandbox`);
+      throw new Error('No active sandbox');
+    }
+
+    try {
+      // Convert to full paths and call SDK writeFiles
+      const filesWithFullPaths = files.map(file => ({
+        path: this.getFullPath(file.path),
+        content: file.content
+      }));
+
+      console.log(`[VercelProvider] Calling sandbox.writeFiles for ${files.length} files`);
+      await this.sandbox.writeFiles(filesWithFullPaths);
+      console.log(`[VercelProvider] sandbox.writeFiles succeeded`);
+
+      // Track all files
+      for (const file of files) {
+        this.trackFile(file.path);
+      }
+    } catch (error: unknown) {
+      console.error(`[VercelProvider] writeFiles failed:`, error);
+      this.logger.error(`writeFiles failed:`, error);
+      throw error;
+    }
+  }
+
   async readFile(path: string): Promise<string> {
     if (!this.sandbox) {
       throw new Error('No active sandbox');

@@ -57,18 +57,38 @@ export async function GET() {
 
     console.log('[get-sandbox-files] Fetching and analyzing file structure...');
 
-    const fileList = typeof sandbox.listFiles === 'function'
-      ? (await sandbox.listFiles()).filter((filePath: string) => /\.(jsx?|tsx?|css|json)$/.test(filePath))
-      : (await commandStdout(
+    // Get code files and image files separately
+    const getFilesList = async () => {
+      if (typeof sandbox.listFiles === 'function') {
+        const allFiles = await sandbox.listFiles();
+        return {
+          codeFiles: allFiles.filter((filePath: string) => /\.(jsx?|tsx?|css|json)$/.test(filePath)),
+          imageFiles: allFiles.filter((filePath: string) => /\.(png|jpe?g|gif|webp|avif|svg)$/i.test(filePath))
+        };
+      } else {
+        const codeResult = await commandStdout(
           sandbox,
           `find . -name node_modules -prune -o -name .git -prune -o -name dist -prune -o -name build -prune -o -type f \\( -name '*.jsx' -o -name '*.js' -o -name '*.tsx' -o -name '*.ts' -o -name '*.css' -o -name '*.json' \\) -print`
-        )).stdout.split('\n').filter((f: string) => f.trim());
+        );
+        const imageResult = await commandStdout(
+          sandbox,
+          `find . -name node_modules -prune -o -name .git -prune -o -name dist -prune -o -name build -prune -o -type f \\( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.gif' -o -name '*.webp' -o -name '*.svg' \\) -print`
+        );
+        return {
+          codeFiles: codeResult.stdout.split('\n').filter((f: string) => f.trim()),
+          imageFiles: imageResult.stdout.split('\n').filter((f: string) => f.trim())
+        };
+      }
+    };
+
+    const { codeFiles, imageFiles } = await getFilesList();
+    const fileList = codeFiles;
 
     if (!Array.isArray(fileList)) {
       throw new Error('Failed to list files');
     }
 
-    console.log('[get-sandbox-files] Found', fileList.length, 'files');
+    console.log('[get-sandbox-files] Found', fileList.length, 'code files +', imageFiles.length, 'image files');
 
     // Read content of each file (limit to reasonable sizes)
     const filesContent: Record<string, string> = {};
@@ -91,6 +111,14 @@ export async function GET() {
         console.debug('Error parsing component info:', parseError);
         // Skip files that can't be read
         continue;
+      }
+    }
+
+    // Add image files to the content list (mark as binary/image)
+    for (const imagePath of imageFiles) {
+      const relativePath = imagePath.replace(/^\.\//, '');
+      if (relativePath) {
+        filesContent[relativePath] = `[Binary image file]`;
       }
     }
 

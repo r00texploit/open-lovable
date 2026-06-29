@@ -348,14 +348,20 @@
   "hotPaths": [
     {
       "path": "lib/sandbox/providers/vercel-provider.ts",
-      "accessCount": 33,
-      "lastAccessed": 1782748473428,
+      "accessCount": 38,
+      "lastAccessed": 1782751816941,
       "type": "file"
     },
     {
       "path": "lib/sandbox/sandbox-manager.ts",
       "accessCount": 22,
       "lastAccessed": 1782725940777,
+      "type": "file"
+    },
+    {
+      "path": "lib/sandbox/providers/base-provider.ts",
+      "accessCount": 22,
+      "lastAccessed": 1782751901261,
       "type": "file"
     },
     {
@@ -374,12 +380,6 @@
       "path": "lib/sandbox/templates/vite-templates.ts",
       "accessCount": 17,
       "lastAccessed": 1782540168013,
-      "type": "file"
-    },
-    {
-      "path": "lib/sandbox/providers/base-provider.ts",
-      "accessCount": 17,
-      "lastAccessed": 1782718468856,
       "type": "file"
     },
     {
@@ -419,6 +419,18 @@
       "type": "file"
     },
     {
+      "path": "lib/sandbox/types.ts",
+      "accessCount": 6,
+      "lastAccessed": 1782751766001,
+      "type": "file"
+    },
+    {
+      "path": "lib/sandbox/providers/e2b-provider.ts",
+      "accessCount": 6,
+      "lastAccessed": 1782751958937,
+      "type": "file"
+    },
+    {
       "path": "lib/sandbox/factory.ts",
       "accessCount": 5,
       "lastAccessed": 1782748470088,
@@ -434,18 +446,6 @@
       "path": "lib/ai/provider-manager.ts",
       "accessCount": 4,
       "lastAccessed": 1782718305146,
-      "type": "file"
-    },
-    {
-      "path": "lib/sandbox/types.ts",
-      "accessCount": 4,
-      "lastAccessed": 1782725777731,
-      "type": "file"
-    },
-    {
-      "path": "lib/sandbox/providers/e2b-provider.ts",
-      "accessCount": 3,
-      "lastAccessed": 1782267986664,
       "type": "file"
     },
     {
