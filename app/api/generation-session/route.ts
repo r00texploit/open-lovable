@@ -33,16 +33,36 @@ export async function GET() {
 
   // Transform sessions to use custom preview URL if site is associated
   const transformedSessions = sessions.map(s => {
+    console.log('[generation-session] Processing session:', {
+      sessionId: s.id,
+      sandboxId: s.sandboxId,
+      siteId: s.siteId,
+      siteSubdomain: s.site?.subdomain,
+      originalSandboxUrl: s.sandboxUrl,
+    });
+
     if (s.site?.subdomain) {
       // Check if there's an active preview mapping
-      const hasPreview = getSandboxUrlForSubdomain(s.site.subdomain);
-      if (hasPreview) {
+      const sandboxUrlFromMapping = getSandboxUrlForSubdomain(s.site.subdomain);
+      console.log('[generation-session] Preview mapping check:', {
+        subdomain: s.site.subdomain,
+        hasMapping: !!sandboxUrlFromMapping,
+        mappedUrl: sandboxUrlFromMapping,
+      });
+
+      if (sandboxUrlFromMapping) {
+        const customUrl = buildPreviewUrl(s.site.subdomain);
+        console.log('[generation-session] Returning custom URL:', customUrl);
         return {
           ...s,
-          sandboxUrl: buildPreviewUrl(s.site.subdomain),
-          previewUrl: buildPreviewUrl(s.site.subdomain),
+          sandboxUrl: customUrl,
+          previewUrl: customUrl,
         };
+      } else {
+        console.log('[generation-session] No preview mapping found, returning original URL:', s.sandboxUrl);
       }
+    } else {
+      console.log('[generation-session] No site or subdomain associated');
     }
     return s;
   });
