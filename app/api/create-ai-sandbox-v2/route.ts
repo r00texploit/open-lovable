@@ -56,6 +56,10 @@ export async function POST(request: Request) {
       console.log(`[create-ai-sandbox-v2] Updated existing session with siteId:`, requestBody.siteId);
     }
 
+    if (!session) {
+      return NextResponse.json({ error: 'Failed to create or retrieve session' }, { status: 500 });
+    }
+
     console.log(`[create-ai-sandbox-v2] Creating sandbox for session ${session.id}...`);
 
     // Only terminate this session's existing sandbox, not all sandboxes
