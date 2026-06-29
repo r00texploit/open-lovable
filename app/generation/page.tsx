@@ -1080,7 +1080,15 @@ function AISandboxPage() {
       if (data.success) {
         sandboxCreationRef.current = false; // Reset the ref on success
         console.log('[createSandbox] Setting sandboxData from creation:', data);
-        setSandboxData(data);
+        // Merge with existing sandboxData to preserve previewUrl
+        setSandboxData(prev => ({
+          ...data,
+          // Keep previewUrl if it exists in current data and new data doesn't have one
+          // or if new data's previewUrl is the same as url (not a custom domain)
+          previewUrl: (data.previewUrl && data.previewUrl !== data.url)
+            ? data.previewUrl
+            : (prev?.previewUrl || data.previewUrl),
+        }));
         updateStatus('Sandbox active', true);
         log('Sandbox created successfully!');
         log(`Sandbox ID: ${data.sandboxId}`);
