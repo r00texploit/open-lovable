@@ -786,6 +786,9 @@ export async function POST(request: NextRequest) {
               gif: 'gif', webp: 'webp', avif: 'avif',
             };
 
+            // Build array of image files to write
+            const imageFiles: Array<{ path: string; content: Buffer }> = [];
+
             for (let i = 0; i < uploadedImages.length; i++) {
               const img = uploadedImages[i];
               if (img.base64) {
@@ -797,13 +800,36 @@ export async function POST(request: NextRequest) {
                 const imageName = `image-${i + 1}.${ext}`;
                 const imagePath = `public/images/${imageName}`;
 
-                // Pass base64 directly — provider will decode for binary files
-                await providerInstance.writeFile(imagePath, img.base64);
+                // Convert base64 to Buffer for writeFiles
+                const imageBuffer = Buffer.from(img.base64, 'base64');
+                imageFiles.push({ path: imagePath, content: imageBuffer });
 
-                console.log(`[apply-ai-code-stream] Saved uploaded image: ${imagePath}`);
+                // Add image to file cache so it appears in code explorer
+                if (sandboxState?.fileCache) {
+                  sandboxState.fileCache.files[imagePath] = {
+                    content: `[Binary image: ${imageName}]`,
+                    lastModified: Date.now()
+                  };
+                }
+                if (global.existingFiles) {
+                  global.existingFiles.add(imagePath);
+                }
+
+                console.log(`[apply-ai-code-stream] Prepared image: ${imagePath} (${imageBuffer.length} bytes)`);
+              }
+            }
+
+            // Write all images in one batch using Buffer
+            if (imageFiles.length > 0) {
+              console.log(`[apply-ai-code-stream] Writing ${imageFiles.length} images via writeFiles...`);
+              await providerInstance.writeFiles(imageFiles);
+              console.log(`[apply-ai-code-stream] Successfully wrote all images`);
+
+              // Send progress for each image
+              for (const file of imageFiles) {
                 await sendProgress({
                   type: 'file-complete',
-                  fileName: imagePath,
+                  fileName: file.path,
                   action: 'created'
                 });
               }

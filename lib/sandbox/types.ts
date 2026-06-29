@@ -51,6 +51,10 @@ export abstract class SandboxProvider {
   abstract getSandboxInfo(): SandboxInfo | null;
   abstract terminate(): Promise<void>;
   abstract isAlive(): boolean;
+
+  // Write multiple files with binary support (Buffer required for binary files)
+  // Use this for images and other binary assets
+  abstract writeFiles(files: Array<{ path: string; content: Buffer }>): Promise<void>;
   
   // Optional methods that providers can override
 

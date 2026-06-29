@@ -209,6 +209,26 @@ print(f"✓ Written: ${fullPath}")
     await this.writeFilePrimary(path, content);
   }
 
+  // Override writeFiles to use E2B's native Buffer support
+  async writeFiles(files: Array<{ path: string; content: Buffer }>): Promise<void> {
+    if (!this.e2bSandbox) {
+      throw new Error('No active sandbox');
+    }
+
+    this.logger.info(`Writing ${files.length} files via E2B native write`);
+    for (const file of files) {
+      const fullPath = this.getFullPath(file.path);
+      if (this.e2bSandbox.files?.write) {
+        await this.e2bSandbox.files.write(fullPath, file.content);
+      } else {
+        // Fallback to base64 encoding via writeFile
+        const base64Content = file.content.toString('base64');
+        await this.writeFile(file.path, base64Content);
+      }
+      this.trackFile(file.path);
+    }
+  }
+
   async readFile(path: string): Promise<string> {
     if (!this.e2bSandbox) {
       throw new Error('No active sandbox');
