@@ -131,3 +131,59 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ session: genSession });
 }
+
+// PATCH /api/generation-session — update siteId for current user's active session
+export async function PATCH(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = await request.json();
+  const { siteId } = body;
+
+  if (!siteId) {
+    return NextResponse.json({ error: 'siteId is required' }, { status: 400 });
+  }
+
+  // Verify the site belongs to this user
+  const site = await prisma.site.findFirst({
+    where: { id: siteId, userId: session.user.id },
+    select: { id: true, slug: true, subdomain: true },
+  });
+
+  if (!site) {
+    return NextResponse.json({ error: 'Site not found' }, { status: 404 });
+  }
+
+  // Find the user's most recent active session
+  const genSession = await prisma.generationSession.findFirst({
+    where: { userId: session.user.id },
+    orderBy: { lastActiveAt: 'desc' },
+  });
+
+  if (!genSession) {
+    return NextResponse.json({ error: 'No active session found' }, { status: 404 });
+  }
+
+  // Update the session with the siteId
+  const updatedSession = await prisma.generationSession.update({
+    where: { id: genSession.id },
+    data: { siteId: site.id },
+  });
+
+  // Register preview mapping if sandboxUrl exists
+  if (genSession.sandboxUrl) {
+    const { registerPreviewMapping } = await import('@/lib/tenancy/preview-mapping');
+    registerPreviewMapping(
+      site.subdomain,
+      genSession.sandboxUrl,
+      genSession.sandboxId,
+      site.id,
+      session.user.id
+    );
+    console.log('[PATCH generation-session] Registered preview mapping for subdomain:', site.subdomain);
+  }
+
+  return NextResponse.json({ session: updatedSession });
+}
