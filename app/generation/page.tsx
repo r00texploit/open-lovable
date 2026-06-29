@@ -33,6 +33,7 @@ import CodeApplicationProgress, { type CodeApplicationState } from '@/components
 interface SandboxData {
   sandboxId: string;
   url: string;
+  previewUrl?: string;
   [key: string]: any;
 }
 
@@ -4762,9 +4763,9 @@ Focus on the key sections and content, making it clean and modern.`;
               
               {/* Open in new tab button */}
               {sandboxData && (
-                <a 
-                  href={sandboxData.url} 
-                  target="_blank" 
+                <a
+                  href={sandboxData.previewUrl || sandboxData.url}
+                  target="_blank"
                   rel="noopener noreferrer"
                   title="Open in new tab"
                   className="p-1.5 rounded-md transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
