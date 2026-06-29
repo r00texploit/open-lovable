@@ -5,6 +5,8 @@ import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 import { createSession, getSession } from '@/lib/session-store';
 import { requireUser } from '@/lib/auth/server';
 import { setSandboxState, setSandboxProvider } from '@/lib/sandbox/sandbox-state';
+import { registerPreviewMapping, buildPreviewUrl } from '@/lib/tenancy/preview-mapping';
+import { prisma } from '@/lib/db/prisma';
 
 // ponytail: global state kept for backward compat
 // Use session-scoped sandboxes via sandboxManager
@@ -65,10 +67,36 @@ export async function POST(request: Request) {
     // Register with sandbox manager keyed by session and user
     sandboxManager.registerSandboxForUser(user.id, session.sandboxId, provider);
 
+    // Get site info for custom preview URL
+    let previewUrl = sandboxInfo.url;
+    let siteSlug: string | null = null;
+
+    if (session.siteId) {
+      const site = await prisma.site.findUnique({
+        where: { id: session.siteId },
+        select: { id: true, slug: true, subdomain: true, userId: true }
+      });
+
+      if (site) {
+        siteSlug = site.slug;
+        // Register preview mapping for the site subdomain
+        registerPreviewMapping(
+          site.subdomain,
+          sandboxInfo.url,
+          session.sandboxId,
+          site.id,
+          site.userId
+        );
+        // Use custom preview URL
+        previewUrl = buildPreviewUrl(site.subdomain);
+        console.log(`[create-ai-sandbox-v2] Preview URL registered: ${site.subdomain} -> ${sandboxInfo.url}`);
+      }
+    }
+
     // Update session with sandbox URL
     const { updateSession } = await import('@/lib/session-store');
     await updateSession(session.id, {
-      sandboxUrl: sandboxInfo.url,
+      sandboxUrl: previewUrl,
       status: 'running',
     });
 
@@ -90,12 +118,15 @@ export async function POST(request: Request) {
     });
 
     console.log(`[create-ai-sandbox-v2] Sandbox ready at: ${sandboxInfo.url} for session ${session.id}`);
+    console.log(`[create-ai-sandbox-v2] Preview URL: ${previewUrl}`);
 
     return NextResponse.json({
       success: true,
       sessionId: session.id,
       sandboxId: session.sandboxId,
       url: sandboxInfo.url,
+      previewUrl: previewUrl,
+      siteSlug: siteSlug,
       provider: sandboxInfo.provider,
       message: 'Sandbox created and Vite React app initialized'
     });
