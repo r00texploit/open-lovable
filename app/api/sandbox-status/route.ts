@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
+import { prisma } from '@/lib/db/prisma';
+import { getSandboxUrlForSubdomain, buildPreviewUrl } from '@/lib/tenancy/preview-mapping';
 
 declare global {
   var activeSandboxProvider: any;
@@ -73,7 +77,7 @@ export async function GET(request: Request) {
     const sandboxExists = !!provider;
 
     let sandboxHealthy = false;
-    let sandboxInfo = null;
+    let sandboxInfo: any = null;
     let needsRecreation = false;
     let healthDetails = null;
 
@@ -88,6 +92,23 @@ export async function GET(request: Request) {
           filesTracked: global.existingFiles ? Array.from(global.existingFiles) : [],
           lastHealthCheck: new Date().toISOString()
         };
+
+        // Check if this sandbox has an associated site for preview URL
+        const serverSession = await getServerSession(authOptions);
+        if (serverSession?.user?.id && sandboxInfo.sandboxId) {
+          const genSession = await prisma.generationSession.findFirst({
+            where: { sandboxId: sandboxInfo.sandboxId, userId: serverSession.user.id },
+            include: { site: { select: { subdomain: true } } },
+          });
+
+          if (genSession?.site?.subdomain) {
+            const sandboxUrlFromMapping = getSandboxUrlForSubdomain(genSession.site.subdomain);
+            if (sandboxUrlFromMapping) {
+              sandboxInfo.previewUrl = buildPreviewUrl(genSession.site.subdomain);
+              console.log('[sandbox-status] Found preview URL:', sandboxInfo.previewUrl);
+            }
+          }
+        }
 
         // Perform actual health check if requested
         if (checkHealth && sandboxInfo.url) {
