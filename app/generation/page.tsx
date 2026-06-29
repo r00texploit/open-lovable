@@ -602,9 +602,20 @@ function AISandboxPage() {
 
   useEffect(() => {
     if (!activeSiteId && sites.length > 0) {
-      setActiveSiteId(sites[0].id);
+      const firstSiteId = sites[0].id;
+      setActiveSiteId(firstSiteId);
+
+      // If sandbox already exists without siteId, update session to associate it
+      if (sandboxData?.sandboxId) {
+        console.log('[site auto-select] Updating existing sandbox session with siteId:', firstSiteId);
+        fetch('/api/generation-session', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ siteId: firstSiteId }),
+        }).catch(err => console.error('[site auto-select] Failed to update session:', err));
+      }
     }
-  }, [activeSiteId, sites]);
+  }, [activeSiteId, sites, sandboxData]);
   
   useEffect(() => {
     // Handle Escape key for home screen
