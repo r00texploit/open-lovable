@@ -1030,10 +1030,11 @@ function AISandboxPage() {
     setScreenshotError(null);
     
     try {
+      console.log('[createSandbox] Creating sandbox with siteId:', activeSiteId);
       const response = await fetch('/api/create-ai-sandbox-v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
+        body: JSON.stringify({ siteId: activeSiteId })
       });
       
       const data = await response.json();
