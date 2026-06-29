@@ -48,6 +48,10 @@ export function isTenantSubdomainHost(hostname: string) {
   }
 
   const subdomain = getSubdomainFromHostname(hostname);
+  // Exclude www subdomain - it should serve the landing page, not tenant sites
+  if (subdomain === 'www') {
+    return false;
+  }
   return !!subdomain;
 }
 
