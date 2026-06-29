@@ -31,11 +31,29 @@ export async function POST(request: Request) {
   let session = await getSession(sessionId);
 
   try {
+    // Parse request body to get optional siteId
+    let requestBody: { siteId?: string } = {};
+    try {
+      requestBody = await request.json();
+    } catch {
+      // No body or invalid JSON, continue with empty object
+    }
+
+    console.log(`[create-ai-sandbox-v2] Request body:`, requestBody);
+    console.log(`[create-ai-sandbox-v2] Session exists:`, !!session, session?.siteId ? `with siteId: ${session.siteId}` : 'without siteId');
+
     if (!session) {
       session = await createSession(user.id, {
         sandboxId: `sb_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`,
         sandboxProvider: process.env.SANDBOX_PROVIDER || 'vercel',
+        siteId: requestBody.siteId || null,
       });
+      console.log(`[create-ai-sandbox-v2] Created new session with siteId:`, requestBody.siteId || null);
+    } else if (requestBody.siteId && !session.siteId) {
+      // Update existing session with siteId if provided
+      const { updateSession } = await import('@/lib/session-store');
+      session = await updateSession(session.id, { siteId: requestBody.siteId });
+      console.log(`[create-ai-sandbox-v2] Updated existing session with siteId:`, requestBody.siteId);
     }
 
     console.log(`[create-ai-sandbox-v2] Creating sandbox for session ${session.id}...`);
@@ -71,11 +89,15 @@ export async function POST(request: Request) {
     let previewUrl = sandboxInfo.url;
     let siteSlug: string | null = null;
 
+    console.log(`[create-ai-sandbox-v2] Checking for site association. session.siteId:`, session.siteId);
+
     if (session.siteId) {
       const site = await prisma.site.findUnique({
         where: { id: session.siteId },
         select: { id: true, slug: true, subdomain: true, userId: true }
       });
+
+      console.log(`[create-ai-sandbox-v2] Found site:`, site ? { id: site.id, slug: site.slug, subdomain: site.subdomain } : null);
 
       if (site) {
         siteSlug = site.slug;
@@ -90,7 +112,12 @@ export async function POST(request: Request) {
         // Use custom preview URL
         previewUrl = buildPreviewUrl(site.subdomain);
         console.log(`[create-ai-sandbox-v2] Preview URL registered: ${site.subdomain} -> ${sandboxInfo.url}`);
+        console.log(`[create-ai-sandbox-v2] Custom preview URL: ${previewUrl}`);
+      } else {
+        console.log(`[create-ai-sandbox-v2] Site not found for siteId:`, session.siteId);
       }
+    } else {
+      console.log(`[create-ai-sandbox-v2] No siteId associated with session`);
     }
 
     // Update session with sandbox URL
