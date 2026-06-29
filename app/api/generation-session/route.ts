@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { prisma } from '@/lib/db/prisma';
+import { buildPreviewUrl, getSandboxUrlForSubdomain } from '@/lib/tenancy/preview-mapping';
 
 // GET /api/generation-session — list user's recent sessions
 export async function GET() {
@@ -26,11 +27,27 @@ export async function GET() {
       siteId: true,
       lastActiveAt: true,
       createdAt: true,
-      site: { select: { id: true, name: true, slug: true } },
+      site: { select: { id: true, name: true, slug: true, subdomain: true } },
     },
   });
 
-  return NextResponse.json({ sessions });
+  // Transform sessions to use custom preview URL if site is associated
+  const transformedSessions = sessions.map(s => {
+    if (s.site?.subdomain) {
+      // Check if there's an active preview mapping
+      const hasPreview = getSandboxUrlForSubdomain(s.site.subdomain);
+      if (hasPreview) {
+        return {
+          ...s,
+          sandboxUrl: buildPreviewUrl(s.site.subdomain),
+          previewUrl: buildPreviewUrl(s.site.subdomain),
+        };
+      }
+    }
+    return s;
+  });
+
+  return NextResponse.json({ sessions: transformedSessions });
 }
 
 // POST /api/generation-session — create or update session by sandboxId
