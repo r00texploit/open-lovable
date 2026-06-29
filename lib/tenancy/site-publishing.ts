@@ -155,7 +155,9 @@ function rewriteIndexHtml(files: Array<{ path: string; content: Buffer; size: nu
 
     const rewritten = file.content
       .toString('utf8')
-      .replace(/(src|href)="\/(assets\/[^"]+)"/g, '$1="./$2"');
+      // Keep absolute paths starting with /assets/
+      // The site-preview route will rewrite these to include the slug prefix
+      .replace(/(src|href)="\/(assets\/[^"]+)"/g, '$1="/$2"');
 
     return {
       ...file,
