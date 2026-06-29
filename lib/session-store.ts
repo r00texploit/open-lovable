@@ -163,6 +163,43 @@ export async function setSessionSandbox(
 }
 
 /**
+ * Get all sandboxes for a user (from their sessions)
+ */
+export async function getUserSandboxes(userId: string): Promise<SandboxSession[]> {
+  const sessions = await prisma.generationSession.findMany({
+    where: {
+      userId,
+      status: { in: ['running', 'creating'] },
+    },
+    orderBy: { lastActiveAt: 'desc' },
+  });
+
+  return sessions.map(s => ({
+    ...s,
+    existingFiles: Array.isArray(s.existingFiles) ? s.existingFiles : [],
+  })) as unknown as SandboxSession[];
+}
+
+/**
+ * Get sandbox by ID with user verification
+ */
+export async function getSandboxWithUser(sandboxId: string, userId: string): Promise<SandboxSession | null> {
+  const session = await prisma.generationSession.findFirst({
+    where: {
+      sandboxId,
+      userId,
+    },
+  });
+
+  if (!session) return null;
+
+  return {
+    ...session,
+    existingFiles: Array.isArray(session.existingFiles) ? session.existingFiles : [],
+  } as unknown as SandboxSession;
+}
+
+/**
  * Add file to session tracking
  */
 export async function addSessionFile(sessionId: string, filePath: string): Promise<void> {

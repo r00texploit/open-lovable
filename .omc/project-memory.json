@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1782497596150,
+  "lastScanned": 1782651061007,
   "projectRoot": "/Users/halim/open-lovable",
   "techStack": {
     "languages": [
@@ -112,7 +112,7 @@
       "path": "app",
       "purpose": "Application code",
       "fileCount": 6,
-      "lastAccessed": 1782497596087,
+      "lastAccessed": 1782651060863,
       "keyFiles": [
         "favicon.ico",
         "globals.css",
@@ -125,7 +125,7 @@
       "path": "atoms",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1782497596087,
+      "lastAccessed": 1782651060864,
       "keyFiles": [
         "sheets.ts"
       ]
@@ -134,7 +134,7 @@
       "path": "components",
       "purpose": "UI components",
       "fileCount": 11,
-      "lastAccessed": 1782497596135,
+      "lastAccessed": 1782651060923,
       "keyFiles": [
         "CodeApplicationProgress.tsx",
         "FirecrawlIcon.tsx",
@@ -147,7 +147,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 1,
-      "lastAccessed": 1782497596137,
+      "lastAccessed": 1782651060935,
       "keyFiles": [
         "app.config.ts"
       ]
@@ -156,14 +156,14 @@
       "path": "design-system",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1782497596140,
+      "lastAccessed": 1782651060938,
       "keyFiles": []
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 6,
-      "lastAccessed": 1782497596141,
+      "lastAccessed": 1782651060940,
       "keyFiles": [
         "FLUID-COMPUTE-SECURITY.md",
         "IMPLEMENTATION-SUMMARY.md",
@@ -176,7 +176,7 @@
       "path": "hooks",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1782497596141,
+      "lastAccessed": 1782651060941,
       "keyFiles": [
         "useSwitchingCode.ts"
       ]
@@ -185,7 +185,7 @@
       "path": "lib",
       "purpose": "Library code",
       "fileCount": 16,
-      "lastAccessed": 1782497596141,
+      "lastAccessed": 1782651060943,
       "keyFiles": [
         "build-validator.ts",
         "context-selector.ts",
@@ -198,21 +198,21 @@
       "path": "open-lovable",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1782497596142,
+      "lastAccessed": 1782651060943,
       "keyFiles": []
     },
     "packages": {
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1782497596143,
+      "lastAccessed": 1782651060945,
       "keyFiles": []
     },
     "prisma": {
       "path": "prisma",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1782497596143,
+      "lastAccessed": 1782651060957,
       "keyFiles": [
         "schema.prisma"
       ]
@@ -221,7 +221,7 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 6,
-      "lastAccessed": 1782497596144,
+      "lastAccessed": 1782651060960,
       "keyFiles": [
         "compressor.json",
         "file.svg",
@@ -234,7 +234,7 @@
       "path": "screenshots",
       "purpose": null,
       "fileCount": 16,
-      "lastAccessed": 1782497596144,
+      "lastAccessed": 1782651060963,
       "keyFiles": [
         "cta.png",
         "faq.png",
@@ -247,7 +247,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 6,
-      "lastAccessed": 1782497596145,
+      "lastAccessed": 1782651060978,
       "keyFiles": [
         "generate-jwt.cjs",
         "init-db.ts",
@@ -260,7 +260,7 @@
       "path": "styles",
       "purpose": null,
       "fileCount": 6,
-      "lastAccessed": 1782497596146,
+      "lastAccessed": 1782651060982,
       "keyFiles": [
         "chrome-bug.css",
         "colors.json",
@@ -273,7 +273,7 @@
       "path": "tests",
       "purpose": "Test files",
       "fileCount": 3,
-      "lastAccessed": 1782497596146,
+      "lastAccessed": 1782651060988,
       "keyFiles": [
         "api-endpoints.test.js",
         "auth-api.test.cjs",
@@ -284,7 +284,7 @@
       "path": "types",
       "purpose": "Type definitions",
       "fileCount": 3,
-      "lastAccessed": 1782497596146,
+      "lastAccessed": 1782651060990,
       "keyFiles": [
         "conversation.ts",
         "file-manifest.ts",
@@ -295,7 +295,7 @@
       "path": "utils",
       "purpose": "Utility functions",
       "fileCount": 3,
-      "lastAccessed": 1782497596147,
+      "lastAccessed": 1782651060992,
       "keyFiles": [
         "init-canvas.ts",
         "set-timeout-on-visible.ts",
@@ -306,28 +306,28 @@
       "path": "app/api",
       "purpose": "API routes",
       "fileCount": 0,
-      "lastAccessed": 1782497596147,
+      "lastAccessed": 1782651060995,
       "keyFiles": []
     },
     "components/app": {
       "path": "components/app",
       "purpose": "Application code",
       "fileCount": 1,
-      "lastAccessed": 1782497596148,
+      "lastAccessed": 1782651061001,
       "keyFiles": []
     },
     "open-lovable/node_modules": {
       "path": "open-lovable/node_modules",
       "purpose": "Dependencies",
       "fileCount": 0,
-      "lastAccessed": 1782497596149,
+      "lastAccessed": 1782651061003,
       "keyFiles": []
     },
     "prisma/migrations": {
       "path": "prisma/migrations",
       "purpose": "Database migrations",
       "fileCount": 2,
-      "lastAccessed": 1782497596149,
+      "lastAccessed": 1782651061004,
       "keyFiles": [
         "add_rls_policies.sql",
         "migration_lock.toml"
@@ -337,7 +337,7 @@
       "path": "styles/components",
       "purpose": "UI components",
       "fileCount": 3,
-      "lastAccessed": 1782497596150,
+      "lastAccessed": 1782651061007,
       "keyFiles": [
         "button.css",
         "code.css",
@@ -348,8 +348,20 @@
   "hotPaths": [
     {
       "path": "lib/sandbox/providers/vercel-provider.ts",
-      "accessCount": 27,
-      "lastAccessed": 1782541008386,
+      "accessCount": 31,
+      "lastAccessed": 1782718419976,
+      "type": "file"
+    },
+    {
+      "path": "lib/sandbox/sandbox-manager.ts",
+      "accessCount": 22,
+      "lastAccessed": 1782725940777,
+      "type": "file"
+    },
+    {
+      "path": "lib/session-store.ts",
+      "accessCount": 19,
+      "lastAccessed": 1782725839076,
       "type": "file"
     },
     {
@@ -365,21 +377,15 @@
       "type": "file"
     },
     {
-      "path": "lib/session-store.ts",
-      "accessCount": 14,
-      "lastAccessed": 1782314268479,
-      "type": "file"
-    },
-    {
       "path": "lib/sandbox/providers/base-provider.ts",
-      "accessCount": 14,
-      "lastAccessed": 1782538950761,
+      "accessCount": 17,
+      "lastAccessed": 1782718468856,
       "type": "file"
     },
     {
-      "path": "lib/sandbox/sandbox-manager.ts",
+      "path": "config/app.config.ts",
       "accessCount": 12,
-      "lastAccessed": 1782536512931,
+      "lastAccessed": 1782655491036,
       "type": "file"
     },
     {
@@ -389,21 +395,21 @@
       "type": "file"
     },
     {
-      "path": "config/app.config.ts",
-      "accessCount": 10,
-      "lastAccessed": 1782532870995,
-      "type": "file"
-    },
-    {
       "path": "package.json",
-      "accessCount": 9,
-      "lastAccessed": 1782498251119,
+      "accessCount": 10,
+      "lastAccessed": 1782651698876,
       "type": "file"
     },
     {
       "path": "prisma/schema.prisma",
-      "accessCount": 9,
-      "lastAccessed": 1782563419381,
+      "accessCount": 10,
+      "lastAccessed": 1782725790404,
+      "type": "file"
+    },
+    {
+      "path": "lib/tenancy/hostname.ts",
+      "accessCount": 8,
+      "lastAccessed": 1782731720793,
       "type": "file"
     },
     {
@@ -419,27 +425,27 @@
       "type": "file"
     },
     {
-      "path": "lib/tenancy/hostname.ts",
-      "accessCount": 4,
-      "lastAccessed": 1782409997469,
-      "type": "file"
-    },
-    {
       "path": "lib/sandbox/factory.ts",
       "accessCount": 4,
       "lastAccessed": 1782494858720,
       "type": "file"
     },
     {
-      "path": "lib/sandbox/providers/e2b-provider.ts",
-      "accessCount": 3,
-      "lastAccessed": 1782267986664,
+      "path": "lib/ai/provider-manager.ts",
+      "accessCount": 4,
+      "lastAccessed": 1782718305146,
       "type": "file"
     },
     {
-      "path": "lib/ai/provider-manager.ts",
+      "path": "lib/sandbox/types.ts",
+      "accessCount": 4,
+      "lastAccessed": 1782725777731,
+      "type": "file"
+    },
+    {
+      "path": "lib/sandbox/providers/e2b-provider.ts",
       "accessCount": 3,
-      "lastAccessed": 1782340555202,
+      "lastAccessed": 1782267986664,
       "type": "file"
     },
     {
@@ -458,12 +464,6 @@
       "path": "lib/edit-intent-analyzer.ts",
       "accessCount": 2,
       "lastAccessed": 1782267743637,
-      "type": "file"
-    },
-    {
-      "path": "lib/sandbox/types.ts",
-      "accessCount": 2,
-      "lastAccessed": 1782267764488,
       "type": "file"
     },
     {

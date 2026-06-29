@@ -23,6 +23,13 @@ import {
   incrementTokenUsage,
 } from '@/lib/usage/token-usage';
 import { getEnhancedSystemPrompt, enhanceUserPrompt } from '@/lib/ai/prompts';
+import {
+  getSandboxState,
+  setSandboxState,
+  initSandboxState,
+  getSandboxFileCache,
+  updateSandboxFile,
+} from '@/lib/sandbox/sandbox-state';
 
 // Force dynamic route to enable streaming
 export const dynamic = 'force-dynamic';
@@ -113,10 +120,14 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
 
-    const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false, uploadedImage, uploadedImages } = await request.json();
+    const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false, uploadedImage, uploadedImages, aiImagesEnabled = false } = await request.json();
 
     // Support both single uploadedImage and array uploadedImages for backwards compatibility
     const imagesToProcess = uploadedImages || (uploadedImage ? [uploadedImage] : []);
+
+    // Get sandbox-scoped state for multi-sandbox support
+    const sandboxId = context?.sandboxId || 'default';
+    const sandboxState = initSandboxState(sandboxId);
 
     console.log('[generate-ai-code-stream] Received request:');
     console.log('[generate-ai-code-stream] - prompt:', prompt);
@@ -238,15 +249,15 @@ export async function POST(request: NextRequest) {
         
         if (isEdit) {
           console.log('[generate-ai-code-stream] Edit mode detected - starting agentic search workflow');
-          console.log('[generate-ai-code-stream] Has fileCache:', !!global.sandboxState?.fileCache);
-          console.log('[generate-ai-code-stream] Has manifest:', !!global.sandboxState?.fileCache?.manifest);
+          console.log('[generate-ai-code-stream] Has fileCache:', !!sandboxState?.fileCache);
+          console.log('[generate-ai-code-stream] Has manifest:', !!sandboxState?.fileCache?.manifest);
           
-          const manifest: FileManifest | undefined = global.sandboxState?.fileCache?.manifest;
+          const manifest: FileManifest | undefined = sandboxState?.fileCache?.manifest;
           
           if (manifest) {
             await sendProgress({ type: 'status', message: '🔍 Creating search plan...' });
             
-            const fileContents = global.sandboxState.fileCache?.files || {};
+            const fileContents = sandboxState.fileCache?.files || {};
             console.log('[generate-ai-code-stream] Files available for search:', Object.keys(fileContents).length);
             
             // STEP 1: Get search plan from AI
@@ -628,7 +639,7 @@ Remember: You are a SURGEON making a precise incision, not an artist repainting 
         }
         
         // Build system prompt with conversation awareness and enhanced design guidelines
-        const baseSystemPrompt = getEnhancedSystemPrompt(isEdit);
+        const baseSystemPrompt = getEnhancedSystemPrompt(isEdit, aiImagesEnabled);
 
         let systemPrompt = `${baseSystemPrompt}
 
@@ -939,14 +950,14 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
           }
           
           // Use backend file cache instead of frontend-provided files
-          let backendFiles = global.sandboxState?.fileCache?.files || {};
+          let backendFiles = sandboxState?.fileCache?.files || {};
           let hasBackendFiles = Object.keys(backendFiles).length > 0;
           
           console.log('[generate-ai-code-stream] Backend file cache status:');
-          console.log('[generate-ai-code-stream] - Has sandboxState:', !!global.sandboxState);
-          console.log('[generate-ai-code-stream] - Has fileCache:', !!global.sandboxState?.fileCache);
+          console.log('[generate-ai-code-stream] - Has sandboxState:', !!sandboxState);
+          console.log('[generate-ai-code-stream] - Has fileCache:', !!sandboxState?.fileCache);
           console.log('[generate-ai-code-stream] - File count:', Object.keys(backendFiles).length);
-          console.log('[generate-ai-code-stream] - Has manifest:', !!global.sandboxState?.fileCache?.manifest);
+          console.log('[generate-ai-code-stream] - Has manifest:', !!sandboxState?.fileCache?.manifest);
           
           // If no backend files and we're in edit mode, try to fetch from sandbox
           if (!hasBackendFiles && isEdit && (global.activeSandbox || context?.sandboxId)) {
@@ -964,16 +975,18 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
                   console.log('[generate-ai-code-stream] Successfully fetched', Object.keys(filesData.files).length, 'files from sandbox');
                   
                   // Initialize sandboxState if needed
-                  if (!global.sandboxState) {
-                    global.sandboxState = {
+                  if (!sandboxState) {
+                    setSandboxState(sandboxId, {
                       fileCache: {
                         files: {},
                         lastSync: Date.now(),
                         sandboxId: context?.sandboxId || 'unknown'
-                      }
-                    } as any;
-                  } else if (!global.sandboxState.fileCache) {
-                    global.sandboxState.fileCache = {
+                      },
+                      sandbox: null,
+                      sandboxData: null,
+                    });
+                  } else if (!sandboxState.fileCache) {
+                    sandboxState.fileCache = {
                       files: {},
                       lastSync: Date.now(),
                       sandboxId: context?.sandboxId || 'unknown'
@@ -983,16 +996,16 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
                   // Store files in cache
                   for (const [path, content] of Object.entries(filesData.files)) {
                     const normalizedPath = path.replace('/home/user/app/', '');
-                    if (global.sandboxState.fileCache) {
-                      global.sandboxState.fileCache.files[normalizedPath] = {
+                    if (sandboxState.fileCache) {
+                      sandboxState.fileCache.files[normalizedPath] = {
                         content: content as string,
                         lastModified: Date.now()
                       };
                     }
                   }
                   
-                  if (filesData.manifest && global.sandboxState.fileCache) {
-                    global.sandboxState.fileCache.manifest = filesData.manifest;
+                  if (filesData.manifest && sandboxState.fileCache) {
+                    sandboxState.fileCache.manifest = filesData.manifest;
                     
                     // Now try to analyze edit intent with the fetched manifest
                     if (!editContext) {
@@ -1023,7 +1036,7 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
                   }
                   
                   // Update variables
-                  backendFiles = global.sandboxState.fileCache?.files || {};
+                  backendFiles = sandboxState.fileCache?.files || {};
                   hasBackendFiles = Object.keys(backendFiles).length > 0;
                   console.log('[generate-ai-code-stream] Updated backend cache with fetched files');
                 }
@@ -1041,8 +1054,8 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
               contextParts.push(`\n${editContext.systemPrompt || enhancedSystemPrompt}\n`);
               
               // Get contents of primary and context files
-              const primaryFileContents = await getFileContents(editContext.primaryFiles, global.sandboxState!.fileCache!.manifest!);
-              const contextFileContents = await getFileContents(editContext.contextFiles, global.sandboxState!.fileCache!.manifest!);
+              const primaryFileContents = await getFileContents(editContext.primaryFiles, sandboxState!.fileCache!.manifest!);
+              const contextFileContents = await getFileContents(editContext.contextFiles, sandboxState!.fileCache!.manifest!);
               
               // Format files for AI
               const formattedFiles = formatFilesForAI(primaryFileContents, contextFileContents);
@@ -1244,22 +1257,14 @@ It's better to have 3 complete files than 10 incomplete files.`;
         // If images were uploaded, convert to multimodal message format and expose
         // real data URLs the generated app can render directly.
         if (imagesToProcess.length > 0) {
-          // Process all images and generate data URLs
-          const imageDataUrls: string[] = [];
           const imageParts: any[] = [];
-          let totalSize = 0;
 
+          // Build stable path list: image-1.jpg, image-2.jpg ... matching what apply-ai-code-stream writes
+          const imagePaths: string[] = [];
           imagesToProcess.forEach((img: any, index: number) => {
             if (img?.base64) {
-              const dataUrl = `data:${img.type || 'image/png'};base64,${img.base64}`;
-              totalSize += dataUrl.length;
-
-              // Only include data URLs for individual images if they're not too large
-              if (dataUrl.length < 500000) {
-                imageDataUrls.push(`IMAGE_${index + 1}_DATA_URL:\n${dataUrl}`);
-              }
-
-              // Add to multimodal content
+              const ext = (img.type || 'image/png').split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+              imagePaths.push(`/images/image-${index + 1}.${ext}`);
               imageParts.push({
                 type: 'image',
                 image: img.base64,
@@ -1268,25 +1273,19 @@ It's better to have 3 complete files than 10 incomplete files.`;
             }
           });
 
-          const dataUrlInstruction =
-            totalSize < 700000
-              ? `
+          const pathList = imagePaths.map((p, i) => `IMAGE_${i + 1}_PATH: ${p}`).join('\n');
 
-UPLOADED_IMAGE_DATA_URLS:
-${imageDataUrls.join('\n\n')}
+          const dataUrlInstruction = `
 
-CRITICAL IMAGE ASSET RULES:
-- The uploaded images are not only inspiration. They are real assets.
-- Use the exact UPLOADED_IMAGE_DATA_URLs above as the src for images in the generated app.
-- Do NOT replace them with text-only blocks, colored placeholder cards, fake labels, stock photos, or generic placeholder images.
-- If you create a gallery, hero image, product/menu image, mood board, or brand-photo strip based on the uploads, at least one visible <img> must use these exact data URLs.
-- Add meaningful alt text from the user's prompt and make the images responsive with object-cover/object-contain as appropriate.`
-              : `
+UPLOADED IMAGE PATHS (use these exact paths as <img src="..."> values):
+${pathList}
 
 CRITICAL IMAGE ASSET RULES:
-- The uploaded images are real visual assets, not just inspiration.
-- The data URLs are too large to safely inline in code, so do not invent placeholder imagery.
-- Build the layout around the uploaded image content and clearly reserve image slots for the provided uploads.`;
+- These images are saved as real files in the app's public directory.
+- Use the exact paths above (e.g. src="/images/image-1.jpg") in every <img> tag or CSS url() that shows one of the uploaded images.
+- Do NOT use data: URIs, do NOT use picsum.photos or placeholder URLs, do NOT invent filenames.
+- Make every used image responsive with className="w-full h-full object-cover" or equivalent.
+- Add meaningful alt text describing the image content.`;
 
           userMessageContent = [
             {

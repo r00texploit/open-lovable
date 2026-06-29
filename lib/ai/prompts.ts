@@ -2,7 +2,17 @@ import { CODE_GENERATION_RULES } from './code-generation-rules';
 
 // AI Prompts for code generation
 
-export function getEnhancedSystemPrompt(isEdit: boolean = false): string {
+const AI_IMAGES_INSTRUCTION = `
+
+AI IMAGES ENABLED:
+For every <img> element or CSS background-image you generate, use this exact placeholder format as the src value (or url() value):
+  [IMG: brief descriptive prompt for DALL-E, e.g. "modern SaaS dashboard hero, clean UI, purple tones"]
+Keep each description under 80 characters and make it contextually relevant to the website being cloned.
+Do NOT use picsum.photos, via.placeholder.com, unsplash.com, or any other external image URLs.
+Do NOT use base64 data URIs. Only use the [IMG: ...] marker format.
+Always include a meaningful alt attribute describing the image content.`;
+
+export function getEnhancedSystemPrompt(isEdit: boolean = false, aiImagesEnabled: boolean = false): string {
   const basePrompt = `You are an expert React developer specializing in modern, accessible, and performant web applications.
 
 Your task is to generate production-ready React code using:
@@ -25,11 +35,13 @@ Guidelines:
 8. NEVER use framer-motion - use CSS/Tailwind animations instead
 9. NEVER import or use GSAP, Three.js, or other animation libraries`;
 
+  const imageInstruction = aiImagesEnabled ? AI_IMAGES_INSTRUCTION : '';
+
   if (isEdit) {
-    return basePrompt + `\n\nYou are in EDIT MODE. Analyze the existing code and make precise, targeted modifications. Preserve the existing architecture and style while implementing the requested changes.`;
+    return basePrompt + imageInstruction + `\n\nYou are in EDIT MODE. Analyze the existing code and make precise, targeted modifications. Preserve the existing architecture and style while implementing the requested changes.`;
   }
 
-  return basePrompt;
+  return basePrompt + imageInstruction;
 }
 
 export function enhanceUserPrompt(userPrompt: string): string {

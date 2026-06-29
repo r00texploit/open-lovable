@@ -175,7 +175,9 @@ export class VercelProvider extends BaseSandboxProvider {
 
     const fullPath = this.getFullPath(path);
     console.log(`[VercelProvider] Full path: ${fullPath}`);
-    const buffer = Buffer.from(content, 'utf-8');
+    // Detect base64 content (used for images) vs regular text files
+    const isBase64 = fullPath.includes('/images/') && !content.includes('\n') && /^[A-Za-z0-9+/=]+$/.test(content);
+    const buffer = isBase64 ? Buffer.from(content, 'base64') : Buffer.from(content, 'utf-8');
 
     console.log(`[VercelProvider] Calling sandbox.writeFiles for ${fullPath}`);
     await this.sandbox.writeFiles([{

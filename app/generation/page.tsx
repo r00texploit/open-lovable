@@ -8,6 +8,8 @@ import Image from 'next/image';
 import { appConfig } from '@/config/app.config';
 import HeroInput from '@/components/HeroInput';
 import SidebarInput from '@/components/app/generation/SidebarInput';
+import AiImagesToggle from '@/components/app/generation/AiImagesToggle';
+import { processGeneratedCodeForImages } from '@/lib/ai/image-generator';
 import BrandSelect from '@/components/app/generation/BrandSelect';
 import { NoeronLogo } from '@/components/brand/noeron-logo';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -118,6 +120,8 @@ function AISandboxPage() {
   ]);
   const [aiChatInput, setAiChatInput] = useState('');
   const [aiEnabled] = useState(true);
+  const [aiImagesEnabled, setAiImagesEnabled] = useState(false);
+  const canUseAiImages = ['plus', 'team'].includes(session?.user?.subscription?.tier ?? '');
   const [chatUploadedImages, setChatUploadedImages] = useState<{ base64: string; type: string; name: string }[]>([]);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -167,12 +171,14 @@ function AISandboxPage() {
     appliedCode: Array<{ files: string[]; timestamp: Date }>;
     currentProject: string;
     lastGeneratedCode?: string;
+    uploadedImages?: Array<{ base64: string; type: string; name: string }>;
   }>({
     scrapedWebsites: [],
     generatedComponents: [],
     appliedCode: [],
     currentProject: '',
-    lastGeneratedCode: undefined
+    lastGeneratedCode: undefined,
+    uploadedImages: undefined
   });
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -1413,7 +1419,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             appliedCode: [...prev.appliedCode, {
               files: changedFiles,
               timestamp: new Date()
-            }]
+            }],
+            uploadedImages: undefined
           }));
           
           // Update the chat message to show success
@@ -2343,6 +2350,12 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     const imagesToSend = chatUploadedImages;
     setChatUploadedImages([]);
 
+    // Store images in context for apply phase
+    setConversationContext(prev => ({
+      ...prev,
+      uploadedImages: imagesToSend.length > 0 ? imagesToSend : undefined
+    }));
+
     // Check for special commands
     const lowerMessage = message.toLowerCase().trim();
     if (lowerMessage === 'check packages' || lowerMessage === 'install packages' || lowerMessage === 'npm install') {
@@ -2418,7 +2431,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           model: aiModel,
           context: fullContext,
           isEdit: conversationContext.appliedCode.length > 0,
-          uploadedImages: imagesToSend.length > 0 ? imagesToSend : undefined
+          uploadedImages: imagesToSend.length > 0 ? imagesToSend : undefined,
+          aiImagesEnabled
         })
       });
       
@@ -2743,7 +2757,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             isEdit,
             sandboxId: activeSandboxData.sandboxId
           });
-          await applyGeneratedCode(generatedCode, isEdit, activeSandboxData !== sandboxData ? activeSandboxData : undefined, uploadedImages);
+          let codeToApply = generatedCode;
+          if (aiImagesEnabled) {
+            addChatMessage('Generating AI images for the website...', 'system');
+            codeToApply = await processGeneratedCodeForImages(generatedCode, (done, total) => {
+              addChatMessage(`Generating image ${done} of ${total}...`, 'system');
+            });
+          }
+          await applyGeneratedCode(codeToApply, isEdit, activeSandboxData !== sandboxData ? activeSandboxData : undefined, conversationContext.uploadedImages);
         } else {
           console.error('[startGeneration] NOT calling applyGeneratedCode - missing:', {
             activeSandboxData: !!activeSandboxData,
@@ -2847,7 +2868,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     
     addChatMessage('Re-applying last generation...', 'system');
     const isEdit = conversationContext.appliedCode.length > 0;
-    await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit, undefined, uploadedImages);
+    await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit, undefined, conversationContext.uploadedImages);
   };
 
   // Auto-scroll code display to bottom when streaming
@@ -3677,7 +3698,8 @@ Focus on the key sections and content, making it clean and modern.`;
               structure: structureContent,
               conversationContext: conversationContext
             },
-            uploadedImages: uploadedImages.length > 0 ? uploadedImages : undefined
+            uploadedImages: uploadedImages.length > 0 ? uploadedImages : undefined,
+            aiImagesEnabled
           })
         });
         
@@ -4003,6 +4025,14 @@ Focus on the key sections and content, making it clean and modern.`;
           <span className={`hidden sm:inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${status.active ? 'bg-warm-100 text-warm-800' : 'bg-warm-200 text-warm-600'}`}>
             {status.text}
           </span>
+          <div className="hidden sm:block">
+            <AiImagesToggle
+              enabled={aiImagesEnabled}
+              onChange={setAiImagesEnabled}
+              canUse={canUseAiImages}
+              disabled={loading || generationProgress.isGenerating}
+            />
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <ToolbarButton
