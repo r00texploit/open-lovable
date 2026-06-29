@@ -1,0 +1,7 @@
+{
+  "tool_name": "Read",
+  "tool_input_preview": "{\"file_path\":\"/Users/halim/open-lovable/lib/sandbox/providers/vercel-sandbox.ts\",\"limit\":100}",
+  "error": "File does not exist. Note: your current working directory is /Users/halim/open-lovable.",
+  "timestamp": "2026-06-29T15:51:10.421Z",
+  "retry_count": 1
+}
