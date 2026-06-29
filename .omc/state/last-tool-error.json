@@ -1,7 +1,0 @@
-{
-  "tool_name": "StructuredOutput",
-  "tool_input_preview": "{\"refuted\":true,\"confidence\":0.95,\"evidence\":\"**REFUTATION EVIDENCE:**\\n\\n1. **Source code contradicts claim**: The actual TypeScript source code in the Vercel Sandbox SDK shows `writeFiles()` accepts...",
-  "error": "Output does not match required schema: /confidence: must be equal to one of the allowed values",
-  "timestamp": "2026-06-29T16:54:38.440Z",
-  "retry_count": 6
-}
