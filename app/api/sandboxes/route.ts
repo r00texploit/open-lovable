@@ -9,6 +9,8 @@ import {
 } from '@/lib/session-store';
 import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 import { SandboxFactory } from '@/lib/sandbox/factory';
+import { registerPreviewMapping, buildPreviewUrl, removePreviewMapping } from '@/lib/tenancy/preview-mapping';
+import { prisma } from '@/lib/db/prisma';
 
 /**
  * GET /api/sandboxes
@@ -96,10 +98,35 @@ export async function POST(request: NextRequest) {
     // Register with sandbox manager for the user
     sandboxManager.registerSandboxForUser(session.user.id, sandboxId, provider);
 
+    // Check if this sandbox is associated with a site for custom preview URL
+    let previewUrl = sandboxInfo.url;
+    let siteSlug: string | null = null;
+
+    if (dbSession.siteId) {
+      const site = await prisma.site.findUnique({
+        where: { id: dbSession.siteId },
+        select: { id: true, slug: true, subdomain: true, userId: true }
+      });
+
+      if (site) {
+        siteSlug = site.slug;
+        // Register preview mapping for the site subdomain
+        registerPreviewMapping(
+          site.subdomain,
+          sandboxInfo.url,
+          sandboxId,
+          site.id,
+          site.userId
+        );
+        // Use custom preview URL
+        previewUrl = buildPreviewUrl(site.subdomain);
+      }
+    }
+
     // Update session with sandbox URL
     const { updateSession } = await import('@/lib/session-store');
     await updateSession(dbSession.id, {
-      sandboxUrl: sandboxInfo.url,
+      sandboxUrl: previewUrl,
       status: 'running',
     });
 
@@ -109,6 +136,8 @@ export async function POST(request: NextRequest) {
         id: dbSession.id,
         sandboxId,
         url: sandboxInfo.url,
+        previewUrl,
+        siteSlug,
         provider: sandboxInfo.provider,
         status: 'running',
         name,
@@ -155,6 +184,23 @@ export async function DELETE(request: NextRequest) {
 
         if (!sandboxSession) {
           return { sandboxId, success: false, error: 'Not found or access denied' };
+        }
+
+        // Remove preview mapping if exists
+        try {
+          const { getSandboxWithUser } = await import('@/lib/session-store');
+          const sandboxSession = await getSandboxWithUser(sandboxId, session.user.id);
+          if (sandboxSession?.siteId) {
+            const site = await prisma.site.findUnique({
+              where: { id: sandboxSession.siteId },
+              select: { subdomain: true }
+            });
+            if (site) {
+              removePreviewMapping(site.subdomain);
+            }
+          }
+        } catch (e) {
+          console.warn(`[sandboxes] Failed to remove preview mapping for ${sandboxId}:`, e);
         }
 
         // Terminate the sandbox if it's running
