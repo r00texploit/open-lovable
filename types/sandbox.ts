@@ -21,11 +21,20 @@ export interface SandboxState {
   } | null;
 }
 
-// Declare global types
+// Map-based global state for multi-sandbox support
+interface SandboxStateMap {
+  sandboxes: Map<string, SandboxState>;
+  activeSandboxIds: Map<string, string>; // userId -> active sandboxId
+}
+
+// Declare global types - legacy singletons for backward compat
 declare global {
   var activeSandbox: any;
   var sandboxState: SandboxState;
   var existingFiles: Set<string>;
+  // New multi-sandbox aware state
+  var sandboxStateMap: Map<string, SandboxState>; // sandboxId -> state
+  var activeSandboxMap: Map<string, any>; // sandboxId -> provider
 }
 
 export {};

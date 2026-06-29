@@ -4,6 +4,7 @@ import type { SandboxState } from '@/types/sandbox';
 import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 import { createSession, getSession } from '@/lib/session-store';
 import { requireUser } from '@/lib/auth/server';
+import { setSandboxState, setSandboxProvider } from '@/lib/sandbox/sandbox-state';
 
 // ponytail: global state kept for backward compat
 // Use session-scoped sandboxes via sandboxManager
@@ -16,18 +17,18 @@ declare global {
 }
 
 export async function POST(request: Request) {
+  // Get authenticated user first (outside try for error handling)
+  const authResult = await requireUser();
+  if (!authResult) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const { user } = authResult;
+
+  // Get or create session
+  const sessionId = request.headers.get('x-session-id') || crypto.randomUUID();
+  let session = await getSession(sessionId);
+
   try {
-    // Get authenticated user
-    const authResult = await requireUser();
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const { user } = authResult;
-
-    // Get or create session
-    const sessionId = request.headers.get('x-session-id') || crypto.randomUUID();
-    let session = await getSession(sessionId);
-
     if (!session) {
       session = await createSession(user.id, {
         sandboxId: `sb_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`,
@@ -48,22 +49,10 @@ export async function POST(request: Request) {
       }
     }
     
-    // Also clean up legacy global state
-    if (global.activeSandboxProvider) {
-      try {
-        await global.activeSandboxProvider.terminate();
-      } catch (e) {
-        console.error('Failed to terminate legacy global sandbox:', e);
-      }
-      global.activeSandboxProvider = null;
-      global.activeSandbox = null;
-    }
-    
-    // Clear existing files tracking
-    if (global.existingFiles) {
-      global.existingFiles.clear();
-    } else {
-      global.existingFiles = new Set<string>();
+    // Clean up sandbox-scoped state for this session's previous sandbox
+    if (session.sandboxId) {
+      const { deleteSandboxState } = await import('@/lib/sandbox/sandbox-state');
+      deleteSandboxState(session.sandboxId);
     }
 
     // Create new sandbox using factory
@@ -73,8 +62,8 @@ export async function POST(request: Request) {
     console.log('[create-ai-sandbox-v2] Setting up Vite React app...');
     await provider.setupViteApp();
     
-    // Register with sandbox manager keyed by session
-    sandboxManager.registerSandbox(session.sandboxId, provider);
+    // Register with sandbox manager keyed by session and user
+    sandboxManager.registerSandboxForUser(user.id, session.sandboxId, provider);
 
     // Update session with sandbox URL
     const { updateSession } = await import('@/lib/session-store');
@@ -83,16 +72,11 @@ export async function POST(request: Request) {
       status: 'running',
     });
 
-    // Also store in legacy global state for backward compatibility
-    global.activeSandboxProvider = provider;
-    global.activeSandbox = provider;
-    global.sandboxData = {
-      sandboxId: session.sandboxId,
-      url: sandboxInfo.url
-    };
+    // Store in sandbox-scoped state for multi-sandbox support
+    setSandboxProvider(session.sandboxId, provider);
 
     // Initialize sandbox state
-    global.sandboxState = {
+    setSandboxState(session.sandboxId, {
       fileCache: {
         files: {},
         lastSync: Date.now(),
@@ -103,7 +87,7 @@ export async function POST(request: Request) {
         sandboxId: session.sandboxId,
         url: sandboxInfo.url
       }
-    };
+    });
 
     console.log(`[create-ai-sandbox-v2] Sandbox ready at: ${sandboxInfo.url} for session ${session.id}`);
 
@@ -118,18 +102,9 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('[create-ai-sandbox-v2] Error:', error);
-    
-    // Clean up on error
-    await sandboxManager.terminateAll();
-    if (global.activeSandboxProvider) {
-      try {
-        await global.activeSandboxProvider.terminate();
-      } catch (e) {
-        console.error('Failed to terminate sandbox on error:', e);
-      }
-      global.activeSandboxProvider = null;
-      global.activeSandbox = null;
-    }
+
+    // Clean up on error - terminate user's sandboxes
+    await sandboxManager.terminateUserSandboxes(user.id);
     
     return NextResponse.json(
       { 

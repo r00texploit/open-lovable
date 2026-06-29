@@ -5,6 +5,14 @@ import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
 import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 import { sanitizeLucideImports } from '@/lib/ai/sanitize-lucide-imports';
+import {
+  getSandboxState,
+  setSandboxState,
+  initSandboxState,
+  updateSandboxFile,
+  getSandboxProvider,
+  setSandboxProvider,
+} from '@/lib/sandbox/sandbox-state';
 
 declare global {
   var conversationState: ConversationState | null;
@@ -267,6 +275,10 @@ export async function POST(request: NextRequest) {
   try {
     const { response, isEdit = false, packages = [], sandboxId, uploadedImages } = await request.json();
 
+    // Initialize sandbox-scoped state for multi-sandbox support
+    const effectiveSandboxId = sandboxId || 'default';
+    const sandboxState = initSandboxState(effectiveSandboxId);
+
     if (!response) {
       return NextResponse.json({
         error: 'response is required'
@@ -307,9 +319,9 @@ export async function POST(request: NextRequest) {
     // Try to get provider from sandbox manager first
     let provider = sandboxId ? sandboxManager.getProvider(sandboxId) : sandboxManager.getActiveProvider();
 
-    // Fall back to global state if not found in manager
+    // Fall back to sandbox-scoped state if not found in manager
     if (!provider) {
-      provider = global.activeSandboxProvider;
+      provider = getSandboxProvider(effectiveSandboxId);
     }
 
     // If we have a sandboxId but no provider, try to get or create one
@@ -328,8 +340,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Update legacy global state
-        global.activeSandboxProvider = provider;
-        global.activeSandbox = provider;
+        setSandboxProvider(effectiveSandboxId, provider);
+        // Legacy: global.activeSandbox = provider;
         console.log(`[apply-ai-code-stream] Successfully got provider for sandbox ${sandboxId}`);
       } catch (providerError) {
         console.error(`[apply-ai-code-stream] Failed to get or create provider for sandbox ${sandboxId}:`, providerError);
@@ -363,8 +375,8 @@ export async function POST(request: NextRequest) {
         sandboxManager.registerSandbox(sandboxInfo.sandboxId, provider);
 
         // Store in legacy global state
-        global.activeSandboxProvider = provider;
-        global.activeSandbox = provider;
+        setSandboxProvider(effectiveSandboxId, provider);
+        // Legacy: global.activeSandbox = provider;
         global.sandboxData = {
           sandboxId: sandboxInfo.sandboxId,
           url: sandboxInfo.url
@@ -726,8 +738,8 @@ export async function POST(request: NextRequest) {
             }
 
             // Update file cache
-            if (global.sandboxState?.fileCache) {
-              global.sandboxState.fileCache.files[normalizedPath] = {
+            if (sandboxState?.fileCache) {
+              sandboxState.fileCache.files[normalizedPath] = {
                 content: fileContent,
                 lastModified: Date.now()
               };
@@ -769,18 +781,24 @@ export async function POST(request: NextRequest) {
             // Create public/images directory
             await providerInstance.runCommand('mkdir -p public/images');
 
-            for (const img of uploadedImages) {
-              if (img.base64 && img.name) {
-                // Generate a clean filename from the original name
-                const cleanName = img.name
-                  .toLowerCase()
-                  .replace(/\s+/g, '-')
-                  .replace(/[^a-z0-9.-]/g, '');
-                const imagePath = `public/images/${cleanName}`;
+            const ALLOWED_EXT: Record<string, string> = {
+              png: 'png', jpeg: 'jpg', jpg: 'jpg',
+              gif: 'gif', webp: 'webp', avif: 'avif',
+            };
 
-                // Decode base64 and write to file
-                const imageBuffer = Buffer.from(img.base64, 'base64');
-                await providerInstance.writeFile(imagePath, imageBuffer.toString('binary'));
+            for (let i = 0; i < uploadedImages.length; i++) {
+              const img = uploadedImages[i];
+              if (img.base64) {
+                // Strict allowlist — never interpolate user-supplied MIME into shell
+                const mimeSubtype = (img.type || '').split('/')[1]?.toLowerCase() ?? '';
+                const ext = ALLOWED_EXT[mimeSubtype] ?? 'png';
+
+                // Index-based stable names (no user input in path)
+                const imageName = `image-${i + 1}.${ext}`;
+                const imagePath = `public/images/${imageName}`;
+
+                // Pass base64 directly — provider will decode for binary files
+                await providerInstance.writeFile(imagePath, img.base64);
 
                 console.log(`[apply-ai-code-stream] Saved uploaded image: ${imagePath}`);
                 await sendProgress({

@@ -49,6 +49,14 @@ CRITICAL RULES FOR CODE GENERATION - VIOLATIONS WILL CAUSE CRASHES:
 10. If you need complex animations: Use CSS @keyframes in a style tag or Tailwind animate utilities.
 
 Remember: The sandbox has limited resources. Simple CSS animations work better and never crash.
+
+11. NEVER generate fake local image paths like /images/menu/photo.png or /assets/hero.jpg.
+    These files do not exist in the sandbox and will 404.
+    WRONG: <img src="/images/menu/hot-coffee.png" />
+    WRONG: <img src="/assets/hero.jpg" />
+    CORRECT (no uploaded images): Use a colored div or inline SVG as a placeholder.
+    CORRECT (uploaded images provided): Use only the exact /images/image-N.ext paths given to you.
+    If you need a background image for design, use a CSS gradient or solid color instead.
 `;
 
 /**

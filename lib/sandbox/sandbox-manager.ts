@@ -15,6 +15,8 @@ interface SandboxInfo {
 class SandboxManager {
   private sandboxes: Map<string, SandboxInfo> = new Map();
   private activeSandboxId: string | null = null;
+  private operationLocks: Map<string, Promise<any>> = new Map();
+  private userSandboxes: Map<string, Set<string>> = new Map(); // userId -> Set of sandboxIds
 
   /**
    * Get or create a sandbox provider for the given sandbox ID
@@ -239,17 +241,122 @@ class SandboxManager {
   async cleanup(maxAge: number = 3600000): Promise<void> {
     const now = new Date();
     const toDelete: string[] = [];
-    
+
     for (const [id, info] of this.sandboxes.entries()) {
       const age = now.getTime() - info.lastAccessed.getTime();
       if (age > maxAge) {
         toDelete.push(id);
       }
     }
-    
+
     for (const id of toDelete) {
       await this.terminateSandbox(id);
     }
+  }
+
+  /**
+   * Get all sandboxes for a user
+   */
+  getUserSandboxes(userId: string): SandboxInfo[] {
+    const sandboxIds = this.userSandboxes.get(userId);
+    if (!sandboxIds) return [];
+
+    return Array.from(sandboxIds)
+      .map(id => this.sandboxes.get(id))
+      .filter((info): info is SandboxInfo => !!info);
+  }
+
+  /**
+   * Register a sandbox for a specific user
+   */
+  registerSandboxForUser(userId: string, sandboxId: string, provider: SandboxProvider): void {
+    // Register in main sandboxes map
+    this.registerSandbox(sandboxId, provider);
+
+    // Track for user
+    if (!this.userSandboxes.has(userId)) {
+      this.userSandboxes.set(userId, new Set());
+    }
+    this.userSandboxes.get(userId)!.add(sandboxId);
+
+    console.log(`[SandboxManager] Registered sandbox ${sandboxId} for user ${userId}`);
+  }
+
+  /**
+   * Execute an operation with exclusive lock on a sandbox
+   * Prevents concurrent operations on the same sandbox
+   */
+  async withSandboxLock<T>(
+    sandboxId: string,
+    operation: () => Promise<T>
+  ): Promise<T> {
+    // Wait for any existing operation on this sandbox
+    while (this.operationLocks.has(sandboxId)) {
+      try {
+        await this.operationLocks.get(sandboxId);
+      } catch {
+        // Previous operation failed, continue
+      }
+    }
+
+    // Create lock for this operation
+    const operationPromise = operation();
+    this.operationLocks.set(sandboxId, operationPromise);
+
+    try {
+      const result = await operationPromise;
+      return result;
+    } finally {
+      this.operationLocks.delete(sandboxId);
+    }
+  }
+
+  /**
+   * Check if a sandbox is currently being operated on
+   */
+  isSandboxLocked(sandboxId: string): boolean {
+    return this.operationLocks.has(sandboxId);
+  }
+
+  /**
+   * Get count of active sandboxes for a user
+   */
+  getUserSandboxCount(userId: string): number {
+    return this.userSandboxes.get(userId)?.size ?? 0;
+  }
+
+  /**
+   * Terminate all sandboxes for a user
+   */
+  async terminateUserSandboxes(userId: string): Promise<void> {
+    const sandboxIds = this.userSandboxes.get(userId);
+    if (!sandboxIds) return;
+
+    const promises = Array.from(sandboxIds).map(async (sandboxId) => {
+      try {
+        await this.terminateSandbox(sandboxId);
+      } catch (error) {
+        console.error(`[SandboxManager] Failed to terminate sandbox ${sandboxId}:`, error);
+      }
+    });
+
+    await Promise.all(promises);
+    this.userSandboxes.delete(userId);
+  }
+
+  /**
+   * Get all active sandbox IDs
+   */
+  getAllSandboxIds(): string[] {
+    return Array.from(this.sandboxes.keys());
+  }
+
+  /**
+   * Check if user has reached sandbox limit
+   */
+  hasReachedSandboxLimit(userId: string, limit: number = 5): boolean {
+    const count = this.getUserSandboxCount(userId);
+    return count >= limit;
   }
 }
 

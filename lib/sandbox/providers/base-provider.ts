@@ -128,19 +128,33 @@ export abstract class BaseSandboxProvider extends SandboxProvider {
       await this.executeCommand('mkdir', ['-p', dir]);
     }
 
-    // Escape content for shell
-    const escapedContent = content
-      .replace(/\\/g, '\\\\')
-      .replace(/"/g, '\\"')
-      .replace(/\$/g, '\\$')
-      .replace(/`/g, '\\`')
-      .replace(/\n/g, '\\n');
+    // Detect base64 content (used for images)
+    const isBase64 = fullPath.includes('/images/')
+      && !content.includes('\n')
+      && /^[A-Za-z0-9+/=]+$/.test(content);
 
-    await this.executeCommand(
-      'bash',
-      ['-c', `printf '%s' "${escapedContent}" > "${fullPath}"`],
-      this.workingDirectory
-    );
+    if (isBase64) {
+      // Use base64 decoding for binary files
+      await this.executeCommand(
+        'bash',
+        ['-c', `echo "${content}" | base64 -d > "${fullPath}"`],
+        this.workingDirectory
+      );
+    } else {
+      // Escape content for shell (text files)
+      const escapedContent = content
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\$/g, '\\$')
+        .replace(/`/g, '\\`')
+        .replace(/\n/g, '\\n');
+
+      await this.executeCommand(
+        'bash',
+        ['-c', `printf '%s' "${escapedContent}" > "${fullPath}"`],
+        this.workingDirectory
+      );
+    }
   }
 
   /**

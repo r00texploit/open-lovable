@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"git push\",\"description\":\"Push changes\"}",
+  "error": "Exit code 1\nremote: error: Trace: c49925aad783fde26becb57417c7a31349d1c682ec9a295fced3e9b9290a3575        \nremote: error: See https://gh.io/lfs for more information.        \nremote: error: File Archive.zip is 360.20 MB; this exceeds GitHub's file size limit of 100.00 MB        \nremote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        \nTo https://github.com/r00texploit/open-lovable.git\n ! [remote rejected] claude/festive-turing-Rs...",
+  "timestamp": "2026-06-29T11:17:32.273Z",
+  "retry_count": 1
+}
