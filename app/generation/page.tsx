@@ -993,7 +993,13 @@ function AISandboxPage() {
 
       if (data.active && data.healthy && data.sandboxData) {
         console.log('[checkSandboxStatus] Setting sandboxData from API:', data.sandboxData);
-        setSandboxData(data.sandboxData);
+        // Merge with existing sandboxData to preserve previewUrl
+        setSandboxData(prev => ({
+          ...(prev || {}),
+          ...data.sandboxData,
+          // Keep previewUrl if it exists in current data and API doesn't return one
+          previewUrl: data.sandboxData.previewUrl || (prev?.previewUrl),
+        }));
         updateStatus('Sandbox active', true);
       } else if (data.active && !data.healthy) {
         // Sandbox exists but not responding
