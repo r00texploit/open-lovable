@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Get active sandbox from global state (in production, use a proper state management solution)
-declare global {
-  var activeSandbox: any;
-}
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
 export async function POST(request: NextRequest) {
   try {
-    const { command } = await request.json();
+    const { command, sandboxId } = await request.json();
     
     if (!command) {
       return NextResponse.json({ 
@@ -16,29 +12,17 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    if (!global.activeSandbox) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No active sandbox' 
-      }, { status: 400 });
+    const resolved = await resolveRequestSandbox(sandboxId);
+
+    if (!resolved.ok) {
+      return resolved.response;
     }
     
-    console.log(`[run-command] Executing: ${command}`);
+    console.log(`[run-command] Executing in ${resolved.value.sandboxId}: ${command}`);
     
-    // Parse command and arguments
-    const commandParts = command.trim().split(/\s+/);
-    const cmd = commandParts[0];
-    const args = commandParts.slice(1);
-    
-    // Execute command using Vercel Sandbox
-    const result = await global.activeSandbox.runCommand({
-      cmd,
-      args
-    });
-    
-    // Get output streams
-    const stdout = await result.stdout();
-    const stderr = await result.stderr();
+    const result = await resolved.value.provider.runCommand(command);
+    const stdout = result.stdout || '';
+    const stderr = result.stderr || '';
     
     const output = [
       stdout ? `STDOUT:\n${stdout}` : '',

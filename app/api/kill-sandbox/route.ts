@@ -1,35 +1,31 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
+import { deleteSandboxState } from '@/lib/sandbox/sandbox-state';
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
-declare global {
-  var activeSandboxProvider: any;
-  var sandboxData: any;
-  var existingFiles: Set<string>;
-}
-
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    console.log('[kill-sandbox] Stopping active sandbox...');
+    const body = await request.json().catch(() => ({}));
+    const sandboxId = body?.sandboxId;
+    const resolved = await resolveRequestSandbox(sandboxId);
+
+    if (!resolved.ok) {
+      return resolved.response;
+    }
+
+    console.log('[kill-sandbox] Stopping sandbox:', resolved.value.sandboxId);
 
     let sandboxKilled = false;
 
-    // Stop existing sandbox if any
-    if (global.activeSandboxProvider) {
-      try {
-        await global.activeSandboxProvider.terminate();
-        sandboxKilled = true;
-        console.log('[kill-sandbox] Sandbox stopped successfully');
-      } catch (e) {
-        console.error('[kill-sandbox] Failed to stop sandbox:', e);
-      }
-      global.activeSandboxProvider = null;
-      global.sandboxData = null;
+    try {
+      await sandboxManager.terminateSandbox(resolved.value.sandboxId);
+      deleteSandboxState(resolved.value.sandboxId);
+      sandboxKilled = true;
+      console.log('[kill-sandbox] Sandbox stopped successfully');
+    } catch (e) {
+      console.error('[kill-sandbox] Failed to stop sandbox:', e);
     }
-    
-    // Clear existing files tracking
-    if (global.existingFiles) {
-      global.existingFiles.clear();
-    }
-    
+
     return NextResponse.json({
       success: true,
       sandboxKilled,

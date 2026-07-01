@@ -1,15 +1,8 @@
 import { NextResponse } from 'next/server';
 import { parseJavaScriptFile, buildComponentTree } from '@/lib/file-parser';
 import { FileManifest, FileInfo, RouteInfo } from '@/types/file-manifest';
-import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
-import type { SandboxState } from '@/types/sandbox';
-// SandboxState type used implicitly through global.activeSandbox
-
-declare global {
-  var activeSandbox: any;
-  var activeSandboxProvider: any;
-  var sandboxState: SandboxState;
-}
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
+import { getSandboxState } from '@/lib/sandbox/sandbox-state';
 
 function shellQuote(value: string) {
   return `'${value.replace(/'/g, `'\\''`)}'`;
@@ -22,40 +15,19 @@ async function commandStdout(sandbox: any, command: string) {
   return { stdout: stdout || '', exitCode };
 }
 
-function cachedFilesFromState() {
-  const rawFiles = global.sandboxState?.fileCache?.files;
-  if (!rawFiles || typeof rawFiles !== 'object') return null;
-
-  return Object.fromEntries(
-    Object.entries(rawFiles).map(([path, value]: [string, any]) => [
-      path,
-      typeof value === 'string' ? value : value?.content ?? '',
-    ]).filter(([, content]) => typeof content === 'string')
-  ) as Record<string, string>;
-}
-
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const sandbox = global.activeSandbox || global.activeSandboxProvider || sandboxManager.getActiveProvider();
-    if (!sandbox) {
-      const cachedFiles = cachedFilesFromState();
-      if (cachedFiles && Object.keys(cachedFiles).length > 0) {
-        return NextResponse.json({
-          success: true,
-          files: cachedFiles,
-          structure: '',
-          fileCount: Object.keys(cachedFiles).length,
-          manifest: buildManifest(cachedFiles),
-          fromCache: true,
-        });
-      }
-      return NextResponse.json({
-        success: false,
-        error: 'No active sandbox'
-      }, { status: 404 });
+    const { searchParams } = new URL(request.url);
+    const sandboxId = searchParams.get('sandboxId') || searchParams.get('sandbox');
+    const resolved = await resolveRequestSandbox(sandboxId);
+
+    if (!resolved.ok) {
+      return resolved.response;
     }
 
-    console.log('[get-sandbox-files] Fetching and analyzing file structure...');
+    const { provider: sandbox } = resolved.value;
+
+    console.log('[get-sandbox-files] Fetching and analyzing file structure for sandbox:', resolved.value.sandboxId);
 
     // Get code files and image files separately
     const getFilesList = async () => {
@@ -134,9 +106,16 @@ export async function GET() {
 
     const fileManifest = buildManifest(filesContent);
 
-    // Update global file cache with manifest
-    if (global.sandboxState?.fileCache) {
-      global.sandboxState.fileCache.manifest = fileManifest;
+    const sandboxState = getSandboxState(resolved.value.sandboxId);
+    if (sandboxState?.fileCache) {
+      sandboxState.fileCache.manifest = fileManifest;
+      sandboxState.fileCache.files = Object.fromEntries(
+        Object.entries(filesContent).map(([path, content]) => [
+          path,
+          { content, lastModified: Date.now() },
+        ])
+      );
+      sandboxState.fileCache.lastSync = Date.now();
     }
 
     return NextResponse.json({

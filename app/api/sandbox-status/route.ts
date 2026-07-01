@@ -1,15 +1,7 @@
 import { NextResponse } from 'next/server';
-import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/auth-options';
 import { prisma } from '@/lib/db/prisma';
 import { getSandboxUrlForSubdomain, buildPreviewUrl } from '@/lib/tenancy/preview-mapping';
-
-declare global {
-  var activeSandboxProvider: any;
-  var sandboxData: any;
-  var existingFiles: Set<string>;
-}
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
 /**
  * Check if the sandbox URL is actually responding.
@@ -71,68 +63,69 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const checkHealth = searchParams.get('checkHealth') === 'true'; // Enable actual health check
+    const sandboxId = searchParams.get('sandboxId') || searchParams.get('sandbox');
 
-    // Check sandbox manager first, then fall back to global state
-    const provider = sandboxManager.getActiveProvider() || global.activeSandboxProvider;
-    const sandboxExists = !!provider;
+    const resolved = await resolveRequestSandbox(sandboxId);
+    if (!resolved.ok) {
+      return resolved.response;
+    }
 
     let sandboxHealthy = false;
     let sandboxInfo: any = null;
     let needsRecreation = false;
     let healthDetails = null;
 
-    if (sandboxExists && provider) {
-      try {
-        // Check if sandbox is healthy by getting its info
-        const providerInfo = provider.getSandboxInfo();
+    const { provider, session: sandboxSession, userId } = resolved.value;
 
-        sandboxInfo = {
-          sandboxId: providerInfo?.sandboxId || global.sandboxData?.sandboxId,
-          url: providerInfo?.url || global.sandboxData?.url,
-          filesTracked: global.existingFiles ? Array.from(global.existingFiles) : [],
-          lastHealthCheck: new Date().toISOString()
-        };
+    try {
+      // Check if sandbox is healthy by getting its info
+      const providerInfo = provider.getSandboxInfo();
 
-        // Check if this sandbox has an associated site for preview URL
-        const serverSession = await getServerSession(authOptions);
-        if (serverSession?.user?.id && sandboxInfo.sandboxId) {
-          const genSession = await prisma.generationSession.findFirst({
-            where: { sandboxId: sandboxInfo.sandboxId, userId: serverSession.user.id },
-            include: { site: { select: { subdomain: true } } },
-          });
+      sandboxInfo = {
+        sandboxId: sandboxSession?.sandboxId || resolved.value.sandboxId,
+        url: providerInfo?.url || sandboxSession?.sandboxUrl,
+        filesTracked: Array.isArray(sandboxSession?.existingFiles)
+          ? sandboxSession.existingFiles
+          : [],
+        lastHealthCheck: new Date().toISOString()
+      };
 
-          if (genSession?.site?.subdomain) {
-            const sandboxUrlFromMapping = getSandboxUrlForSubdomain(genSession.site.subdomain);
-            if (sandboxUrlFromMapping) {
-              sandboxInfo.previewUrl = buildPreviewUrl(genSession.site.subdomain);
-              console.log('[sandbox-status] Found preview URL:', sandboxInfo.previewUrl);
-            }
-          }
+      // Check if this sandbox has an associated site for preview URL
+      const genSession = await prisma.generationSession.findFirst({
+        where: { sandboxId: sandboxInfo.sandboxId, userId },
+        include: { site: { select: { subdomain: true } } },
+      });
+
+      if (genSession?.site?.subdomain) {
+        const sandboxUrlFromMapping = getSandboxUrlForSubdomain(genSession.site.subdomain);
+        if (sandboxUrlFromMapping) {
+          sandboxInfo.previewUrl = buildPreviewUrl(genSession.site.subdomain);
+          console.log('[sandbox-status] Found preview URL:', sandboxInfo.previewUrl);
         }
-
-        // Perform actual health check if requested
-        if (checkHealth && sandboxInfo.url) {
-          healthDetails = await checkSandboxHealth(sandboxInfo.url);
-          sandboxHealthy = healthDetails.healthy;
-
-          // If Vercel says the sandbox stopped, or the port is gone, recreate.
-          if ([410, 502, 503].includes(healthDetails.statusCode ?? 0)) {
-            needsRecreation = true;
-            console.log(`[sandbox-status] Sandbox returned ${healthDetails.statusCode}, needs recreation`);
-          }
-        } else {
-          // Basic health check - just verify provider has info
-          sandboxHealthy = !!providerInfo;
-        }
-      } catch (error) {
-        console.error('[sandbox-status] Health check failed:', error);
-        sandboxHealthy = false;
       }
+
+      // Perform actual health check if requested
+      if (checkHealth && sandboxInfo.url) {
+        healthDetails = await checkSandboxHealth(sandboxInfo.url);
+        sandboxHealthy = healthDetails.healthy;
+
+        // If Vercel says the sandbox stopped, or the port is gone, recreate.
+        if ([410, 502, 503].includes(healthDetails.statusCode ?? 0)) {
+          needsRecreation = true;
+          console.log(`[sandbox-status] Sandbox returned ${healthDetails.statusCode}, needs recreation`);
+        }
+      } else {
+        // Basic health check - just verify provider has info
+        sandboxHealthy = !!providerInfo;
+      }
+    } catch (error) {
+      console.error('[sandbox-status] Health check failed:', error);
+      sandboxHealthy = false;
     }
 
     return NextResponse.json({
       success: true,
-      active: sandboxExists,
+      active: true,
       healthy: sandboxHealthy,
       needsRecreation,
       sandboxData: sandboxInfo,
@@ -141,9 +134,7 @@ export async function GET(request: Request) {
         ? 'Sandbox stopped or timed out and needs to be recreated'
         : sandboxHealthy
           ? 'Sandbox is active and healthy'
-          : sandboxExists
-            ? 'Sandbox exists but is not responding'
-            : 'No active sandbox'
+          : 'Sandbox exists but is not responding'
     });
 
   } catch (error) {

@@ -1,23 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseMorphEdits, applyMorphEditToFile } from '@/lib/morph-fast-apply';
-// Sandbox import not needed - using global sandbox from sandbox-manager
 import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
-import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 import { sanitizeLucideImports } from '@/lib/ai/sanitize-lucide-imports';
 import {
   getSandboxState,
   setSandboxState,
   initSandboxState,
   updateSandboxFile,
-  getSandboxProvider,
-  setSandboxProvider,
 } from '@/lib/sandbox/sandbox-state';
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
 declare global {
   var conversationState: ConversationState | null;
-  var activeSandboxProvider: any;
-  var activeSandbox: any;
   var existingFiles: Set<string>;
   var sandboxState: SandboxState;
 }
@@ -29,6 +24,28 @@ interface ParsedResponse {
   packages: string[];
   commands: string[];
   structure: string | null;
+}
+
+function sanitizeJsxTypeScriptSyntax(content: string): string {
+  return content
+    // Remove standalone type/interface declarations that are invalid in .jsx files.
+    .replace(/\n\s*(?:export\s+)?(?:interface|type)\s+\w+[\s\S]*?(?=\n\s*(?:export\s+default\s+)?(?:function|const|let|var|class)\b|$)/g, '\n')
+    // Convert hook generics: useRef<Record<string, HTMLElement | null>>({}) -> useRef({})
+    .replace(/\b(use(?:Ref|State|Memo|Callback|Reducer))<[^)]*>\(/g, '$1(')
+    // Convert typed variables: const item: MenuItem = ... -> const item = ...
+    .replace(/\b(const|let|var)\s+([A-Za-z_$][\w$]*)\s*:\s*[^=;]+=/g, '$1 $2 =')
+    // Convert typed params: (id: string, el: HTMLElement | null) -> (id, el).
+    // Keep object literal values like { hot: useRef(null) } intact.
+    .replace(/([,(]\s*[A-Za-z_$][\w$]*)\s*:\s*(?:string|number|boolean|unknown|any|HTMLElement|HTML\w+Element|Record<[^)]*>|React\.[^,)=]+|[A-Z][A-Za-z0-9_$]*(?:<[^>]*>)?)(?:\s*\|\s*(?:null|undefined|string|number|boolean|[A-Z][A-Za-z0-9_$]*))*\s*(?=[,)=])/g, '$1')
+    // Convert arrow return types: (props): JSX.Element => -> (props) =>
+    .replace(/\)\s*:\s*[^=({]+=>/g, ') =>')
+    // Convert: function Card({ a }: { a: string }) { ... }
+    // To:      function Card({ a }) { ... }
+    .replace(/(\bfunction\s+\w+\s*\(\s*\{[\s\S]*?\n\s*\})\s*:\s*\{[\s\S]*?\n\s*\}\s*\)/g, '$1)')
+    // Convert: const Card = ({ a }: { a: string }) => ...
+    // To:      const Card = ({ a }) => ...
+    .replace(/(\(\s*\{[\s\S]*?\n\s*\})\s*:\s*\{[\s\S]*?\n\s*\}\s*\)\s*=>/g, '$1) =>')
+    .replace(/\s+as\s+const\b/g, '');
 }
 
 function parseAIResponse(response: string): ParsedResponse {
@@ -275,8 +292,13 @@ export async function POST(request: NextRequest) {
   try {
     const { response, isEdit = false, packages = [], sandboxId, uploadedImages } = await request.json();
 
+    const resolved = await resolveRequestSandbox(sandboxId);
+    if (!resolved.ok) {
+      return resolved.response;
+    }
+
     // Initialize sandbox-scoped state for multi-sandbox support
-    const effectiveSandboxId = sandboxId || 'default';
+    const effectiveSandboxId = resolved.value.sandboxId;
     const sandboxState = initSandboxState(effectiveSandboxId);
 
     if (!response) {
@@ -316,91 +338,7 @@ export async function POST(request: NextRequest) {
       global.existingFiles = new Set<string>();
     }
 
-    // Try to get provider from sandbox manager first
-    let provider = sandboxId ? sandboxManager.getProvider(sandboxId) : sandboxManager.getActiveProvider();
-
-    // Fall back to sandbox-scoped state if not found in manager
-    if (!provider) {
-      provider = getSandboxProvider(effectiveSandboxId);
-    }
-
-    // If we have a sandboxId but no provider, try to get or create one
-    if (!provider && sandboxId) {
-      console.log(`[apply-ai-code-stream] No provider found for sandbox ${sandboxId}, attempting to get or create...`);
-
-      try {
-        provider = await sandboxManager.getOrCreateProvider(sandboxId);
-
-        // If we got a new provider (not reconnected), we need to create a new sandbox
-        if (!provider.getSandboxInfo()) {
-          console.log(`[apply-ai-code-stream] Creating new sandbox since reconnection failed for ${sandboxId}`);
-          await provider.createSandbox();
-          await provider.setupViteApp();
-          sandboxManager.registerSandbox(sandboxId, provider);
-        }
-
-        // Update legacy global state
-        setSandboxProvider(effectiveSandboxId, provider);
-        // Legacy: global.activeSandbox = provider;
-        console.log(`[apply-ai-code-stream] Successfully got provider for sandbox ${sandboxId}`);
-      } catch (providerError) {
-        console.error(`[apply-ai-code-stream] Failed to get or create provider for sandbox ${sandboxId}:`, providerError);
-        return NextResponse.json({
-          success: false,
-          error: `Failed to create sandbox provider for ${sandboxId}. The sandbox may have expired.`,
-          results: {
-            filesCreated: [],
-            packagesInstalled: [],
-            commandsExecuted: [],
-            errors: [`Sandbox provider creation failed: ${(providerError as Error).message}`]
-          },
-          explanation: parsed.explanation,
-          structure: parsed.structure,
-          parsedFiles: parsed.files,
-          message: `Parsed ${parsed.files.length} files but couldn't apply them - sandbox reconnection failed.`
-        }, { status: 500 });
-      }
-    }
-
-    // If we still don't have a provider, create a new one
-    if (!provider) {
-      console.log(`[apply-ai-code-stream] No active provider found, creating new sandbox...`);
-      try {
-        const { SandboxFactory } = await import('@/lib/sandbox/factory');
-        provider = await SandboxFactory.create();
-        const sandboxInfo = await provider.createSandbox();
-        await provider.setupViteApp();
-
-        // Register with sandbox manager
-        sandboxManager.registerSandbox(sandboxInfo.sandboxId, provider);
-
-        // Store in legacy global state
-        setSandboxProvider(effectiveSandboxId, provider);
-        // Legacy: global.activeSandbox = provider;
-        global.sandboxData = {
-          sandboxId: sandboxInfo.sandboxId,
-          url: sandboxInfo.url
-        };
-
-        console.log(`[apply-ai-code-stream] Created new sandbox successfully`);
-      } catch (createError) {
-        console.error(`[apply-ai-code-stream] Failed to create new sandbox:`, createError);
-        return NextResponse.json({
-          success: false,
-          error: `Failed to create new sandbox: ${createError instanceof Error ? createError.message : 'Unknown error'}`,
-          results: {
-            filesCreated: [],
-            packagesInstalled: [],
-            commandsExecuted: [],
-            errors: [`Sandbox creation failed: ${createError instanceof Error ? createError.message : 'Unknown error'}`]
-          },
-          explanation: parsed.explanation,
-          structure: parsed.structure,
-          parsedFiles: parsed.files,
-          message: `Parsed ${parsed.files.length} files but couldn't apply them - sandbox creation failed.`
-        }, { status: 500 });
-      }
-    }
+    const provider = resolved.value.provider;
 
     // Create a response stream for real-time updates
     const encoder = new TextEncoder();
@@ -482,7 +420,10 @@ export async function POST(request: NextRequest) {
 
             const installResponse = await fetch(apiUrl, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                Cookie: req.headers.get('cookie') || '',
+              },
               body: JSON.stringify({
                 packages: uniquePackages,
                 sandboxId: sandboxId || providerInstance.getSandboxInfo()?.sandboxId
@@ -558,7 +499,9 @@ export async function POST(request: NextRequest) {
 
         // Handle file extension conflicts: delete .jsx files when .tsx files are being written
         const tsxFiles = filteredFiles.filter(f => f.path.endsWith('.tsx'));
+        const jsxFiles = filteredFiles.filter(f => f.path.endsWith('.jsx'));
         const jsxFilesToDelete: string[] = [];
+        const tsxFilesToDelete: string[] = [];
         let needsIndexHtmlUpdate = false;
         let newEntryFile: string | null = null;
 
@@ -581,6 +524,37 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // ALSO handle reverse: when .jsx files are written, delete conflicting .tsx template files
+        for (const jsxFile of jsxFiles) {
+          const tsxPath = jsxFile.path.replace(/\.jsx$/, '.tsx');
+          const normalizedTsxPath = tsxPath.startsWith('src/') ? tsxPath : 'src/' + tsxPath;
+          const normalizedJsxPath = jsxFile.path.startsWith('src/') ? jsxFile.path : 'src/' + jsxFile.path;
+
+          // Check if the .tsx version exists in tracked files OR in global.existingFiles
+          const tsxExists = global.existingFiles.has(normalizedTsxPath) ||
+                           global.existingFiles.has(tsxPath) ||
+                           jsxFilesToDelete.some(f => f.endsWith('.tsx'));
+
+          // Also always delete main.tsx and App.tsx when writing .jsx equivalents
+          // because the sandbox template uses .tsx files
+          const fileName = jsxFile.path.split('/').pop() || '';
+          const isEntryFile = fileName === 'main.jsx' || fileName === 'App.jsx';
+
+          if (tsxExists || isEntryFile) {
+            tsxFilesToDelete.push(normalizedTsxPath);
+            console.log(`[apply-ai-code-stream] Will delete conflicting .tsx template file: ${normalizedTsxPath} (replacing with ${normalizedJsxPath})`);
+          }
+
+          // Check if this is the main entry file (App.jsx or main.jsx)
+          if (isEntryFile) {
+            needsIndexHtmlUpdate = true;
+            // Only set newEntryFile for main.jsx (not App.jsx)
+            if (fileName === 'main.jsx') {
+              newEntryFile = 'src/main.jsx';
+            }
+          }
+        }
+
         // Delete conflicting .jsx files before writing new files
         if (jsxFilesToDelete.length > 0) {
           await sendProgress({
@@ -599,21 +573,72 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // Delete conflicting .tsx template files when writing .jsx
+        if (tsxFilesToDelete.length > 0) {
+          await sendProgress({
+            type: 'info',
+            message: `Cleaning up ${tsxFilesToDelete.length} conflicting TypeScript template files...`
+          });
+
+          for (const tsxFile of tsxFilesToDelete) {
+            try {
+              await providerInstance.runCommand(`rm -f ${tsxFile}`);
+              global.existingFiles.delete(tsxFile);
+              console.log(`[apply-ai-code-stream] Deleted conflicting template file: ${tsxFile}`);
+            } catch (err) {
+              console.warn(`[apply-ai-code-stream] Failed to delete ${tsxFile}:`, err);
+            }
+          }
+        }
+
+        // Create main.jsx entry point if generated code provides App.jsx without an entry.
+        // The sandbox template starts with main.tsx -> App.tsx, so replacing only App.jsx
+        // requires a matching JSX entry even if main.tsx itself was not deleted.
+        const hasMainJsx = filteredFiles.some(f => f.path === 'src/main.jsx' || f.path === 'main.jsx');
+        const hasAppJsx = filteredFiles.some(f => f.path === 'src/App.jsx' || f.path === 'App.jsx');
+        const hasMainTsx = tsxFilesToDelete.some(f => f.includes('main.tsx'));
+
+        if ((hasMainTsx || hasAppJsx) && !hasMainJsx) {
+          console.log('[apply-ai-code-stream] Creating main.jsx entry point...');
+          const mainJsxContent = `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)`;
+          try {
+            await providerInstance.writeFile('src/main.jsx', mainJsxContent);
+            console.log('[apply-ai-code-stream] Created src/main.jsx entry point');
+            await sendProgress({
+              type: 'info',
+              message: 'Created main.jsx entry point'
+            });
+            // Add main.jsx to filtered files so it gets tracked
+            filteredFiles.push({ path: 'src/main.jsx', content: mainJsxContent });
+          } catch (err) {
+            console.warn('[apply-ai-code-stream] Failed to create main.jsx:', err);
+          }
+        }
+
         // Update index.html to point to correct entry file if needed
-        if (needsIndexHtmlUpdate && newEntryFile) {
+        if (needsIndexHtmlUpdate || tsxFilesToDelete.length > 0) {
           try {
             const currentIndexHtml = await providerInstance.readFile('index.html');
             const updatedIndexHtml = currentIndexHtml.replace(
               /src\/(main|index)\.(jsx|tsx)/,
-              newEntryFile.replace(/^\//, '')
+              'src/main.jsx'
             );
 
             if (updatedIndexHtml !== currentIndexHtml) {
               await providerInstance.writeFile('index.html', updatedIndexHtml);
-              console.log(`[apply-ai-code-stream] Updated index.html to point to ${newEntryFile}`);
+              console.log(`[apply-ai-code-stream] Updated index.html to point to src/main.jsx`);
               await sendProgress({
                 type: 'info',
-                message: `Updated HTML entry point to ${newEntryFile}`
+                message: `Updated HTML entry point to src/main.jsx`
               });
             }
           } catch (err) {
@@ -624,7 +649,7 @@ export async function POST(request: NextRequest) {
         // If Morph is enabled and we have edits, apply them before file writes
         const morphUpdatedPaths = new Set<string>();
         if (morphEnabled && morphEdits.length > 0) {
-          const morphSandbox = (global as any).activeSandbox || providerInstance;
+          const morphSandbox = providerInstance;
           if (!morphSandbox) {
             console.warn('[apply-ai-code-stream] No sandbox available to apply Morph edits');
             await sendProgress({ type: 'warning', message: 'No sandbox available to apply Morph edits' });
@@ -706,6 +731,9 @@ export async function POST(request: NextRequest) {
 
             // Sanitize lucide-react imports so invalid icon names don't crash Vite
             fileContent = sanitizeLucideImports(fileContent);
+            if (normalizedPath.endsWith('.jsx')) {
+              fileContent = sanitizeJsxTypeScriptSyntax(fileContent);
+            }
 
             // Fix common Tailwind CSS errors in CSS files
             if (file.path.endsWith('.css')) {
@@ -911,21 +939,38 @@ export async function POST(request: NextRequest) {
         }
 
         const changedFiles = [...results.filesCreated, ...results.filesUpdated];
+        const applySucceeded =
+          changedFiles.length > 0 ||
+          results.commandsExecuted.length > 0 ||
+          results.packagesInstalled.length > 0 ||
+          Boolean(uploadedImages?.length);
 
         console.log('[apply-ai-code-stream] DEBUG: Final results:', {
           filesCreated: results.filesCreated,
           filesUpdated: results.filesUpdated,
           errors: results.errors,
-          errorCount: results.errors.length
+          errorCount: results.errors.length,
+          applySucceeded
         });
 
-        // Send final results
+        // Get sandbox info to send back to frontend
+        const sandboxInfo = providerInstance.getSandboxInfo();
+        console.log('[apply-ai-code-stream] DEBUG: Sending complete event with sandbox:', sandboxInfo);
+
+        // Send final results with sandbox info
         await sendProgress({
           type: 'complete',
+          success: applySucceeded,
           results,
           explanation: parsed.explanation,
           structure: parsed.structure,
-          message: `Successfully applied ${changedFiles.length} files`
+          message: applySucceeded
+            ? `Successfully applied ${changedFiles.length} files`
+            : `No files were applied${results.errors.length > 0 ? `: ${results.errors[0]}` : ''}`,
+          sandbox: sandboxInfo ? {
+            sandboxId: sandboxId || sandboxInfo.sandboxId,
+            url: sandboxInfo.url
+          } : undefined
         });
 
         // Track applied files in conversation state

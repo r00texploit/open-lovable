@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireUser } from '@/lib/auth/server';
-import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 import { buildSiteSnapshot, publishSiteSnapshot } from '@/lib/tenancy/site-publishing';
 import { toSiteDto } from '@/lib/tenancy/site-dto';
 
@@ -25,16 +25,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const body = await request.json().catch(() => ({}));
   const sandboxId = typeof body?.sandboxId === 'string' ? body.sandboxId : undefined;
-  const provider =
-    (sandboxId ? sandboxManager.getProvider(sandboxId) : null) ||
-    sandboxManager.getActiveProvider() ||
-    (global as any).activeSandboxProvider;
+  const resolved = await resolveRequestSandbox(sandboxId);
 
-  if (!provider) {
-    return NextResponse.json({ error: 'No active sandbox available to publish' }, { status: 400 });
+  if (!resolved.ok) {
+    return resolved.response;
   }
 
-  const files = await buildSiteSnapshot(provider);
+  const files = await buildSiteSnapshot(resolved.value.provider);
   await publishSiteSnapshot(site.id, files);
 
   const updatedSite = await prisma.site.findUniqueOrThrow({ where: { id: site.id } });

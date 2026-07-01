@@ -30,6 +30,10 @@ export async function POST(request: Request) {
   const sessionId = request.headers.get('x-session-id') || crypto.randomUUID();
   let session = await getSession(sessionId);
 
+  if (session && session.userId !== user.id) {
+    return NextResponse.json({ error: 'Sandbox session not found' }, { status: 404 });
+  }
+
   try {
     // Parse request body to get optional siteId
     let requestBody: { siteId?: string } = {};
@@ -42,18 +46,27 @@ export async function POST(request: Request) {
     console.log(`[create-ai-sandbox-v2] Request body:`, requestBody);
     console.log(`[create-ai-sandbox-v2] Session exists:`, !!session, session?.siteId ? `with siteId: ${session.siteId}` : 'without siteId');
 
+    let validSiteId: string | null = null;
+    if (requestBody.siteId) {
+      const ownedSite = await prisma.site.findFirst({
+        where: { id: requestBody.siteId, userId: user.id },
+        select: { id: true },
+      });
+      validSiteId = ownedSite?.id ?? null;
+    }
+
     if (!session) {
       session = await createSession(user.id, {
         sandboxId: `sb_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`,
         sandboxProvider: process.env.SANDBOX_PROVIDER || 'vercel',
-        siteId: requestBody.siteId || null,
+        siteId: validSiteId,
       });
-      console.log(`[create-ai-sandbox-v2] Created new session with siteId:`, requestBody.siteId || null);
-    } else if (requestBody.siteId && !session.siteId) {
+      console.log(`[create-ai-sandbox-v2] Created new session with siteId:`, validSiteId);
+    } else if (validSiteId && !session.siteId) {
       // Update existing session with siteId if provided
       const { updateSession } = await import('@/lib/session-store');
-      session = await updateSession(session.id, { siteId: requestBody.siteId });
-      console.log(`[create-ai-sandbox-v2] Updated existing session with siteId:`, requestBody.siteId);
+      session = await updateSession(session.id, { siteId: validSiteId });
+      console.log(`[create-ai-sandbox-v2] Updated existing session with siteId:`, validSiteId);
     }
 
     if (!session) {

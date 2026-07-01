@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-declare global {
-  var activeSandbox: any;
-  var activeSandboxProvider: any;
-  var sandboxData: any;
-}
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
 export async function POST(request: NextRequest) {
   try {
-    const { packages } = await request.json();
-    // sandboxId not used - using global sandbox
+    const { packages, sandboxId } = await request.json();
     
     if (!packages || !Array.isArray(packages) || packages.length === 0) {
       return NextResponse.json({ 
@@ -37,17 +31,14 @@ export async function POST(request: NextRequest) {
       console.log(`[install-packages] Cleaned:`, validPackages);
     }
     
-    // Get active sandbox provider
-    const provider = global.activeSandboxProvider;
+    const resolved = await resolveRequestSandbox(sandboxId);
     
-    if (!provider) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No active sandbox provider available' 
-      }, { status: 400 });
+    if (!resolved.ok) {
+      return resolved.response;
     }
     
-    console.log('[install-packages] Installing packages:', validPackages);
+    const provider = resolved.value.provider;
+    console.log(`[install-packages] Installing packages in ${resolved.value.sandboxId}:`, validPackages);
     
     // Create a response stream for real-time updates
     const encoder = new TextEncoder();

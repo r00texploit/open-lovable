@@ -1,0 +1,107 @@
+- generic [active] [ref=f12e1]:
+  - generic [ref=f12e2]:
+    - generic [ref=f12e3]:
+      - generic [ref=f12e4]:
+        - link "Noeron" [ref=f12e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f12e6]:
+            - img [ref=f12e7]
+            - generic [ref=f12e14]: Noeron
+        - button "GPT-5" [ref=f12e17] [cursor=pointer]:
+          - generic [ref=f12e18]: GPT-5
+          - img [ref=f12e19]
+        - generic [ref=f12e21]: Sandbox active
+        - button "AI Images requires Plus or Team plan — upgrade to generate real images with DALL-E 3" [disabled] [ref=f12e23]:
+          - generic [ref=f12e24]: 🔒
+          - text: AI Images
+      - generic [ref=f12e25]:
+        - button "New sandbox" [ref=f12e511] [cursor=pointer]:
+          - img [ref=f12e513]
+          - generic [ref=f12e515]: New sandbox
+        - button "Re-apply" [ref=f12e516] [cursor=pointer]:
+          - img [ref=f12e518]
+          - generic [ref=f12e520]: Re-apply
+        - button "Download ZIP" [ref=f12e521] [cursor=pointer]:
+          - img [ref=f12e523]
+          - generic [ref=f12e525]: Download ZIP
+        - link "My Websites" [ref=f12e526] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=f12e528]
+          - generic [ref=f12e530]: My Websites
+        - link "Settings" [ref=f12e531] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=f12e533]
+          - generic [ref=f12e536]: Settings
+        - button "Sign out" [ref=f12e537] [cursor=pointer]:
+          - img [ref=f12e539]
+          - generic [ref=f12e541]: Sign out
+    - generic [ref=f12e58]:
+      - generic [ref=f12e59]:
+        - button "No sites yet" [disabled] [ref=f12e161]:
+          - generic [ref=f12e62]: No sites yet
+          - img [ref=f12e63]
+        - generic [ref=f12e65]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=f12e66]:
+        - textbox "Site name" [ref=f12e67]
+        - textbox "site-slug" [ref=f12e68]
+        - button "Create site" [disabled] [ref=f12e69]
+    - generic [ref=f12e70]:
+      - generic [ref=f12e71]:
+        - generic [ref=f12e75]:
+          - generic [ref=f12e76]: Website URL
+          - textbox "https://example.com" [ref=f12e77]
+        - generic [ref=f12e78]:
+          - generic [ref=f12e82]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+          - generic [ref=f12e237]: Create a green button
+          - generic [ref=f12e358]:
+            - generic [ref=f12e359]: Code generated successfully!
+            - generic [ref=f12e360]:
+              - generic [ref=f12e361]: "Generated Files:"
+              - generic [ref=f12e362]:
+                - generic [ref=f12e363]: index.css
+                - generic [ref=f12e365]: App.jsx
+                - generic [ref=f12e367]: GreenButton.jsx
+                - generic [ref=f12e369]: Header.jsx
+                - generic [ref=f12e371]: Hero.jsx
+                - generic [ref=f12e373]: MenuGrid.jsx
+                - generic [ref=f12e375]: Footer.jsx
+          - generic [ref=f12e545]: "Sandbox created! ID: sb_1782831265906_af7e7c48. I now have context of your sandbox and can help you build your app. Just ask me to create components and I'll automatically apply them! Tip: I automatically detect and install npm packages from your code imports (like react-router-dom, axios, etc.)"
+          - generic [ref=f12e378]:
+            - img [ref=f12e380]
+            - generic [ref=f12e382]: Applying to sandbox...
+        - generic [ref=f12e85]:
+          - generic [ref=f12e86]:
+            - img [ref=f12e88]
+            - textbox "Describe what you want to build..." [ref=f12e91]
+          - generic [ref=f12e92]:
+            - button "Add image" [ref=f12e93] [cursor=pointer]:
+              - img [ref=f12e94]
+              - generic [ref=f12e98]: Add image
+            - button "Send" [disabled] [ref=f12e99]:
+              - generic [ref=f12e100]: Send
+              - img [ref=f12e101]
+      - generic [ref=f12e104]:
+        - generic [ref=f12e105]:
+          - generic [ref=f12e107]:
+            - button "Code" [ref=f12e108] [cursor=pointer]:
+              - generic [ref=f12e109]:
+                - img [ref=f12e110]
+                - generic [ref=f12e112]: Code
+            - button "View" [ref=f12e113] [cursor=pointer]:
+              - generic [ref=f12e114]:
+                - img [ref=f12e115]
+                - generic [ref=f12e118]: View
+          - generic [ref=f12e162]:
+            - generic [ref=f12e163]: Sandbox active
+            - link "Open in new tab" [ref=f12e165] [cursor=pointer]:
+              - /url: https://sb-4jjs8ama1dnk.vercel.run
+              - img [ref=f12e166]
+        - generic [ref=f12e120]:
+          - iframe [ref=f12e168]:
+            
+          - generic [ref=f12e384]:
+            - heading "Analyzing code..." [level=3] [ref=f12e385]
+            - paragraph [ref=f12e386]: Parsing generated code and detecting dependencies...
+          - button "Refresh sandbox" [ref=f12e169] [cursor=pointer]:
+            - img [ref=f12e170]
+  - alert [ref=f12e129]
