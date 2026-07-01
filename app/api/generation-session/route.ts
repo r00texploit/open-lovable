@@ -123,16 +123,28 @@ export async function POST(request: NextRequest) {
     lastActiveAt: new Date(),
   };
 
-  const genSession = await prisma.generationSession.upsert({
+  const existingSession = await prisma.generationSession.findUnique({
     where: { sandboxId },
-    create: { sandboxId, ...data },
-    update: data,
+    select: { id: true, userId: true },
   });
+
+  if (existingSession && existingSession.userId !== session.user.id) {
+    return NextResponse.json({ error: 'Sandbox not found' }, { status: 404 });
+  }
+
+  const genSession = existingSession
+    ? await prisma.generationSession.update({
+        where: { id: existingSession.id },
+        data,
+      })
+    : await prisma.generationSession.create({
+        data: { sandboxId, ...data },
+      });
 
   return NextResponse.json({ session: genSession });
 }
 
-// PATCH /api/generation-session — update siteId for current user's active session
+// PATCH /api/generation-session — update siteId for a specific user-owned session
 export async function PATCH(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -140,10 +152,14 @@ export async function PATCH(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { siteId } = body;
+  const { siteId, sandboxId } = body;
 
   if (!siteId) {
     return NextResponse.json({ error: 'siteId is required' }, { status: 400 });
+  }
+
+  if (!sandboxId || typeof sandboxId !== 'string') {
+    return NextResponse.json({ error: 'sandboxId is required' }, { status: 400 });
   }
 
   // Verify the site belongs to this user
@@ -156,20 +172,18 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Site not found' }, { status: 404 });
   }
 
-  // Find the user's most recent active session
   const genSession = await prisma.generationSession.findFirst({
-    where: { userId: session.user.id },
-    orderBy: { lastActiveAt: 'desc' },
+    where: { sandboxId, userId: session.user.id },
   });
 
   if (!genSession) {
-    return NextResponse.json({ error: 'No active session found' }, { status: 404 });
+    return NextResponse.json({ error: 'Sandbox session not found' }, { status: 404 });
   }
 
   // Update the session with the siteId
   const updatedSession = await prisma.generationSession.update({
     where: { id: genSession.id },
-    data: { siteId: site.id },
+    data: { siteId: site.id, lastActiveAt: new Date() },
   });
 
   // Register preview mapping if sandboxUrl exists

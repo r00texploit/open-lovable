@@ -1,0 +1,59 @@
+[     340ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     487ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     488ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     489ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782833967532_3f38c6de&model=anthropic/claude-sonnet-4-20250514:0
+[     532ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     545ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782833967532_3f38c6de&model=anthropic/claude-sonnet-4-20250514:0
+[     551ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     551ms] [LOG] [home] Restoring session for sandbox: sb_1782833967532_3f38c6de @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3728ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_19MbBLzmXiHMXa08be6qSE5OpWPv, url: https://sb-7kz0tfzteo1w.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T15:42:23.094Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3757ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    5847ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    6193ms] [LOG] [home] Session restored (sandbox alive): sb_1782833967532_3f38c6de @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    7203ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_19MbBLzmXiHMXa08be6qSE5OpWPv, url: https://sb-7kz0tfzteo1w.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T15:42:27.069Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   33761ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   36646ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_19MbBLzmXiHMXa08be6qSE5OpWPv, url: https://sb-7kz0tfzteo1w.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T15:42:56.322Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   63759ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   66632ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_19MbBLzmXiHMXa08be6qSE5OpWPv, url: https://sb-7kz0tfzteo1w.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T15:43:26.311Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   93762ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   96638ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_19MbBLzmXiHMXa08be6qSE5OpWPv, url: https://sb-7kz0tfzteo1w.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T15:43:56.334Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  123760ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  126589ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_19MbBLzmXiHMXa08be6qSE5OpWPv, url: https://sb-7kz0tfzteo1w.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T15:44:26.314Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153761ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156635ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_19MbBLzmXiHMXa08be6qSE5OpWPv, url: https://sb-7kz0tfzteo1w.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T15:44:56.330Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  177001ms] [LOG] [startGeneration] Sandbox already exists: sbx_19MbBLzmXiHMXa08be6qSE5OpWPv @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  177001ms] [LOG] [chat] Using backend file cache for context @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  177002ms] [LOG] [chat] Sending context to AI: @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  177002ms] [LOG] [chat] - sandboxId: sbx_19MbBLzmXiHMXa08be6qSE5OpWPv @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  177002ms] [LOG] [chat] - isEdit: false @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  177020ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  177021ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  177774ms] [LOG] [health-check] Skipping initial health check - generation or code application in progress @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  180770ms] [ERROR] Failed to load resource: the server responded with a status of 429 (Too Many Requests) @ http://localhost:3000/api/generate-ai-code-stream:0
+[  180801ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  180803ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  180879ms] [WARNING] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  180881ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  180967ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  180970ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/pricing:0
+[  205691ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  205701ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  205701ms] [LOG] [home] No sandbox in URL, creating new sandbox automatically... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  205701ms] [LOG] [createSandbox] Starting sandbox creation... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  205701ms] [LOG] [createSandbox] Creating sandbox with siteId:  @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  205768ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  205770ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation:0
+[  208531ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  208586ms] [LOG] [Fast Refresh] done in 156ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  208690ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  208830ms] [LOG] [Fast Refresh] done in 241ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  208866ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_19MbBLzmXiHMXa08be6qSE5OpWPv, url: https://sb-7kz0tfzteo1w.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T15:45:48.239Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  208921ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  208926ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/settings:0
+[  214209ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_19MbBLzmXiHMXa08be6qSE5OpWPv, url: https://sb-7kz0tfzteo1w.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T15:45:51.429Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  244778ms] [LOG] [createSandbox] Response data: {success: true, sessionId: cmr0tjk9m0057it10yvlac6da, sandboxId: sb_1782834353260_c6049437, url: https://sb-6ly2nadlsdbb.vercel.run, previewUrl: https://sb-6ly2nadlsdbb.vercel.run} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  244779ms] [LOG] [createSandbox] Setting sandboxData from creation: {success: true, sessionId: cmr0tjk9m0057it10yvlac6da, sandboxId: sb_1782834353260_c6049437, url: https://sb-6ly2nadlsdbb.vercel.run, previewUrl: https://sb-6ly2nadlsdbb.vercel.run} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  244781ms] [LOG] [createSandbox] Sandbox ready with Vite server running @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  244889ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  244902ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  244902ms] [LOG] [home] Restoring session for sandbox: sb_1782834353260_c6049437 @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477

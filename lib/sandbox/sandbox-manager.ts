@@ -179,6 +179,13 @@ class SandboxManager {
   }
 
   /**
+   * Get the active app/session sandbox ID used as the manager key.
+   */
+  getActiveSandboxId(): string | null {
+    return this.activeSandboxId;
+  }
+
+  /**
    * Get a specific sandbox provider
    */
   getProvider(sandboxId: string): SandboxProvider | null {

@@ -1,25 +1,25 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
 declare global {
-  var activeSandbox: any;
-  var activeSandboxProvider: any;
   var lastViteRestartTime: number;
   var viteRestartInProgress: boolean;
 }
 
 const RESTART_COOLDOWN_MS = 5000; // 5 second cooldown between restarts
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    // Check both v1 and v2 global references
-    const provider = global.activeSandbox || global.activeSandboxProvider;
+    const body = await request.json().catch(() => ({}));
+    const { searchParams } = new URL(request.url);
+    const sandboxId = body?.sandboxId || searchParams.get('sandboxId') || searchParams.get('sandbox');
+    const resolved = await resolveRequestSandbox(sandboxId);
     
-    if (!provider) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No active sandbox' 
-      }, { status: 400 });
+    if (!resolved.ok) {
+      return resolved.response;
     }
+
+    const provider = resolved.value.provider;
     
     // Check if restart is already in progress
     if (global.viteRestartInProgress) {

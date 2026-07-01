@@ -30,6 +30,30 @@ import {
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
 
+type UploadedImagePayload = { base64: string; type: string; name: string };
+
+const MAX_CHAT_UPLOAD_IMAGES = 40;
+
+const getImagesForGeneratedCode = (
+  code: string,
+  currentImages?: UploadedImagePayload[],
+  fallbackImages?: UploadedImagePayload[]
+) => {
+  if (!/\/images\/image-\d+\.(png|jpe?g|gif|webp|avif)/i.test(code)) {
+    return undefined;
+  }
+
+  if (currentImages && currentImages.length > 0) {
+    return currentImages;
+  }
+
+  if (fallbackImages && fallbackImages.length > 0) {
+    return fallbackImages;
+  }
+
+  return undefined;
+};
+
 interface SandboxData {
   sandboxId: string;
   url: string;
@@ -123,7 +147,7 @@ function AISandboxPage() {
   const [aiEnabled] = useState(true);
   const [aiImagesEnabled, setAiImagesEnabled] = useState(false);
   const canUseAiImages = ['plus', 'team'].includes(session?.user?.subscription?.tier ?? '');
-  const [chatUploadedImages, setChatUploadedImages] = useState<{ base64: string; type: string; name: string }[]>([]);
+  const [chatUploadedImages, setChatUploadedImages] = useState<UploadedImagePayload[]>([]);
   const searchParams = useSearchParams();
   const router = useRouter();
   const [aiModel, setAiModel] = useState(() => {
@@ -149,7 +173,7 @@ function AISandboxPage() {
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
   const [isPreparingDesign, setIsPreparingDesign] = useState(false);
   const [targetUrl, setTargetUrl] = useState<string>('');
-  const [uploadedImages, setUploadedImages] = useState<{ base64: string; type: string; name: string }[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImagePayload[]>([]);
   const [sidebarScrolled, setSidebarScrolled] = useState(false);
   const [screenshotCollapsed, setScreenshotCollapsed] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'gathering' | 'planning' | 'generating' | null>(null);
@@ -172,22 +196,29 @@ function AISandboxPage() {
     appliedCode: Array<{ files: string[]; timestamp: Date }>;
     currentProject: string;
     lastGeneratedCode?: string;
-    uploadedImages?: Array<{ base64: string; type: string; name: string }>;
+    uploadedImages?: UploadedImagePayload[];
+    lastGeneratedImages?: UploadedImagePayload[];
   }>({
     scrapedWebsites: [],
     generatedComponents: [],
     appliedCode: [],
     currentProject: '',
     lastGeneratedCode: undefined,
-    uploadedImages: undefined
+    uploadedImages: undefined,
+    lastGeneratedImages: undefined
   });
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const codeDisplayRef = useRef<HTMLDivElement>(null);
   const saveSessionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sandboxDataRef = useRef<SandboxData | null>(null);
   const sandboxJustCreatedAt = useRef<number>(0);
   const codeApplicationInProgress = useRef<boolean>(false);
+
+  useEffect(() => {
+    sandboxDataRef.current = sandboxData;
+  }, [sandboxData]);
 
   const fileTypeFromPath = useCallback((path: string) => {
     const fileExt = path.split('.').pop() || '';
@@ -566,6 +597,9 @@ function AISandboxPage() {
               }
             }
           }
+        } else if (isStartingNewGeneration || generationProgress.isGenerating) {
+          console.log('[home] Generation in progress, skipping auto sandbox creation...');
+          // Don't create sandbox - the generation flow will handle it
         } else {
           console.log('[home] No sandbox in URL, creating new sandbox automatically...');
           sandboxCreated = true;
@@ -611,7 +645,7 @@ function AISandboxPage() {
         fetch('/api/generation-session', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ siteId: firstSiteId }),
+          body: JSON.stringify({ siteId: firstSiteId, sandboxId: sandboxData.sandboxId }),
         })
           .then(async (res) => {
             if (res.ok) {
@@ -763,7 +797,11 @@ function AISandboxPage() {
 
     const intervalMs = appConfig.vercelSandbox.keepAliveIntervalMs;
     const extendSandbox = () => {
-      fetch('/api/extend-sandbox-timeout', { method: 'POST' })
+      fetch('/api/extend-sandbox-timeout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sandboxId: sandboxData.sandboxId }),
+      })
         .then(res => res.json())
         .then(data => {
           if (!data.extended) {
@@ -925,7 +963,7 @@ function AISandboxPage() {
       const response = await fetch('/api/install-packages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packages })
+        body: JSON.stringify({ packages, sandboxId: sandboxData.sandboxId })
       });
       
       if (!response.ok) {
@@ -984,15 +1022,28 @@ function AISandboxPage() {
   };
 
   const checkSandboxStatus = async (autoRecreate = true) => {
+    if (!sandboxData?.sandboxId) {
+      return;
+    }
+
+    if (sandboxCreationRef.current || codeApplicationInProgress.current || generationProgress.isGenerating || isStartingNewGeneration) {
+      console.log('[checkSandboxStatus] Skipping status check while sandbox operation is in progress');
+      return;
+    }
+
     try {
       // Use checkHealth=true to get actual health status including 502 detection
-      const response = await fetch('/api/sandbox-status?checkHealth=true');
+      const response = await fetch(`/api/sandbox-status?checkHealth=true&sandboxId=${encodeURIComponent(sandboxData.sandboxId)}`);
       const data = await response.json();
 
       if (data.needsRecreation && autoRecreate) {
-        // Safety check: don't recreate if code application is in progress
+        // Safety check: don't recreate if code application or generation is in progress
         if (codeApplicationInProgress.current) {
           console.log('[checkSandboxStatus] Sandbox needs recreation but code application is in progress, skipping recreation');
+          return;
+        }
+        if (generationProgress.isGenerating || isStartingNewGeneration) {
+          console.log('[checkSandboxStatus] Sandbox needs recreation but generation is in progress, skipping recreation');
           return;
         }
         console.log('[checkSandboxStatus] Sandbox needs recreation, auto-recreating...');
@@ -1081,14 +1132,18 @@ function AISandboxPage() {
         sandboxCreationRef.current = false; // Reset the ref on success
         console.log('[createSandbox] Setting sandboxData from creation:', data);
         // Merge with existing sandboxData to preserve previewUrl
-        setSandboxData(prev => ({
-          ...data,
-          // Keep previewUrl if it exists in current data and new data doesn't have one
-          // or if new data's previewUrl is the same as url (not a custom domain)
-          previewUrl: (data.previewUrl && data.previewUrl !== data.url)
-            ? data.previewUrl
-            : (prev?.previewUrl || data.previewUrl),
-        }));
+        setSandboxData(prev => {
+          const nextSandboxData = {
+            ...data,
+            // Keep previewUrl if it exists in current data and new data doesn't have one
+            // or if new data's previewUrl is the same as url (not a custom domain)
+            previewUrl: (data.previewUrl && data.previewUrl !== data.url)
+              ? data.previewUrl
+              : (prev?.sandboxId === data.sandboxId ? (prev?.previewUrl || data.previewUrl) : data.previewUrl),
+          };
+          sandboxDataRef.current = nextSandboxData;
+          return nextSandboxData;
+        });
         updateStatus('Sandbox active', true);
         log('Sandbox created successfully!');
         log(`Sandbox ID: ${data.sandboxId}`);
@@ -1172,12 +1227,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
   };
 
-  const applyGeneratedCode = async (code: string, isEdit: boolean = false, overrideSandboxData?: SandboxData, images?: { base64: string; type: string; name: string }[]) => {
+  const applyGeneratedCode = async (code: string, isEdit: boolean = false, overrideSandboxData?: SandboxData, images?: UploadedImagePayload[]) => {
     console.log('[applyGeneratedCode] STARTED:', {
       codeLength: code?.length || 0,
       isEdit,
       hasOverrideSandboxData: !!overrideSandboxData,
-      currentSandboxDataId: sandboxData?.sandboxId
+      currentSandboxDataId: sandboxData?.sandboxId,
+      uploadedImageCount: images?.length || 0
     });
     setLoading(true);
     codeApplicationInProgress.current = true; // Prevent health check from recreating sandbox
@@ -1202,7 +1258,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         codeLength: code?.length,
         isEdit,
         sandboxId: effectiveSandboxData?.sandboxId,
-        hasPendingPackages: pendingPackages.length > 0
+        hasPendingPackages: pendingPackages.length > 0,
+        uploadedImageCount: images?.length || 0
       });
       const response = await fetch('/api/apply-ai-code-stream', {
         method: 'POST',
@@ -1349,7 +1406,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       // Process final data
       if (finalData && finalData.type === 'complete') {
         const data: any = {
-          success: true,
+          success: finalData.success !== false,
           results: finalData.results,
           explanation: finalData.explanation,
           structure: finalData.structure,
@@ -1363,7 +1420,17 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         
         if (data.success) {
           const { results } = data;
-        
+
+          // Update sandbox data if backend sent new sandbox info (e.g., when new sandbox was created)
+          if (finalData.sandbox?.sandboxId && finalData.sandbox?.url) {
+            console.log('[applyGeneratedCode] Updating sandbox data from response:', finalData.sandbox);
+            setSandboxData(prev => ({
+              ...prev,
+              sandboxId: finalData.sandbox.sandboxId,
+              url: finalData.sandbox.url
+            }));
+          }
+
         // Log package installation results without duplicate messages
         if (results.packagesInstalled?.length > 0) {
           log(`Packages installed: ${results.packagesInstalled.join(', ')}`);
@@ -1466,7 +1533,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               files: changedFiles,
               timestamp: new Date()
             }],
-            uploadedImages: undefined
+            uploadedImages: undefined,
+            lastGeneratedImages: images && images.length > 0 ? images : prev.lastGeneratedImages
           }));
           
           // Update the chat message to show success
@@ -1534,7 +1602,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         }
         
         } else {
-          throw new Error(finalData?.error || 'Failed to apply code');
+          const firstError = finalData?.results?.errors?.[0];
+          throw new Error(firstError || finalData?.message || finalData?.error || 'Failed to apply code');
         }
       } else {
         // If no final data was received, still close loading
@@ -1557,7 +1626,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     if (!sandboxData) return null;
     
     try {
-      const response = await fetch('/api/get-sandbox-files', {
+      const response = await fetch(`/api/get-sandbox-files?sandboxId=${encodeURIComponent(sandboxData.sandboxId)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -2394,12 +2463,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
     // Clear uploaded images after sending
     const imagesToSend = chatUploadedImages;
+    const imagesForGeneration = imagesToSend.length > 0 ? imagesToSend : undefined;
     setChatUploadedImages([]);
 
     // Store images in context for apply phase
     setConversationContext(prev => ({
       ...prev,
-      uploadedImages: imagesToSend.length > 0 ? imagesToSend : undefined
+      uploadedImages: imagesForGeneration,
+      lastGeneratedImages: imagesForGeneration ?? prev.lastGeneratedImages
     }));
 
     // Check for special commands
@@ -2415,16 +2486,23 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
     
     // Start sandbox creation in parallel if needed
-    let sandboxPromise: Promise<void> | null = null;
+    let sandboxPromise: Promise<any> | null = null;
     let sandboxCreating = false;
-    
+
     if (!sandboxData) {
       sandboxCreating = true;
       addChatMessage('Creating sandbox while I plan your app...', 'system');
-      sandboxPromise = createSandbox(true).catch((error: any) => {
+      console.log('[startGeneration] Starting sandbox creation...');
+      sandboxPromise = createSandbox(true).then((data) => {
+        console.log('[startGeneration] Sandbox created:', data?.sandboxId);
+        return data;
+      }).catch((error: any) => {
+        console.error('[startGeneration] Sandbox creation failed:', error);
         addChatMessage(`Failed to create sandbox: ${error.message}`, 'system');
         throw error;
       });
+    } else {
+      console.log('[startGeneration] Sandbox already exists:', sandboxData.sandboxId);
     }
     
     // Determine if this is an edit
@@ -2458,7 +2536,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         sandboxId: sandboxData?.sandboxId || (sandboxCreating ? 'pending' : null),
         structure: structureContent,
         recentMessages: chatMessages.slice(-20),
-        conversationContext: conversationContext,
+        conversationContext: {
+          ...conversationContext,
+          uploadedImages: undefined,
+          lastGeneratedImages: undefined
+        },
         currentCode: promptInput,
         sandboxUrl: sandboxData?.url,
         sandboxCreating: sandboxCreating
@@ -2477,7 +2559,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           model: aiModel,
           context: fullContext,
           isEdit: conversationContext.appliedCode.length > 0,
-          uploadedImages: imagesToSend.length > 0 ? imagesToSend : undefined,
+          uploadedImages: imagesForGeneration,
           aiImagesEnabled
         })
       });
@@ -2666,7 +2748,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   // Save the last generated code
                   setConversationContext(prev => ({
                     ...prev,
-                    lastGeneratedCode: generatedCode
+                    lastGeneratedCode: generatedCode,
+                    lastGeneratedImages: imagesForGeneration ?? prev.lastGeneratedImages
                   }));
                   
                   // Clear thinking state when generation completes
@@ -2730,7 +2813,52 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           }
         }
       }
-      
+
+      // Process any remaining data in the buffer after stream ends
+      if (buffer.trim()) {
+        console.log('[chat] Processing remaining buffer:', buffer.length, 'bytes');
+        const lines = buffer.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'complete') {
+                console.log('[chat] Processing late complete event from buffer');
+                generatedCode = data.generatedCode;
+                explanation = data.explanation;
+
+                // Save the last generated code
+                setConversationContext(prev => ({
+                  ...prev,
+                  lastGeneratedCode: generatedCode,
+                  lastGeneratedImages: imagesForGeneration ?? prev.lastGeneratedImages
+                }));
+
+                // Clear thinking state when generation completes
+                setGenerationProgress(prev => ({
+                  ...prev,
+                  isThinking: false,
+                  thinkingText: undefined,
+                  thinkingDuration: undefined
+                }));
+
+                // Store packages to install from tool calls
+                if (data.packagesToInstall && data.packagesToInstall.length > 0) {
+                  console.log('[generate-code] Packages to install from tools:', data.packagesToInstall);
+                  (window as any).pendingPackages = data.packagesToInstall;
+                }
+              } else if (data.type === 'error') {
+                console.error('[chat] Late error event from buffer:', data.error);
+                // Don't throw here, just log it - the main processing already handled errors
+              }
+            } catch (e) {
+              console.error('Failed to parse remaining SSE data:', e);
+            }
+          }
+        }
+      }
+
       if (generatedCode) {
         // Parse files from generated code for metadata
         const fileRegex = /<file path="([^"]+)">([^]*?)<\/file>/g;
@@ -2763,22 +2891,49 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         // setLeftPanelVisible(true);
         
         // Wait for sandbox creation if it's still in progress
-        let activeSandboxData = sandboxData;
+        let activeSandboxData = sandboxDataRef.current ?? sandboxData;
+        console.log('[startGeneration] Initial sandboxData:', { sandboxData: !!sandboxData, sandboxPromise: !!sandboxPromise });
+
         if (sandboxPromise) {
           addChatMessage('Waiting for sandbox to be ready...', 'system');
           try {
+            console.log('[startGeneration] Awaiting sandboxPromise...');
             const newSandboxData = await sandboxPromise;
-            if (newSandboxData != null) {
+            console.log('[startGeneration] sandboxPromise resolved:', { newSandboxData: !!newSandboxData, hasSandboxId: !!newSandboxData?.sandboxId });
+            if (newSandboxData != null && newSandboxData.sandboxId) {
               activeSandboxData = newSandboxData;
               // Also update the state for future use
+              sandboxDataRef.current = newSandboxData;
               setSandboxData(newSandboxData);
+              console.log('[startGeneration] Using new sandbox data:', newSandboxData.sandboxId);
+            } else {
+              console.warn('[startGeneration] sandboxPromise resolved but no valid data, waiting for sandboxData state...');
+              // If promise returned null but sandboxData might be set via state update soon, wait for it
+              // Poll sandboxData for up to 10 seconds
+              const startTime = Date.now();
+              while (!activeSandboxData && Date.now() - startTime < 10000) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                activeSandboxData = sandboxDataRef.current;
+                if (activeSandboxData) {
+                  console.log('[startGeneration] sandboxData became available after waiting:', activeSandboxData.sandboxId);
+                  break;
+                }
+              }
+              if (!activeSandboxData) {
+                console.error('[startGeneration] sandboxData did not become available after 10s');
+              }
             }
             // Remove the waiting message
             setChatMessages(prev => prev.filter(msg => msg.content !== 'Waiting for sandbox to be ready...'));
-          } catch {
+          } catch (error) {
+            console.error('[startGeneration] Sandbox creation failed:', error);
             addChatMessage('Sandbox creation failed. Cannot apply code.', 'system');
             return;
           }
+        } else if (!activeSandboxData) {
+          console.error('[startGeneration] No sandboxPromise and no sandboxData - sandbox was never created!');
+          addChatMessage('Sandbox not available. Please refresh and try again.', 'system');
+          return;
         }
         
         console.log('[startGeneration] Checking conditions for applyGeneratedCode:', {
@@ -2801,7 +2956,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           console.log('[startGeneration] Calling applyGeneratedCode with:', {
             generatedCodeLength: generatedCode.length,
             isEdit,
-            sandboxId: activeSandboxData.sandboxId
+            sandboxId: activeSandboxData.sandboxId,
+            uploadedImageCount: imagesForGeneration?.length || 0
           });
           let codeToApply = generatedCode;
           if (aiImagesEnabled) {
@@ -2810,7 +2966,12 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               addChatMessage(`Generating image ${done} of ${total}...`, 'system');
             });
           }
-          await applyGeneratedCode(codeToApply, isEdit, activeSandboxData !== sandboxData ? activeSandboxData : undefined, conversationContext.uploadedImages);
+          const imagesForApply = getImagesForGeneratedCode(
+            codeToApply,
+            imagesForGeneration,
+            conversationContext.lastGeneratedImages
+          );
+          await applyGeneratedCode(codeToApply, isEdit, activeSandboxData, imagesForApply);
         } else {
           console.error('[startGeneration] NOT calling applyGeneratedCode - missing:', {
             activeSandboxData: !!activeSandboxData,
@@ -2914,7 +3075,12 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     
     addChatMessage('Re-applying last generation...', 'system');
     const isEdit = conversationContext.appliedCode.length > 0;
-    await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit, undefined, conversationContext.uploadedImages);
+    const imagesForReapply = getImagesForGeneratedCode(
+      conversationContext.lastGeneratedCode,
+      conversationContext.uploadedImages,
+      conversationContext.lastGeneratedImages
+    );
+    await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit, undefined, imagesForReapply);
   };
 
   // Auto-scroll code display to bottom when streaming
@@ -3904,7 +4070,8 @@ Focus on the key sections and content, making it clean and modern.`;
                   // Save the last generated code
                   setConversationContext(prev => ({
                     ...prev,
-                    lastGeneratedCode: generatedCode
+                    lastGeneratedCode: generatedCode,
+                    lastGeneratedImages: uploadedImages.length > 0 ? uploadedImages : prev.lastGeneratedImages
                   }));
                 }
               } catch (e) {
@@ -4737,6 +4904,7 @@ Focus on the key sections and content, making it clean and modern.`;
               placeholder="Describe what you want to build..."
               showSearchFeatures={false}
               onImageUpload={(images) => setChatUploadedImages(images || [])}
+              maxImages={MAX_CHAT_UPLOAD_IMAGES}
             />
           </div>
         </div>
