@@ -55,7 +55,7 @@ Remember: The sandbox has limited resources. Simple CSS animations work better a
     WRONG: <img src="/images/menu/hot-coffee.png" />
     WRONG: <img src="/assets/hero.jpg" />
     CORRECT (no uploaded images): Use a colored div or inline SVG as a placeholder.
-    CORRECT (uploaded images provided): Use only the exact /images/image-N.ext paths given to you.
+    CORRECT (uploaded images provided): Use only the exact /images/upload-*.ext paths given to you.
     If you need a background image for design, use a CSS gradient or solid color instead.
 `;
 
