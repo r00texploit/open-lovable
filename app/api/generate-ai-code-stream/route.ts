@@ -23,6 +23,7 @@ import {
   incrementTokenUsage,
 } from '@/lib/usage/token-usage';
 import { getEnhancedSystemPrompt, enhanceUserPrompt } from '@/lib/ai/prompts';
+import { getUploadedImagePublicPath } from '@/lib/ai/uploaded-image-paths';
 import {
   getSandboxState,
   setSandboxState,
@@ -1270,12 +1271,10 @@ It's better to have 3 complete files than 10 incomplete files.`;
         if (imagesToProcess.length > 0) {
           const imageParts: any[] = [];
 
-          // Build stable path list: image-1.jpg, image-2.jpg ... matching what apply-ai-code-stream writes
           const imagePaths: string[] = [];
           imagesToProcess.forEach((img: any, index: number) => {
             if (img?.base64) {
-              const ext = (img.type || 'image/png').split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
-              imagePaths.push(`/images/image-${index + 1}.${ext}`);
+              imagePaths.push(getUploadedImagePublicPath(img));
               imageParts.push({
                 type: 'image',
                 image: img.base64,
@@ -1293,7 +1292,7 @@ ${pathList}
 
 CRITICAL IMAGE ASSET RULES:
 - These images are saved as real files in the app's public directory.
-- Use the exact paths above (e.g. src="/images/image-1.jpg") in every <img> tag or CSS url() that shows one of the uploaded images.
+- Use the exact paths above (e.g. src="${imagePaths[0] || '/images/upload-example.jpg'}") in every <img> tag or CSS url() that shows one of the uploaded images.
 - Do NOT use data: URIs, do NOT use picsum.photos or placeholder URLs, do NOT invent filenames.
 - Make every used image responsive with className="w-full h-full object-cover" or equivalent.
 - Add meaningful alt text describing the image content.`;

@@ -39,7 +39,7 @@ const getImagesForGeneratedCode = (
   currentImages?: UploadedImagePayload[],
   fallbackImages?: UploadedImagePayload[]
 ) => {
-  if (!/\/images\/image-\d+\.(png|jpe?g|gif|webp|avif)/i.test(code)) {
+  if (!/\/images\/(?:image-\d+|upload-[a-f0-9]{12})\.(png|jpe?g|gif|webp|avif)/i.test(code)) {
     return undefined;
   }
 

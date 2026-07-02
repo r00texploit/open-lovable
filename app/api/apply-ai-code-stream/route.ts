@@ -3,6 +3,7 @@ import { parseMorphEdits, applyMorphEditToFile } from '@/lib/morph-fast-apply';
 import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
 import { sanitizeLucideImports } from '@/lib/ai/sanitize-lucide-imports';
+import { getUploadedImageSandboxPath } from '@/lib/ai/uploaded-image-paths';
 import {
   getSandboxState,
   setSandboxState,
@@ -809,24 +810,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             // Create public/images directory
             await providerInstance.runCommand('mkdir -p public/images');
 
-            const ALLOWED_EXT: Record<string, string> = {
-              png: 'png', jpeg: 'jpg', jpg: 'jpg',
-              gif: 'gif', webp: 'webp', avif: 'avif',
-            };
-
             // Build array of image files to write
             const imageFiles: Array<{ path: string; content: Buffer }> = [];
 
             for (let i = 0; i < uploadedImages.length; i++) {
               const img = uploadedImages[i];
               if (img.base64) {
-                // Strict allowlist — never interpolate user-supplied MIME into shell
-                const mimeSubtype = (img.type || '').split('/')[1]?.toLowerCase() ?? '';
-                const ext = ALLOWED_EXT[mimeSubtype] ?? 'png';
-
-                // Index-based stable names (no user input in path)
-                const imageName = `image-${i + 1}.${ext}`;
-                const imagePath = `public/images/${imageName}`;
+                const imagePath = getUploadedImageSandboxPath(img);
+                const imageName = imagePath.split('/').pop() || 'uploaded-image';
 
                 // Convert base64 to Buffer for writeFiles
                 const imageBuffer = Buffer.from(img.base64, 'base64');
