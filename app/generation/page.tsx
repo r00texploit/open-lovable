@@ -219,6 +219,7 @@ function AISandboxPage() {
   const [siteError, setSiteError] = useState<string | null>(null);
   const [siteActionLoading, setSiteActionLoading] = useState<'create' | 'publish' | 'unpublish' | null>(null);
   const [siteStatusMessage, setSiteStatusMessage] = useState<string | null>(null);
+  const [showNewSiteForm, setShowNewSiteForm] = useState(false);
   
   const [conversationContext, setConversationContext] = useState<{
     scrapedWebsites: Array<{ url: string; content: any; timestamp: Date }>;
@@ -380,6 +381,7 @@ function AISandboxPage() {
   // Store flag to trigger generation after component mounts
   const [shouldAutoGenerate, setShouldAutoGenerate] = useState(false);
   const activeSite = sites.find((site) => site.id === activeSiteId) || null;
+  const isShowingCreateSiteForm = !activeSite || showNewSiteForm;
 
   // Clear old conversation data on component mount and create/restore sandbox
   useEffect(() => {
@@ -1758,6 +1760,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
       setSites((prev) => [data.site, ...prev]);
       setActiveSiteId(data.site.id);
+      setShowNewSiteForm(false);
+      setNewSiteName('');
+      setNewSiteSlug('');
 
       if (sandboxData?.sandboxId) {
         const attachResponse = await fetch('/api/generation-session', {
@@ -4430,8 +4435,21 @@ Focus on the key sections and content, making it clean and modern.`;
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {activeSite ? (
+            {!isShowingCreateSiteForm ? (
               <>
+                <button
+                  onClick={() => {
+                    setNewSiteName('');
+                    setNewSiteSlug('');
+                    setShowNewSiteForm(true);
+                    setSiteError(null);
+                    setSiteStatusMessage(null);
+                  }}
+                  disabled={siteActionLoading !== null}
+                  className="rounded-full border border-warm-750/12 px-4 py-2 text-sm text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  New site
+                </button>
                 <button
                   onClick={publishActiveSite}
                   disabled={siteActionLoading !== null || !sandboxData}
@@ -4468,6 +4486,20 @@ Focus on the key sections and content, making it clean and modern.`;
                 >
                   {siteActionLoading === 'create' ? 'Creating...' : 'Create site'}
                 </button>
+                {activeSite && (
+                  <button
+                    onClick={() => {
+                      setShowNewSiteForm(false);
+                      setNewSiteName('');
+                      setNewSiteSlug('');
+                      setSiteError(null);
+                    }}
+                    disabled={siteActionLoading !== null}
+                    className="rounded-full border border-warm-750/12 px-4 py-2 text-sm text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -4479,9 +4511,9 @@ Focus on the key sections and content, making it clean and modern.`;
             {activeSite.customDomain ? ` • Custom domain: ${activeSite.customDomain}` : ''}
           </p>
         )}
-        {!activeSite && newSiteSlug && (
+        {isShowingCreateSiteForm && newSiteSlug && (
           <p className="mt-2 text-xs text-warm-500">
-            Default URL: https://{newSiteSlug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'mydomain.com'}
+            Default URL: https://{newSiteSlug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net'}
           </p>
         )}
         {siteStatusMessage && <p className="mt-2 text-sm text-brand-orange-dark">{siteStatusMessage}</p>}
