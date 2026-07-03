@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireUser } from '@/lib/auth/server';
-import { createSiteSchema } from '@/lib/validations/site';
+import { createSiteSchema, slugSchema } from '@/lib/validations/site';
 import { toSiteDto } from '@/lib/tenancy/site-dto';
+import { extractSiteNameFromPrompt, slugifySiteName } from '@/lib/tenancy/site-naming';
 
 export async function GET() {
   const auth = await requireUser();
@@ -26,16 +27,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const payload = await request.json();
-  const parsed = createSiteSchema.safeParse(payload);
+  const payload = await request.json().catch(() => ({}));
+  const requestedName = typeof payload?.name === 'string' ? payload.name.trim() : '';
+  const requestedSlug = typeof payload?.slug === 'string' ? payload.slug.trim() : '';
+  const prompt = typeof payload?.prompt === 'string' ? payload.prompt : '';
+  const sourceUrl = typeof payload?.sourceUrl === 'string' ? payload.sourceUrl : '';
+  const name = requestedName || extractSiteNameFromPrompt({ prompt, sourceUrl });
+  const shouldAutoSlug = !requestedSlug;
+  const baseSlug = requestedSlug || slugifySiteName(name);
+  const parsedSlug = slugSchema.safeParse(baseSlug);
+
+  if (!parsedSlug.success) {
+    return NextResponse.json({ error: parsedSlug.error.errors[0]?.message || 'Invalid slug' }, { status: 400 });
+  }
+
+  const slug = shouldAutoSlug
+    ? await generateUniqueSlug(parsedSlug.data)
+    : parsedSlug.data;
+
+  const parsed = createSiteSchema.safeParse({ name, slug });
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.errors[0]?.message || 'Invalid site data' }, { status: 400 });
   }
 
-  const { name, slug } = parsed.data;
   const existing = await prisma.site.findFirst({
     where: {
-      OR: [{ slug }, { subdomain: slug }],
+      OR: [{ slug: parsed.data.slug }, { subdomain: parsed.data.slug }],
     },
   });
 
@@ -46,11 +63,31 @@ export async function POST(request: NextRequest) {
   const site = await prisma.site.create({
     data: {
       userId: auth.user.id,
-      name,
-      slug,
-      subdomain: slug,
+      name: parsed.data.name,
+      slug: parsed.data.slug,
+      subdomain: parsed.data.slug,
     },
   });
 
   return NextResponse.json({ site: toSiteDto(site) }, { status: 201 });
+}
+
+async function generateUniqueSlug(baseSlug: string) {
+  const root = baseSlug.slice(0, 44).replace(/-+$/g, '') || 'site';
+
+  for (let index = 0; index < 100; index++) {
+    const candidate = index === 0 ? root : `${root}-${index + 1}`;
+    const existing = await prisma.site.findFirst({
+      where: {
+        OR: [{ slug: candidate }, { subdomain: candidate }],
+      },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      return candidate;
+    }
+  }
+
+  return `${root}-${Date.now().toString(36).slice(-6)}`.slice(0, 50).replace(/-+$/g, '');
 }
