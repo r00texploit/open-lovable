@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       sandbox: {
         ...sandboxSession,
         isActive,
-        canReconnect: !isActive && !!sandboxSession.sandboxUrl,
+        canReconnect: !isActive && !!(sandboxSession.sandboxName || sandboxSession.rawSandboxUrl || sandboxSession.sandboxUrl),
       },
     });
   } catch (error) {

@@ -11,6 +11,7 @@ import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 import { SandboxFactory } from '@/lib/sandbox/factory';
 import { registerPreviewMapping, buildPreviewUrl, removePreviewMapping } from '@/lib/tenancy/preview-mapping';
 import { prisma } from '@/lib/db/prisma';
+import { buildPersistentSandboxName } from '@/lib/sandbox/persistent-sandbox';
 
 /**
  * GET /api/sandboxes
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
       return {
         ...sb,
         isActive: !!provider && provider.isAlive(),
-        canReconnect: !provider && !!sb.sandboxUrl,
+        canReconnect: !provider && !!(sb.sandboxName || sb.rawSandboxUrl || sb.sandboxUrl),
       };
     });
 
@@ -90,10 +91,12 @@ export async function POST(request: NextRequest) {
 
     // Create the actual sandbox
     const provider = await SandboxFactory.create();
-    const sandboxInfo = await provider.createSandbox();
-
-    // Setup the Vite app
-    await provider.setupViteApp();
+    const sandboxName = buildPersistentSandboxName(dbSession.id, dbSession.siteId);
+    const sandboxInfo = await provider.createSandbox({
+      appSandboxId: sandboxId,
+      sandboxName,
+      setupOnCreate: true,
+    });
 
     // Register with sandbox manager for the user
     sandboxManager.registerSandboxForUser(session.user.id, sandboxId, provider);
@@ -127,6 +130,10 @@ export async function POST(request: NextRequest) {
     const { updateSession } = await import('@/lib/session-store');
     await updateSession(dbSession.id, {
       sandboxUrl: previewUrl,
+      rawSandboxUrl: sandboxInfo.url,
+      sandboxName: sandboxInfo.sandboxName || sandboxName,
+      sandboxRuntimeStatus: sandboxInfo.runtimeStatus || 'running',
+      currentSnapshotId: sandboxInfo.currentSnapshotId || null,
       status: 'running',
     });
 
@@ -137,6 +144,7 @@ export async function POST(request: NextRequest) {
         sandboxId,
         url: sandboxInfo.url,
         previewUrl,
+        sandboxName: sandboxInfo.sandboxName || sandboxName,
         siteSlug,
         provider: sandboxInfo.provider,
         status: 'running',

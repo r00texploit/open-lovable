@@ -1,4 +1,4 @@
-import { SandboxInfo, CommandResult, SandboxProviderConfig } from '../types';
+import { SandboxInfo, CommandResult, SandboxCreateOptions, SandboxProviderConfig } from '../types';
 import { BaseSandboxProvider, Logger } from './base-provider';
 import { appConfig } from '@/config/app.config';
 
@@ -47,7 +47,7 @@ export class E2BProvider extends BaseSandboxProvider {
     return false;
   }
 
-  async createSandbox(): Promise<SandboxInfo> {
+  async createSandbox(_options: SandboxCreateOptions = {}): Promise<SandboxInfo> {
     try {
       const Sandbox = await getE2BSandbox();
 

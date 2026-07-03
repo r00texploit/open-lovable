@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { findSiteByHostname, getPublishedAsset } from '@/lib/tenancy/site-publishing';
-import { decodeTenantHost, getRootDomain, getSubdomainFromHostname } from '@/lib/tenancy/hostname';
-import { getSandboxUrlForSubdomain } from '@/lib/tenancy/preview-mapping';
+import { decodeTenantHost, getRootDomain, isTenantSubdomainHost } from '@/lib/tenancy/hostname';
+import { prisma } from '@/lib/db/prisma';
+import { ensureSessionSandboxRunning, persistSandboxRuntime } from '@/lib/sandbox/persistent-sandbox';
 
 export async function GET(request: NextRequest, context: { params: Promise<unknown> }) {
   const { host, asset } = (await context.params) as { host: string; asset?: string[] };
-  const hostname = decodeTenantHost(host);
   const rootDomain = getRootDomain();
+  const decodedHost = decodeTenantHost(host);
+  const hostname = decodedHost.includes('.') ? decodedHost : `${decodedHost}.${rootDomain}`;
 
   // Redirect www and root domain to landing page - they should not be served by site-host
   if (hostname === `www.${rootDomain}` || hostname === rootDomain) {
@@ -15,16 +17,37 @@ export async function GET(request: NextRequest, context: { params: Promise<unkno
 
   const site = await findSiteByHostname(hostname);
 
-  // If site is not published, check if there's an active preview (sandbox)
-  if (!site || !site.published) {
-    const subdomain = getSubdomainFromHostname(hostname);
-    if (subdomain) {
-      const sandboxUrl = getSandboxUrlForSubdomain(subdomain);
-      if (sandboxUrl) {
-        // Proxy to sandbox for live preview
-        return proxyToSandbox(request, sandboxUrl, asset);
+  if (site && isTenantSubdomainHost(hostname)) {
+    const previewSession = await prisma.generationSession.findFirst({
+      where: {
+        siteId: site.id,
+        sandboxProvider: 'vercel',
+        OR: [
+          { rawSandboxUrl: { not: null } },
+          { sandboxName: { not: null } },
+        ],
+      },
+      orderBy: { lastActiveAt: 'desc' },
+    });
+
+    if (previewSession) {
+      try {
+        const { info } = await ensureSessionSandboxRunning(previewSession);
+        await persistSandboxRuntime(previewSession.id, info, `https://${hostname}`);
+        return proxyToSandbox(request, info.url, asset);
+      } catch (error) {
+        console.error('[site-host] Failed to resume sandbox preview:', error);
+        if (!site.published) {
+          return NextResponse.json(
+            { error: 'Preview waking up. Please retry in a moment.' },
+            { status: 503, headers: { 'Retry-After': '3' } }
+          );
+        }
       }
     }
+  }
+
+  if (!site || !site.published) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
@@ -52,8 +75,9 @@ async function proxyToSandbox(
 ): Promise<NextResponse> {
   try {
     // Build the target URL
-    const targetPath = asset ? `/${asset.join('/')}` : request.nextUrl.pathname;
+    const targetPath = asset && asset.length > 0 ? `/${asset.join('/')}` : '/';
     const targetUrl = new URL(targetPath, sandboxUrl);
+    targetUrl.search = request.nextUrl.search;
 
     // Copy relevant headers
     const headers = new Headers(request.headers);

@@ -58,7 +58,13 @@ interface SandboxData {
   sandboxId: string;
   url: string;
   previewUrl?: string;
+  rawSandboxUrl?: string;
   [key: string]: any;
+}
+
+function buildClientTenantUrl(subdomain: string) {
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'mydomain.com';
+  return `https://${subdomain}.${rootDomain}`;
 }
 
 interface ChatMessage {
@@ -264,7 +270,11 @@ function AISandboxPage() {
     const payload = {
       sandboxId: sd.sandboxId,
       sandboxProvider: sd.provider ?? 'vercel',
-      sandboxUrl: sd.url ?? null,
+      sandboxUrl: sd.previewUrl || sd.url || null,
+      rawSandboxUrl: sd.rawSandboxUrl || sd.url || null,
+      sandboxName: sd.sandboxName || null,
+      sandboxRuntimeStatus: sd.runtimeStatus || sd.sandboxRuntimeStatus || null,
+      currentSnapshotId: sd.currentSnapshotId || null,
       chatMessages: (overrideMessages ?? chatMessages).map(m => ({
         content: m.content,
         type: m.type,
@@ -522,8 +532,8 @@ function AISandboxPage() {
             }
           }
 
-          // Probe the saved sandbox URL before loading it — Vercel sandboxes expire after 15 min
-          const savedUrl: string | null = savedSession?.sandboxUrl ?? null;
+          // Probe the raw saved sandbox URL before loading it. Persistent sandboxes may resume on demand.
+          const savedUrl: string | null = savedSession?.rawSandboxUrl ?? savedSession?.sandboxUrl ?? null;
           let sandboxAlive = false;
           if (savedUrl) {
             try {
@@ -543,6 +553,11 @@ function AISandboxPage() {
             setSandboxData({
               sandboxId: savedSession.sandboxId,
               url: savedUrl,
+              rawSandboxUrl: savedUrl,
+              previewUrl: savedSession.sandboxUrl && savedSession.sandboxUrl !== savedUrl
+                ? savedSession.sandboxUrl
+                : undefined,
+              sandboxName: savedSession.sandboxName,
               provider: savedSession.sandboxProvider ?? 'vercel',
               success: true,
             } as any);
@@ -655,7 +670,7 @@ function AISandboxPage() {
               if (data.session?.siteId) {
                 const selectedSite = sites.find(s => s.id === data.session.siteId);
                 if (selectedSite?.subdomain) {
-                  const customPreviewUrl = `https://${selectedSite.subdomain}.noeron.net`;
+                  const customPreviewUrl = buildClientTenantUrl(selectedSite.subdomain);
                   console.log('[site auto-select] Updating sandboxData previewUrl:', customPreviewUrl);
                   setSandboxData(prev => prev ? {
                     ...prev,
@@ -1682,6 +1697,27 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
       setSites((prev) => [data.site, ...prev]);
       setActiveSiteId(data.site.id);
+
+      if (sandboxData?.sandboxId) {
+        const attachResponse = await fetch('/api/generation-session', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ siteId: data.site.id, sandboxId: sandboxData.sandboxId }),
+        });
+        const attachData = await attachResponse.json();
+
+        if (!attachResponse.ok) {
+          throw new Error(attachData.error || 'Created site, but failed to attach the active sandbox');
+        }
+
+        const customPreviewUrl = buildClientTenantUrl(data.site.subdomain);
+        setSandboxData((prev) => prev ? {
+          ...prev,
+          previewUrl: customPreviewUrl,
+          rawSandboxUrl: prev.rawSandboxUrl || prev.url,
+        } : prev);
+      }
+
       setSiteStatusMessage(`Created ${data.site.name}. Publish your current build when you are ready.`);
     } catch (error: any) {
       setSiteError(error.message);
@@ -2542,7 +2578,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           lastGeneratedImages: undefined
         },
         currentCode: promptInput,
-        sandboxUrl: sandboxData?.url,
+        sandboxUrl: sandboxData?.rawSandboxUrl || sandboxData?.url,
         sandboxCreating: sandboxCreating
       };
       

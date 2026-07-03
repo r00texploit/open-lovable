@@ -9,10 +9,8 @@ import {
   isTenantSubdomainHost,
 } from '@/lib/tenancy/hostname';
 
-const PUBLIC_FILE = /\.(.*)$/;
-
 export default async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
   if (
     pathname.startsWith('/api') ||
@@ -20,8 +18,7 @@ export default async function middleware(request: NextRequest) {
     pathname.startsWith('/site-host') ||
     pathname.startsWith('/favicon') ||
     pathname.startsWith('/brand') ||
-    pathname.startsWith('/site-preview') ||
-    PUBLIC_FILE.test(pathname)
+    pathname.startsWith('/site-preview')
   ) {
     return NextResponse.next();
   }
@@ -56,7 +53,7 @@ export default async function middleware(request: NextRequest) {
   }
 
   // Explicitly exclude www and root domain from tenant routing
-  const rootDomain = process.env.ROOT_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net';
+  const rootDomain = process.env.ROOT_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'mydomain.com';
   if (hostname === `www.${rootDomain}` || hostname === rootDomain) {
     return NextResponse.next();
   }
@@ -64,6 +61,7 @@ export default async function middleware(request: NextRequest) {
   if (isTenantSubdomainHost(hostname) || isCustomDomainHost(hostname)) {
     const url = request.nextUrl.clone();
     url.pathname = `/site-host/${encodeTenantHost(hostname)}${pathname}`;
+    url.search = search;
     return NextResponse.rewrite(url);
   }
 

@@ -1,6 +1,6 @@
 /**
  * Maps site subdomains to sandbox URLs for live preview during development.
- * This allows users to preview their site at custom subdomains like user-webapp.noeron.net
+ * This allows users to preview their site at custom subdomains like user-webapp.example.com
  * instead of the raw Vercel Sandbox URL (xxx.vercel.run).
  */
 
@@ -84,6 +84,6 @@ export function cleanupOldPreviewMappings(maxAgeMs: number = 24 * 60 * 60 * 1000
  * Build the custom preview URL for a site
  */
 export function buildPreviewUrl(subdomain: string): string {
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || 'noeron.net';
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || 'mydomain.com';
   return `https://${subdomain}.${rootDomain}`;
 }

@@ -50,7 +50,7 @@ export async function resolveRequestSandbox(
 
   if (!provider) {
     try {
-      provider = await sandboxManager.getOrCreateProvider(normalizedSandboxId);
+      provider = await sandboxManager.getOrCreateProvider(normalizedSandboxId, sandboxSession || undefined);
     } catch (error) {
       console.warn(
         `[resolve-request-sandbox] Failed to reconnect sandbox ${normalizedSandboxId}:`,

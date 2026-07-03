@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { getSandboxWithUser } from '@/lib/session-store';
 import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
-import { SandboxFactory } from '@/lib/sandbox/factory';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -37,35 +36,24 @@ export async function POST(request: NextRequest, { params }: Params) {
       // Sandbox is already running, just set it as active
       sandboxManager.setActiveSandbox(sandboxId);
     } else {
-      // Try to reconnect to existing sandbox
+      // Try to reconnect/resume existing persistent sandbox
       console.log(`[switch] Attempting to reconnect to sandbox ${sandboxId}`);
       try {
-        provider = await sandboxManager.getOrCreateProvider(sandboxId);
+        provider = await sandboxManager.getOrCreateProvider(sandboxId, sandboxSession);
+        if (typeof (provider as any).ensureViteServerReady === 'function') {
+          await (provider as any).ensureViteServerReady();
+        }
 
-        // If we got a new provider (not reconnected), we need to recreate
-        if (!provider.getSandboxInfo()) {
-          console.log(`[switch] Sandbox ${sandboxId} expired, creating new one`);
-          const newProvider = await SandboxFactory.create();
-          const sandboxInfo = await newProvider.createSandbox();
-          await newProvider.setupViteApp();
-
-          sandboxManager.registerSandbox(sandboxId, newProvider);
-
-          // Update session with new URL
+        const sandboxInfo = provider.getSandboxInfo();
+        if (sandboxInfo) {
           const { updateSession } = await import('@/lib/session-store');
           await updateSession(sandboxSession.id, {
-            sandboxUrl: sandboxInfo.url,
+            rawSandboxUrl: sandboxInfo.url,
+            sandboxUrl: sandboxSession.sandboxUrl || sandboxInfo.url,
+            sandboxName: sandboxInfo.sandboxName || sandboxSession.sandboxName,
+            sandboxRuntimeStatus: sandboxInfo.runtimeStatus || 'running',
+            currentSnapshotId: sandboxInfo.currentSnapshotId || null,
             status: 'running',
-          });
-
-          return NextResponse.json({
-            success: true,
-            message: 'Sandbox recreated successfully',
-            sandbox: {
-              sandboxId,
-              url: sandboxInfo.url,
-              recreated: true,
-            },
           });
         }
       } catch (error) {

@@ -9,6 +9,9 @@ export interface SandboxInfo {
   url: string;
   provider: 'e2b' | 'vercel';
   createdAt: Date;
+  sandboxName?: string;
+  runtimeStatus?: string;
+  currentSnapshotId?: string;
 }
 
 export interface CommandResult {
@@ -32,6 +35,12 @@ export interface SandboxProviderConfig {
   };
 }
 
+export interface SandboxCreateOptions {
+  appSandboxId?: string;
+  sandboxName?: string;
+  setupOnCreate?: boolean;
+}
+
 export abstract class SandboxProvider {
   protected config: SandboxProviderConfig;
   protected sandbox: any;
@@ -41,7 +50,7 @@ export abstract class SandboxProvider {
     this.config = config;
   }
 
-  abstract createSandbox(): Promise<SandboxInfo>;
+  abstract createSandbox(options?: SandboxCreateOptions): Promise<SandboxInfo>;
   abstract runCommand(command: string): Promise<CommandResult>;
   abstract writeFile(path: string, content: string): Promise<void>;
   abstract readFile(path: string): Promise<string>;
@@ -74,5 +83,9 @@ export abstract class SandboxProvider {
   async restartViteServer(): Promise<void> {
     // Default implementation for restarting Vite
     throw new Error('restartViteServer not implemented for this provider');
+  }
+
+  async ensureViteServerReady(): Promise<void> {
+    await this.restartViteServer();
   }
 }
