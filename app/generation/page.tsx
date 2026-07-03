@@ -1312,7 +1312,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       isEdit,
       hasOverrideSandboxData: !!overrideSandboxData,
       currentSandboxDataId: sandboxData?.sandboxId,
-      uploadedImageCount: images?.length || 0
+      uploadedImageCount: images?.length || 0,
+      uploadedImageNames: images?.map(image => image.label || image.name).slice(0, 8) || []
     });
     setLoading(true);
     codeApplicationInProgress.current = true; // Prevent health check from recreating sandbox
@@ -1338,7 +1339,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         isEdit,
         sandboxId: effectiveSandboxData?.sandboxId,
         hasPendingPackages: pendingPackages.length > 0,
-        uploadedImageCount: images?.length || 0
+        uploadedImageCount: images?.length || 0,
+        uploadedImageNames: images?.map(image => image.label || image.name).slice(0, 8) || []
       });
       const response = await fetch('/api/apply-ai-code-stream', {
         method: 'POST',
@@ -3110,9 +3112,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               addChatMessage(`Generating image ${done} of ${total}...`, 'system');
             });
           }
-          const imagesForApply = getImagesForGeneratedCode(
+          const imagesForApply = imagesForGeneration ?? getImagesForGeneratedCode(
             codeToApply,
-            imagesForGeneration,
+            undefined,
             conversationContext.lastGeneratedImages
           );
           await applyGeneratedCode(codeToApply, isEdit, activeSandboxData, imagesForApply);
