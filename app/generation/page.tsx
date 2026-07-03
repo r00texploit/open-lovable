@@ -29,6 +29,7 @@ import {
 } from '@/lib/icons';
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
+import { extractSiteNameFromPrompt, slugifySiteName } from '@/lib/tenancy/site-naming';
 
 type UploadedImagePayload = {
   id?: string;
@@ -1741,6 +1742,37 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
   };
 
+  const ensureSiteForGeneration = async (input: { prompt?: string; sourceUrl?: string } = {}) => {
+    const currentSiteId = activeSiteIdRef.current || activeSiteId;
+    if (currentSiteId) {
+      return currentSiteId;
+    }
+
+    const prompt = input.prompt?.trim() || '';
+    const sourceUrl = input.sourceUrl?.trim() || '';
+    if (!prompt && !sourceUrl) {
+      return '';
+    }
+
+    const response = await fetch('/api/sites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, sourceUrl }),
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.warn('[site auto-create] Failed to create site from prompt:', data.error);
+      return '';
+    }
+
+    setSites((prev) => [data.site, ...prev]);
+    setActiveSiteId(data.site.id);
+    activeSiteIdRef.current = data.site.id;
+    setSiteStatusMessage(`Created ${data.site.name} at ${data.site.liveUrl}`);
+    return data.site.id;
+  };
+
   const createSite = async () => {
     setSiteError(null);
     setSiteStatusMessage(null);
@@ -1750,7 +1782,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       const response = await fetch('/api/sites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newSiteName, slug: newSiteSlug }),
+        body: JSON.stringify({
+          name: newSiteName,
+          slug: newSiteSlug.trim() || undefined,
+        }),
       });
       const data = await response.json();
 
@@ -2596,6 +2631,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     let sandboxCreating = false;
 
     if (!sandboxData) {
+      if (!activeSiteIdRef.current) {
+        await ensureSiteForGeneration({ prompt: message });
+      }
       sandboxCreating = true;
       addChatMessage('Creating sandbox while I plan your app...', 'system');
       console.log('[startGeneration] Starting sandbox creation...');
@@ -3656,6 +3694,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       'system'
     );
     
+    if (!sandboxData && !activeSiteIdRef.current) {
+      await ensureSiteForGeneration({
+        prompt: submittedContext,
+        sourceUrl: submittedUrl,
+      });
+    }
+
     // Start creating sandbox and capturing screenshot immediately in parallel
     const sandboxPromise = !sandboxData ? createSandbox(true) : Promise.resolve(null);
     
@@ -4481,7 +4526,7 @@ Focus on the key sections and content, making it clean and modern.`;
                 />
                 <button
                   onClick={createSite}
-                  disabled={siteActionLoading !== null || !newSiteName.trim() || !newSiteSlug.trim()}
+                  disabled={siteActionLoading !== null || !newSiteName.trim()}
                   className="ol-primary-button px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {siteActionLoading === 'create' ? 'Creating...' : 'Create site'}
@@ -4511,9 +4556,9 @@ Focus on the key sections and content, making it clean and modern.`;
             {activeSite.customDomain ? ` • Custom domain: ${activeSite.customDomain}` : ''}
           </p>
         )}
-        {isShowingCreateSiteForm && newSiteSlug && (
+        {isShowingCreateSiteForm && (newSiteSlug || newSiteName) && (
           <p className="mt-2 text-xs text-warm-500">
-            Default URL: https://{newSiteSlug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net'}
+            Default URL: https://{slugifySiteName(newSiteSlug || newSiteName)}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net'}
           </p>
         )}
         {siteStatusMessage && <p className="mt-2 text-sm text-brand-orange-dark">{siteStatusMessage}</p>}
