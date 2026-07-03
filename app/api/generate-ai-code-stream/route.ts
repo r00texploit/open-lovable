@@ -109,6 +109,21 @@ declare global {
   var conversationState: ConversationState | null;
 }
 
+type UploadedImagePayload = {
+  base64?: string;
+  type?: string;
+  name?: string;
+  label?: string;
+  role?: string;
+  notes?: string;
+  size?: number;
+};
+
+function cleanImageMetadata(value?: string): string {
+  const trimmed = (value || '').replace(/\s+/g, ' ').trim();
+  return trimmed || 'Not provided';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -125,7 +140,7 @@ export async function POST(request: NextRequest) {
 
     // Support both single uploadedImage and array uploadedImages for backwards compatibility
     const userImages = uploadedImages || (uploadedImage ? [uploadedImage] : []);
-    const imagesToProcess = userImages;
+    const imagesToProcess: UploadedImagePayload[] = userImages;
 
     // Get sandbox-scoped state for multi-sandbox support
     const sandboxId = context?.sandboxId || 'default';
@@ -1271,10 +1286,13 @@ It's better to have 3 complete files than 10 incomplete files.`;
         if (imagesToProcess.length > 0) {
           const imageParts: any[] = [];
 
-          const imagePaths: string[] = [];
-          imagesToProcess.forEach((img: any, index: number) => {
+          const imageAssets: Array<{ path: string; image: UploadedImagePayload }> = [];
+          imagesToProcess.forEach((img) => {
             if (img?.base64) {
-              imagePaths.push(getUploadedImagePublicPath(img));
+              imageAssets.push({
+                path: getUploadedImagePublicPath(img),
+                image: img,
+              });
               imageParts.push({
                 type: 'image',
                 image: img.base64,
@@ -1283,16 +1301,28 @@ It's better to have 3 complete files than 10 incomplete files.`;
             }
           });
 
-          const pathList = imagePaths.map((p, i) => `IMAGE_${i + 1}_PATH: ${p}`).join('\n');
+          const pathList = imageAssets.map(({ path, image }, i) => {
+            const fallbackLabel = image.name ? image.name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ') : `Image ${i + 1}`;
+            return [
+              `IMAGE_${i + 1}:`,
+              `- path: ${path}`,
+              `- original filename: ${cleanImageMetadata(image.name)}`,
+              `- label: ${cleanImageMetadata(image.label || fallbackLabel)}`,
+              `- role: ${cleanImageMetadata(image.role || 'Reference')}`,
+              `- notes: ${cleanImageMetadata(image.notes)}`,
+            ].join('\n');
+          }).join('\n\n');
 
           const dataUrlInstruction = `
 
-UPLOADED IMAGE PATHS (use these exact paths as <img src="..."> values):
+UPLOADED IMAGE ASSETS (use these exact paths as <img src="..."> values):
 ${pathList}
 
 CRITICAL IMAGE ASSET RULES:
 - These images are saved as real files in the app's public directory.
-- Use the exact paths above (e.g. src="${imagePaths[0] || '/images/upload-example.jpg'}") in every <img> tag or CSS url() that shows one of the uploaded images.
+- Use the exact paths above (e.g. src="${imageAssets[0]?.path || '/images/upload-example.jpg'}") in every <img> tag or CSS url() that shows one of the uploaded images.
+- Choose placement based on each asset's label, role, notes, and upload order.
+- Treat Logo assets as brand marks, Hero assets as primary visual candidates, Product assets as commerce/content imagery, Background assets as decorative surfaces, and Reference assets as style/context unless the user's prompt says otherwise.
 - Do NOT use data: URIs, do NOT use picsum.photos or placeholder URLs, do NOT invent filenames.
 - Make every used image responsive with className="w-full h-full object-cover" or equivalent.
 - Add meaningful alt text describing the image content.`;

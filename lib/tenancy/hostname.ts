@@ -5,7 +5,7 @@ function stripPort(value: string) {
 }
 
 export function getRootDomain() {
-  return process.env.ROOT_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'mydomain.com';
+  return process.env.ROOT_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net';
 }
 
 export function getPlatformAppHost() {
