@@ -53,7 +53,7 @@ export default async function middleware(request: NextRequest) {
   }
 
   // Explicitly exclude www and root domain from tenant routing
-  const rootDomain = process.env.ROOT_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'mydomain.com';
+  const rootDomain = process.env.ROOT_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net';
   if (hostname === `www.${rootDomain}` || hostname === rootDomain) {
     return NextResponse.next();
   }

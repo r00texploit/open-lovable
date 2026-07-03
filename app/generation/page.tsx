@@ -30,7 +30,16 @@ import {
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
 
-type UploadedImagePayload = { base64: string; type: string; name: string };
+type UploadedImagePayload = {
+  id?: string;
+  base64: string;
+  type: string;
+  name: string;
+  label?: string;
+  role?: string;
+  notes?: string;
+  size?: number;
+};
 
 const MAX_CHAT_UPLOAD_IMAGES = 40;
 
@@ -63,8 +72,23 @@ interface SandboxData {
 }
 
 function buildClientTenantUrl(subdomain: string) {
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'mydomain.com';
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net';
   return `https://${subdomain}.${rootDomain}`;
+}
+
+function buildDraftPreviewUrl(previewUrl: string | undefined, rawUrl: string | undefined) {
+  const url = previewUrl || rawUrl;
+  if (!url || url === rawUrl) {
+    return url;
+  }
+
+  try {
+    const draftUrl = new URL(url);
+    draftUrl.searchParams.set('draft', '1');
+    return draftUrl.toString();
+  } catch {
+    return `${url}${url.includes('?') ? '&' : '?'}draft=1`;
+  }
 }
 
 interface ChatMessage {
@@ -219,12 +243,18 @@ function AISandboxPage() {
   const codeDisplayRef = useRef<HTMLDivElement>(null);
   const saveSessionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sandboxDataRef = useRef<SandboxData | null>(null);
+  const activeSiteIdRef = useRef('');
+  const attachedSandboxSiteRef = useRef('');
   const sandboxJustCreatedAt = useRef<number>(0);
   const codeApplicationInProgress = useRef<boolean>(false);
 
   useEffect(() => {
     sandboxDataRef.current = sandboxData;
   }, [sandboxData]);
+
+  useEffect(() => {
+    activeSiteIdRef.current = activeSiteId;
+  }, [activeSiteId]);
 
   const fileTypeFromPath = useCallback((path: string) => {
     const fileExt = path.split('.').pop() || '';
@@ -650,40 +680,60 @@ function AISandboxPage() {
   }, [session?.user?.id]);
 
   useEffect(() => {
-    if (!activeSiteId && sites.length > 0) {
-      const firstSiteId = sites[0].id;
-      setActiveSiteId(firstSiteId);
-
-      // If sandbox already exists without siteId, update session to associate it
-      if (sandboxData?.sandboxId) {
-        console.log('[site auto-select] Updating existing sandbox session with siteId:', firstSiteId);
-        fetch('/api/generation-session', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ siteId: firstSiteId, sandboxId: sandboxData.sandboxId }),
-        })
-          .then(async (res) => {
-            if (res.ok) {
-              const data = await res.json();
-              console.log('[site auto-select] Session updated:', data);
-              // Update sandboxData with the custom preview URL
-              if (data.session?.siteId) {
-                const selectedSite = sites.find(s => s.id === data.session.siteId);
-                if (selectedSite?.subdomain) {
-                  const customPreviewUrl = buildClientTenantUrl(selectedSite.subdomain);
-                  console.log('[site auto-select] Updating sandboxData previewUrl:', customPreviewUrl);
-                  setSandboxData(prev => prev ? {
-                    ...prev,
-                    previewUrl: customPreviewUrl,
-                  } : prev);
-                }
-              }
-            }
-          })
-          .catch(err => console.error('[site auto-select] Failed to update session:', err));
-      }
+    const selectedSiteId = activeSiteId || sites[0]?.id;
+    if (!selectedSiteId) {
+      return;
     }
-  }, [activeSiteId, sites, sandboxData]);
+
+    if (!activeSiteId) {
+      setActiveSiteId(selectedSiteId);
+      activeSiteIdRef.current = selectedSiteId;
+    }
+
+    if (!sandboxData?.sandboxId) {
+      return;
+    }
+
+    const selectedSite = sites.find(s => s.id === selectedSiteId);
+    if (!selectedSite?.subdomain) {
+      return;
+    }
+
+    const customPreviewUrl = buildClientTenantUrl(selectedSite.subdomain);
+    if (sandboxData.previewUrl === customPreviewUrl) {
+      return;
+    }
+
+    const attachKey = `${sandboxData.sandboxId}:${selectedSiteId}`;
+    if (attachedSandboxSiteRef.current === attachKey) {
+      return;
+    }
+    attachedSandboxSiteRef.current = attachKey;
+
+    console.log('[site auto-attach] Updating existing sandbox session with siteId:', selectedSiteId);
+    fetch('/api/generation-session', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ siteId: selectedSiteId, sandboxId: sandboxData.sandboxId }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to attach sandbox session to site');
+        }
+
+        console.log('[site auto-attach] Session updated:', data);
+        setSandboxData(prev => prev ? {
+          ...prev,
+          previewUrl: customPreviewUrl,
+          rawSandboxUrl: prev.rawSandboxUrl || prev.url,
+        } : prev);
+      })
+      .catch(err => {
+        attachedSandboxSiteRef.current = '';
+        console.error('[site auto-attach] Failed to update session:', err);
+      });
+  }, [activeSiteId, sites, sandboxData?.sandboxId, sandboxData?.previewUrl]);
   
   useEffect(() => {
     // Handle Escape key for home screen
@@ -1079,12 +1129,22 @@ function AISandboxPage() {
       if (data.active && data.healthy && data.sandboxData) {
         console.log('[checkSandboxStatus] Setting sandboxData from API:', data.sandboxData);
         // Merge with existing sandboxData to preserve previewUrl
-        setSandboxData(prev => ({
-          ...(prev || {}),
-          ...data.sandboxData,
-          // Keep previewUrl if it exists in current data and API doesn't return one
-          previewUrl: data.sandboxData.previewUrl || (prev?.previewUrl),
-        }));
+        setSandboxData(prev => {
+          const incomingPreviewUrl = data.sandboxData.previewUrl;
+          const incomingRawUrl = data.sandboxData.url;
+          const preservedPreviewUrl = prev?.previewUrl && prev.previewUrl !== prev.url
+            ? prev.previewUrl
+            : undefined;
+
+          return {
+            ...(prev || {}),
+            ...data.sandboxData,
+            rawSandboxUrl: data.sandboxData.rawSandboxUrl || prev?.rawSandboxUrl || incomingRawUrl,
+            previewUrl: incomingPreviewUrl && incomingPreviewUrl !== incomingRawUrl
+              ? incomingPreviewUrl
+              : (preservedPreviewUrl || incomingPreviewUrl),
+          };
+        });
         updateStatus('Sandbox active', true);
       } else if (data.active && !data.healthy) {
         // Sandbox exists but not responding
@@ -1133,11 +1193,12 @@ function AISandboxPage() {
     setScreenshotError(null);
     
     try {
-      console.log('[createSandbox] Creating sandbox with siteId:', activeSiteId);
+      const effectiveSiteId = activeSiteIdRef.current || activeSiteId;
+      console.log('[createSandbox] Creating sandbox with siteId:', effectiveSiteId);
       const response = await fetch('/api/create-ai-sandbox-v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ siteId: activeSiteId })
+        body: JSON.stringify({ siteId: effectiveSiteId })
       });
       
       const data = await response.json();
@@ -1165,7 +1226,7 @@ function AISandboxPage() {
         log(`URL: ${data.url}`);
 
         // Persist session to DB so it can be resumed on any device
-        debouncedSave(data, chatMessages, activeSiteId);
+        debouncedSave(data, chatMessages, effectiveSiteId);
         
         // Update URL with sandbox ID
         const newParams = new URLSearchParams(searchParams.toString());
@@ -2486,7 +2547,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   };
 
   const sendChatMessage = async () => {
-    const message = aiChatInput.trim();
+    const message = aiChatInput.trim() || (
+      chatUploadedImages.length > 0
+        ? 'Use these uploaded image assets to build or update the website.'
+        : ''
+    );
     if (!message) return;
     
     if (!aiEnabled) {
@@ -5012,7 +5077,7 @@ Focus on the key sections and content, making it clean and modern.`;
               {/* Open in new tab button */}
               {sandboxData && (
                 <a
-                  href={sandboxData.previewUrl || sandboxData.url}
+                  href={buildDraftPreviewUrl(sandboxData.previewUrl, sandboxData.url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Open in new tab"

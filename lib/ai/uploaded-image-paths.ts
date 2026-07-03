@@ -4,6 +4,10 @@ export type UploadedImageLike = {
   base64?: string;
   type?: string;
   name?: string;
+  label?: string;
+  role?: string;
+  notes?: string;
+  size?: number;
 };
 
 const ALLOWED_EXT: Record<string, string> = {

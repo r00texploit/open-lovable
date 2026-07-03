@@ -84,6 +84,6 @@ export function cleanupOldPreviewMappings(maxAgeMs: number = 24 * 60 * 60 * 1000
  * Build the custom preview URL for a site
  */
 export function buildPreviewUrl(subdomain: string): string {
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || 'mydomain.com';
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || 'noeron.net';
   return `https://${subdomain}.${rootDomain}`;
 }

@@ -16,8 +16,11 @@ export async function GET(request: NextRequest, context: { params: Promise<unkno
   }
 
   const site = await findSiteByHostname(hostname);
+  const wantsDraftPreview =
+    request.nextUrl.searchParams.get('draft') === '1' ||
+    request.nextUrl.searchParams.get('preview') === 'sandbox';
 
-  if (site && isTenantSubdomainHost(hostname)) {
+  if (site && isTenantSubdomainHost(hostname) && (!site.published || wantsDraftPreview)) {
     const previewSession = await prisma.generationSession.findFirst({
       where: {
         siteId: site.id,
@@ -82,6 +85,7 @@ async function proxyToSandbox(
     // Copy relevant headers
     const headers = new Headers(request.headers);
     headers.delete('host'); // Let the fetch set the correct host
+    headers.delete('accept-encoding'); // Avoid returning auto-decoded bytes with compressed headers
 
     // Forward the request to the sandbox
     const response = await fetch(targetUrl, {
@@ -90,11 +94,20 @@ async function proxyToSandbox(
       body: request.method !== 'GET' && request.method !== 'HEAD' ? await request.text() : undefined,
     });
 
-    // Create response with appropriate headers
-    const responseHeaders = new Headers(response.headers);
+    // Create response with a fresh header set. Next/fetch may auto-decode the
+    // upstream body while the sandbox still reports content-encoding: br/gzip;
+    // forwarding that stale header makes browsers fail module loads.
+    const responseHeaders = new Headers();
+    const contentType = response.headers.get('content-type');
+    const cacheControl = response.headers.get('cache-control');
+    const lastModified = response.headers.get('last-modified');
+    if (contentType) responseHeaders.set('Content-Type', contentType);
+    if (cacheControl) responseHeaders.set('Cache-Control', cacheControl);
+    if (lastModified) responseHeaders.set('Last-Modified', lastModified);
     responseHeaders.set('X-Proxy-Source', 'sandbox-preview');
+    const body = request.method === 'HEAD' ? null : await response.arrayBuffer();
 
-    return new NextResponse(response.body, {
+    return new NextResponse(body, {
       status: response.status,
       statusText: response.statusText,
       headers: responseHeaders,

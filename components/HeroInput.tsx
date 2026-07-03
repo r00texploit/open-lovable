@@ -1,12 +1,27 @@
 "use client";
 
-import { useState, KeyboardEvent, useEffect, useRef, ChangeEvent } from "react";
-import { ImageIcon, X, Send } from "lucide-react";
+import Image from "next/image";
+import { useState, KeyboardEvent, useEffect, useRef, ChangeEvent, DragEvent } from "react";
+import { ChevronDown, ChevronUp, ImageIcon, Send, X } from "lucide-react";
 
-interface ImageData {
+export type UploadedImageRole =
+  | "Logo"
+  | "Hero"
+  | "Product"
+  | "Gallery"
+  | "Icon"
+  | "Avatar"
+  | "Background"
+  | "Reference";
+
+export interface ImageData {
+  id: string;
   base64: string;
   type: string;
   name: string;
+  label: string;
+  role: UploadedImageRole;
+  notes: string;
   preview: string;
   size: number;
 }
@@ -27,6 +42,35 @@ function isURL(str: string): boolean {
   return urlPattern.test(str.trim());
 }
 
+const IMAGE_ROLES: UploadedImageRole[] = [
+  "Logo",
+  "Hero",
+  "Product",
+  "Gallery",
+  "Icon",
+  "Avatar",
+  "Background",
+  "Reference",
+];
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+function getDefaultLabel(fileName: string): string {
+  const withoutExtension = fileName.replace(/\.[^/.]+$/, "");
+  const spaced = withoutExtension
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!spaced) return "Uploaded image";
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+function createImageId(file: File): string {
+  return `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID?.() || Date.now()}`;
+}
+
 export default function HeroInput({
   value,
   onChange,
@@ -40,6 +84,9 @@ export default function HeroInput({
   const [isFocused, setIsFocused] = useState(false);
   const [showTiles, setShowTiles] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<ImageData[]>([]);
+  const [assetBoardOpen, setAssetBoardOpen] = useState(false);
+  const [isDraggingImages, setIsDraggingImages] = useState(false);
+  const [uploadFeedback, setUploadFeedback] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isURLInput = showSearchFeatures ? isURL(value) : false;
@@ -71,65 +118,139 @@ export default function HeroInput({
     }
   };
 
-  const handleImageSelect = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const remainingSlots = maxImages - uploadedImages.length;
-      const filesToProcess = Array.from(files).slice(0, remainingSlots);
-      filesToProcess.forEach(file => processImageFile(file));
-    }
+  const commitImages = (nextImages: ImageData[]) => {
+    setUploadedImages(nextImages);
+    onImageUpload?.(nextImages.length > 0 ? nextImages : null);
   };
 
-  const processImageFile = (file: File) => {
-    if (!file.type.startsWith('image/')) return;
-    if (file.size > 5 * 1024 * 1024) return;
+  const handleImageSelect = async (e: ChangeEvent<HTMLInputElement>) => {
+    await addImageFiles(Array.from(e.target.files || []));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64Full = e.target?.result as string;
-      const base64 = base64Full.split(',')[1];
-      const imageData: ImageData = {
-        size: file.size,
-        preview: base64Full,
-        base64,
-        type: file.type,
-        name: file.name
+  const addImageFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    const validFiles: File[] = [];
+    const skipped: string[] = [];
+    const remainingSlots = maxImages - uploadedImages.length;
+
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        skipped.push(`${file.name} is not an image`);
+        continue;
+      }
+      if (file.size > MAX_IMAGE_SIZE) {
+        skipped.push(`${file.name} is larger than 5 MB`);
+        continue;
+      }
+      if (validFiles.length >= remainingSlots) {
+        skipped.push(`Only ${remainingSlots} more image${remainingSlots === 1 ? '' : 's'} can be added`);
+        break;
+      }
+      validFiles.push(file);
+    }
+
+    if (remainingSlots <= 0) {
+      setUploadFeedback(`Max ${maxImages} images allowed`);
+      return;
+    }
+
+    const processedImages = (await Promise.all(validFiles.map(processImageFile))).filter(Boolean) as ImageData[];
+    if (processedImages.length > 0) {
+      const nextImages = [...uploadedImages, ...processedImages];
+      commitImages(nextImages);
+      if (nextImages.length > 1) setAssetBoardOpen(true);
+    }
+
+    setUploadFeedback(skipped.length > 0 ? skipped[0] : null);
+  };
+
+  const processImageFile = (file: File): Promise<ImageData | null> => {
+    if (!file.type.startsWith('image/')) return Promise.resolve(null);
+    if (file.size > MAX_IMAGE_SIZE) return Promise.resolve(null);
+
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64Full = e.target?.result as string;
+        const base64 = base64Full.split(',')[1];
+        resolve({
+          id: createImageId(file),
+          size: file.size,
+          preview: base64Full,
+          base64,
+          type: file.type,
+          name: file.name,
+          label: getDefaultLabel(file.name),
+          role: "Reference",
+          notes: "",
+        });
       };
-      setUploadedImages(prev => {
-        const newImages = [...prev, imageData];
-        onImageUpload?.(newImages);
-        return newImages;
-      });
-    };
-    reader.readAsDataURL(file);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
   };
 
   const removeImage = (index: number) => {
-    setUploadedImages(prev => {
-      const newImages = prev.filter((_, i) => i !== index);
-      onImageUpload?.(newImages.length > 0 ? newImages : null);
-      return newImages;
-    });
+    const newImages = uploadedImages.filter((_, i) => i !== index);
+    commitImages(newImages);
+    if (newImages.length === 0) {
+      setAssetBoardOpen(false);
+      setUploadFeedback(null);
+    }
+  };
+
+  const updateImage = (index: number, updates: Partial<Pick<ImageData, "label" | "role" | "notes">>) => {
+    const newImages = uploadedImages.map((image, i) => (
+      i === index ? { ...image, ...updates } : image
+    ));
+    commitImages(newImages);
+  };
+
+  const moveImage = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= uploadedImages.length) return;
+
+    const newImages = [...uploadedImages];
+    [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
+    commitImages(newImages);
+  };
+
+  const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingImages(false);
+    await addImageFiles(Array.from(e.dataTransfer.files || []));
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingImages(true);
   };
 
   const handleSubmit = () => {
     if (!value.trim() && uploadedImages.length === 0) return;
     onSubmit();
     if (uploadedImages.length > 0) {
-      setUploadedImages([]);
-      onImageUpload?.(null);
+      commitImages([]);
+      setAssetBoardOpen(false);
+      setUploadFeedback(null);
     }
   };
 
   return (
     <div className={`w-full ${className}`}>
       <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={() => setIsDraggingImages(false)}
         className={`
           rounded-2xl border transition-all duration-200
           ${isFocused
             ? 'border-brand-orange/50 bg-white shadow-[0_4px_20px_rgba(250,93,25,0.08)]'
             : 'border-warm-750/12 bg-white hover:border-warm-750/25'
           }
+          ${isDraggingImages ? 'border-brand-orange bg-brand-orange/5' : ''}
         `}
       >
         {/* Textarea */}
@@ -171,40 +292,112 @@ export default function HeroInput({
           />
         </div>
 
-        {/* Image Previews - with max height and scroll */}
+        {/* Image asset board */}
         {uploadedImages.length > 0 && (
           <div className="px-4 pb-3">
-            <div className="flex flex-col gap-2 max-h-[150px] overflow-y-auto scrollbar-thin pr-1">
-              {uploadedImages.map((image, index) => (
-                <div key={index} className="flex items-center gap-3 rounded-lg bg-warm-100/70 p-2 pr-2 border border-warm-750/8 shrink-0">
-                  <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md border border-warm-750/10">
-                    <img
-                      src={image.preview}
-                      alt={image.name}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium text-foreground">
-                      {image.name}
-                    </p>
-                    <p className="text-[10px] text-foreground-dimmer">
-                      {(image.size / 1024).toFixed(0)} KB
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-warm-150 text-warm-500 transition-colors hover:bg-warm-200 hover:text-warm-700"
-                    title="Remove image"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setAssetBoardOpen(prev => !prev)}
+                className="flex min-w-0 items-center gap-2 text-xs font-medium text-foreground transition-colors hover:text-brand-orange"
+              >
+                {assetBoardOpen ? <ChevronUp className="h-3.5 w-3.5 shrink-0" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0" />}
+                <span className="truncate">
+                  {assetBoardOpen ? 'Hide asset board' : 'Manage assets'}
+                </span>
+              </button>
+              <span className="shrink-0 text-[10px] text-foreground-dimmer">
+                {uploadedImages.length}/{maxImages}
+              </span>
             </div>
-            {uploadedImages.length >= maxImages && (
-              <p className="text-xs text-brand-orange mt-2 text-center">Max {maxImages} images allowed</p>
+
+            {!assetBoardOpen ? (
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                {uploadedImages.map((image, index) => (
+                  <div key={image.id} className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-warm-750/10 bg-warm-100">
+                    <Image src={image.preview} alt={image.label || image.name} fill sizes="48px" unoptimized className="object-cover" />
+                    <span className="absolute bottom-0 right-0 rounded-tl bg-black/60 px-1 text-[9px] text-white">{index + 1}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex max-h-[280px] flex-col gap-2 overflow-y-auto pr-1 scrollbar-thin">
+                {uploadedImages.map((image, index) => (
+                  <div key={image.id} className="rounded-lg border border-warm-750/8 bg-warm-100/70 p-2">
+                    <div className="flex items-start gap-3">
+                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-warm-750/10">
+                        <Image src={image.preview} alt={image.label || image.name} fill sizes="48px" unoptimized className="object-cover" />
+                        <span className="absolute bottom-0 right-0 rounded-tl bg-black/60 px-1 text-[9px] text-white">{index + 1}</span>
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={image.label}
+                            onChange={(e) => updateImage(index, { label: e.target.value })}
+                            className="min-w-0 flex-1 rounded-md border border-warm-750/10 bg-white px-2 py-1 text-xs font-medium text-foreground outline-none transition-colors focus:border-brand-orange/50"
+                            aria-label={`Label for ${image.name}`}
+                            placeholder="Asset label"
+                          />
+                          <select
+                            value={image.role}
+                            onChange={(e) => updateImage(index, { role: e.target.value as UploadedImageRole })}
+                            className="h-7 rounded-md border border-warm-750/10 bg-white px-2 text-[11px] text-foreground outline-none transition-colors focus:border-brand-orange/50"
+                            aria-label={`Role for ${image.name}`}
+                          >
+                            {IMAGE_ROLES.map(role => (
+                              <option key={role} value={role}>{role}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <input
+                          value={image.notes}
+                          onChange={(e) => updateImage(index, { notes: e.target.value })}
+                          className="w-full rounded-md border border-warm-750/10 bg-white px-2 py-1 text-[11px] text-foreground outline-none transition-colors placeholder:text-warm-400 focus:border-brand-orange/50"
+                          aria-label={`Notes for ${image.name}`}
+                          placeholder="Optional placement note"
+                        />
+                        <p className="truncate text-[10px] text-foreground-dimmer">
+                          {image.name} · {(image.size / 1024).toFixed(0)} KB
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, -1)}
+                          disabled={index === 0}
+                          className="flex h-6 w-6 items-center justify-center rounded-md bg-white text-warm-500 transition-colors hover:text-warm-800 disabled:opacity-30"
+                          title="Move up"
+                        >
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, 1)}
+                          disabled={index === uploadedImages.length - 1}
+                          className="flex h-6 w-6 items-center justify-center rounded-md bg-white text-warm-500 transition-colors hover:text-warm-800 disabled:opacity-30"
+                          title="Move down"
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="flex h-6 w-6 items-center justify-center rounded-md bg-white text-warm-500 transition-colors hover:text-red-600"
+                          title="Remove image"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {(uploadedImages.length >= maxImages || uploadFeedback) && (
+              <p className="mt-2 text-center text-xs text-brand-orange">
+                {uploadFeedback || `Max ${maxImages} images allowed`}
+              </p>
             )}
           </div>
         )}

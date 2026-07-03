@@ -56,6 +56,7 @@ Remember: The sandbox has limited resources. Simple CSS animations work better a
     WRONG: <img src="/assets/hero.jpg" />
     CORRECT (no uploaded images): Use a colored div or inline SVG as a placeholder.
     CORRECT (uploaded images provided): Use only the exact /images/upload-*.ext paths given to you.
+    When uploaded image labels, roles, or notes are provided, use them to decide where each exact image path belongs.
     If you need a background image for design, use a CSS gradient or solid color instead.
 `;
 
