@@ -7,6 +7,7 @@ import { requireUser } from '@/lib/auth/server';
 import { setSandboxState, setSandboxProvider } from '@/lib/sandbox/sandbox-state';
 import { registerPreviewMapping, buildPreviewUrl } from '@/lib/tenancy/preview-mapping';
 import { prisma } from '@/lib/db/prisma';
+import { buildPersistentSandboxName } from '@/lib/sandbox/persistent-sandbox';
 
 // ponytail: global state kept for backward compat
 // Use session-scoped sandboxes via sandboxManager
@@ -94,10 +95,12 @@ export async function POST(request: Request) {
 
     // Create new sandbox using factory
     const provider = await SandboxFactory.create();
-    const sandboxInfo = await provider.createSandbox();
-    
-    console.log('[create-ai-sandbox-v2] Setting up Vite React app...');
-    await provider.setupViteApp();
+    const sandboxName = buildPersistentSandboxName(session.id, session.siteId);
+    const sandboxInfo = await provider.createSandbox({
+      appSandboxId: session.sandboxId,
+      sandboxName,
+      setupOnCreate: true,
+    });
     
     // Register with sandbox manager keyed by session and user
     sandboxManager.registerSandboxForUser(user.id, session.sandboxId, provider);
@@ -141,6 +144,10 @@ export async function POST(request: Request) {
     const { updateSession } = await import('@/lib/session-store');
     await updateSession(session.id, {
       sandboxUrl: previewUrl,
+      rawSandboxUrl: sandboxInfo.url,
+      sandboxName: sandboxInfo.sandboxName || sandboxName,
+      sandboxRuntimeStatus: sandboxInfo.runtimeStatus || 'running',
+      currentSnapshotId: sandboxInfo.currentSnapshotId || null,
       status: 'running',
     });
 
@@ -157,7 +164,9 @@ export async function POST(request: Request) {
       sandbox: provider,
       sandboxData: {
         sandboxId: session.sandboxId,
-        url: sandboxInfo.url
+        url: sandboxInfo.url,
+        previewUrl,
+        sandboxName: sandboxInfo.sandboxName || sandboxName,
       }
     });
 
@@ -170,6 +179,7 @@ export async function POST(request: Request) {
       sandboxId: session.sandboxId,
       url: sandboxInfo.url,
       previewUrl: previewUrl,
+      sandboxName: sandboxInfo.sandboxName || sandboxName,
       siteSlug: siteSlug,
       provider: sandboxInfo.provider,
       message: 'Sandbox created and Vite React app initialized'

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { prisma } from '@/lib/db/prisma';
-import { buildPreviewUrl, getSandboxUrlForSubdomain } from '@/lib/tenancy/preview-mapping';
+import { buildPreviewUrl } from '@/lib/tenancy/preview-mapping';
 
 // GET /api/generation-session — list user's recent sessions
 export async function GET() {
@@ -20,6 +20,10 @@ export async function GET() {
       sandboxId: true,
       sandboxProvider: true,
       sandboxUrl: true,
+      rawSandboxUrl: true,
+      sandboxName: true,
+      sandboxRuntimeStatus: true,
+      currentSnapshotId: true,
       chatMessages: true,
       conversationCtx: true,
       fileCache: true,
@@ -31,40 +35,21 @@ export async function GET() {
     },
   });
 
-  // Transform sessions to use custom preview URL if site is associated
   const transformedSessions = sessions.map(s => {
-    console.log('[generation-session] Processing session:', {
-      sessionId: s.id,
-      sandboxId: s.sandboxId,
-      siteId: s.siteId,
-      siteSubdomain: s.site?.subdomain,
-      originalSandboxUrl: s.sandboxUrl,
-    });
-
     if (s.site?.subdomain) {
-      // Check if there's an active preview mapping
-      const sandboxUrlFromMapping = getSandboxUrlForSubdomain(s.site.subdomain);
-      console.log('[generation-session] Preview mapping check:', {
-        subdomain: s.site.subdomain,
-        hasMapping: !!sandboxUrlFromMapping,
-        mappedUrl: sandboxUrlFromMapping,
-      });
-
-      if (sandboxUrlFromMapping) {
-        const customUrl = buildPreviewUrl(s.site.subdomain);
-        console.log('[generation-session] Returning custom URL:', customUrl);
-        return {
-          ...s,
-          sandboxUrl: customUrl,
-          previewUrl: customUrl,
-        };
-      } else {
-        console.log('[generation-session] No preview mapping found, returning original URL:', s.sandboxUrl);
-      }
-    } else {
-      console.log('[generation-session] No site or subdomain associated');
+      const customUrl = buildPreviewUrl(s.site.subdomain);
+      return {
+        ...s,
+        sandboxUrl: customUrl,
+        previewUrl: customUrl,
+        rawSandboxUrl: s.rawSandboxUrl || s.sandboxUrl,
+      };
     }
-    return s;
+    return {
+      ...s,
+      previewUrl: s.sandboxUrl,
+      rawSandboxUrl: s.rawSandboxUrl || s.sandboxUrl,
+    };
   });
 
   return NextResponse.json({ sessions: transformedSessions });
@@ -82,6 +67,10 @@ export async function POST(request: NextRequest) {
     sandboxId,
     sandboxProvider,
     sandboxUrl,
+    rawSandboxUrl,
+    sandboxName,
+    sandboxRuntimeStatus,
+    currentSnapshotId,
     chatMessages,
     conversationCtx,
     fileCache,
@@ -111,6 +100,10 @@ export async function POST(request: NextRequest) {
     userId: session.user.id,
     sandboxProvider: sandboxProvider ?? 'vercel',
     sandboxUrl: sandboxUrl ?? null,
+    rawSandboxUrl: rawSandboxUrl ?? sandboxUrl ?? null,
+    sandboxName: sandboxName ?? null,
+    sandboxRuntimeStatus: sandboxRuntimeStatus ?? null,
+    currentSnapshotId: currentSnapshotId ?? null,
     chatMessages: chatMessages ?? [],
     conversationCtx: {
       ...(conversationCtx ?? {}),
@@ -180,18 +173,27 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Sandbox session not found' }, { status: 404 });
   }
 
-  // Update the session with the siteId
+  const rawSandboxUrl = genSession.rawSandboxUrl || genSession.sandboxUrl;
+  const previewUrl = buildPreviewUrl(site.subdomain);
+
+  // Update the session with the siteId and durable URL split:
+  // sandboxUrl is what users open; rawSandboxUrl is what proxy/resume uses.
   const updatedSession = await prisma.generationSession.update({
     where: { id: genSession.id },
-    data: { siteId: site.id, lastActiveAt: new Date() },
+    data: {
+      siteId: site.id,
+      sandboxUrl: previewUrl,
+      rawSandboxUrl,
+      lastActiveAt: new Date(),
+    },
   });
 
-  // Register preview mapping if sandboxUrl exists
-  if (genSession.sandboxUrl) {
+  // Keep local dev fallback mapping in sync; durable routing uses rawSandboxUrl.
+  if (rawSandboxUrl) {
     const { registerPreviewMapping } = await import('@/lib/tenancy/preview-mapping');
     registerPreviewMapping(
       site.subdomain,
-      genSession.sandboxUrl,
+      rawSandboxUrl,
       genSession.sandboxId,
       site.id,
       session.user.id

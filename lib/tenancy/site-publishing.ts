@@ -78,7 +78,7 @@ export async function findSiteByHostname(hostname: string) {
   return prisma.site.findFirst({
     where: {
       OR: [
-        ...(isCustomDomainHost(hostname) ? [{ customDomain: hostname }] : []),
+        ...(isCustomDomainHost(hostname) ? [{ customDomain: hostname, customDomainVerified: true }] : []),
         ...(subdomain ? [{ subdomain }] : []),
       ],
     },
@@ -166,5 +166,4 @@ function rewriteIndexHtml(files: Array<{ path: string; content: Buffer; size: nu
     };
   });
 }
-
 

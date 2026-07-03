@@ -1,4 +1,4 @@
-import { SandboxInfo, CommandResult, SandboxProviderConfig } from '../types';
+import { SandboxInfo, CommandResult, SandboxCreateOptions, SandboxProviderConfig } from '../types';
 import { BaseSandboxProvider, Logger } from './base-provider';
 import { appConfig } from '@/config/app.config';
 
@@ -18,7 +18,7 @@ function buildCredentials(): Record<string, string> {
     return { teamId: process.env.VERCEL_TEAM_ID, projectId: process.env.VERCEL_PROJECT_ID, token: process.env.VERCEL_TOKEN };
   }
   if (hasUsableOidcToken()) {
-    return { oidcToken: process.env.VERCEL_OIDC_TOKEN! };
+    return {};
   }
   return {};
 }
@@ -26,21 +26,48 @@ function buildCredentials(): Record<string, string> {
 export class VercelProvider extends BaseSandboxProvider {
   protected providerName: 'vercel' | 'e2b' = 'vercel';
   protected workingDirectory = '/vercel/sandbox';
+  private appSandboxId: string | null = null;
 
   constructor(config: SandboxProviderConfig = {}, logger?: Logger) {
     super(config, logger, 'vercel');
   }
 
-  async reconnect(sandboxId: string): Promise<SandboxInfo> {
+  private buildSandboxInfo(appSandboxId: string): SandboxInfo {
+    if (!this.sandbox) {
+      throw new Error('No active sandbox');
+    }
+
+    const sandboxUrl = this.sandbox.domain(appConfig.vercelSandbox.devPort);
+    return {
+      sandboxId: appSandboxId,
+      url: sandboxUrl,
+      provider: 'vercel',
+      createdAt: new Date(),
+      sandboxName: this.sandbox.name,
+      runtimeStatus: this.sandbox.status,
+      currentSnapshotId: this.sandbox.currentSnapshotId,
+    };
+  }
+
+  async reconnect(sandboxName: string, appSandboxId: string = sandboxName): Promise<SandboxInfo> {
     const Sandbox = await getVercelSandbox();
     const credentials = buildCredentials();
-    this.sandbox = await Sandbox.get({ sandboxId, ...credentials });
-    const sandboxUrl = this.sandbox.domain(appConfig.vercelSandbox.devPort);
-    this.sandboxInfo = { sandboxId, url: sandboxUrl, provider: 'vercel', createdAt: new Date() };
+    this.appSandboxId = appSandboxId;
+    this.sandbox = await Sandbox.get({
+      name: sandboxName,
+      resume: true,
+      onResume: async (sandbox: any) => {
+        this.sandbox = sandbox;
+        await this.restartViteServer();
+      },
+      ...credentials
+    });
+    await this.ensureViteServerReady();
+    this.sandboxInfo = this.buildSandboxInfo(appSandboxId);
     return this.sandboxInfo;
   }
 
-  async createSandbox(): Promise<SandboxInfo> {
+  async createSandbox(options: SandboxCreateOptions = {}): Promise<SandboxInfo> {
     try {
       const Sandbox = await getVercelSandbox();
 
@@ -57,25 +84,38 @@ export class VercelProvider extends BaseSandboxProvider {
       // Clear existing files tracking
       this.clearTrackedFiles();
 
+      const appSandboxId = options.appSandboxId || options.sandboxName || `sb_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+      const sandboxName = options.sandboxName || appSandboxId;
+      this.appSandboxId = appSandboxId;
+
       const sandboxConfig: Record<string, unknown> = {
+        name: sandboxName,
         timeout: appConfig.vercelSandbox.timeoutMs,
         runtime: appConfig.vercelSandbox.runtime,
-        ports: [appConfig.vercelSandbox.devPort]
+        ports: [appConfig.vercelSandbox.devPort],
+        persistent: true,
+        snapshotExpiration: 0,
+        keepLastSnapshots: { count: 1, expiration: 0 },
+        resume: true,
+        onCreate: async (sandbox: any) => {
+          this.sandbox = sandbox;
+          if (options.setupOnCreate) {
+            await this.setupViteApp();
+          }
+        },
+        onResume: async (sandbox: any) => {
+          this.sandbox = sandbox;
+          await this.restartViteServer();
+        }
       };
 
       Object.assign(sandboxConfig, buildCredentials());
 
-      this.sandbox = await Sandbox.create(sandboxConfig as Parameters<typeof Sandbox.create>[0]);
-
-      const sandboxId = this.sandbox.sandboxId;
-      const sandboxUrl = this.sandbox.domain(appConfig.vercelSandbox.devPort);
-
-      this.sandboxInfo = {
-        sandboxId,
-        url: sandboxUrl,
-        provider: 'vercel',
-        createdAt: new Date()
-      };
+      this.sandbox = await Sandbox.getOrCreate(sandboxConfig as Parameters<typeof Sandbox.getOrCreate>[0]);
+      if (options.setupOnCreate) {
+        await this.ensureViteServerReady();
+      }
+      this.sandboxInfo = this.buildSandboxInfo(appSandboxId);
 
       return this.sandboxInfo;
 
@@ -91,6 +131,9 @@ export class VercelProvider extends BaseSandboxProvider {
     }
     try {
       await this.sandbox.extendTimeout(durationMs);
+      if (this.appSandboxId) {
+        this.sandboxInfo = this.buildSandboxInfo(this.appSandboxId);
+      }
       return true;
     } catch (error: unknown) {
       this.logger.warn('Could not extend sandbox timeout:', (error as Error)?.message || error);
@@ -384,6 +427,21 @@ export class VercelProvider extends BaseSandboxProvider {
     }
 
     this.logger.info('Vite server verified listening on port', appConfig.vercelSandbox.devPort);
+  }
+
+  async ensureViteServerReady(): Promise<void> {
+    if (!this.sandbox) {
+      throw new Error('No active sandbox');
+    }
+
+    const isReady = await this.verifyDevServerReady();
+    if (!isReady) {
+      await this.startViteServer();
+    }
+
+    if (this.appSandboxId) {
+      this.sandboxInfo = this.buildSandboxInfo(this.appSandboxId);
+    }
   }
 
   /**

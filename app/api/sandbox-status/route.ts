@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { getSandboxUrlForSubdomain, buildPreviewUrl } from '@/lib/tenancy/preview-mapping';
+import { buildPreviewUrl } from '@/lib/tenancy/preview-mapping';
 import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
 /**
@@ -83,7 +83,10 @@ export async function GET(request: Request) {
 
       sandboxInfo = {
         sandboxId: sandboxSession?.sandboxId || resolved.value.sandboxId,
-        url: providerInfo?.url || sandboxSession?.sandboxUrl,
+        url: providerInfo?.url || sandboxSession?.rawSandboxUrl || sandboxSession?.sandboxUrl,
+        previewUrl: sandboxSession?.sandboxUrl || undefined,
+        sandboxName: sandboxSession?.sandboxName || providerInfo?.sandboxName,
+        runtimeStatus: providerInfo?.runtimeStatus || sandboxSession?.sandboxRuntimeStatus,
         filesTracked: Array.isArray(sandboxSession?.existingFiles)
           ? sandboxSession.existingFiles
           : [],
@@ -97,11 +100,7 @@ export async function GET(request: Request) {
       });
 
       if (genSession?.site?.subdomain) {
-        const sandboxUrlFromMapping = getSandboxUrlForSubdomain(genSession.site.subdomain);
-        if (sandboxUrlFromMapping) {
-          sandboxInfo.previewUrl = buildPreviewUrl(genSession.site.subdomain);
-          console.log('[sandbox-status] Found preview URL:', sandboxInfo.previewUrl);
-        }
+        sandboxInfo.previewUrl = buildPreviewUrl(genSession.site.subdomain);
       }
 
       // Perform actual health check if requested

@@ -16,6 +16,10 @@ export interface SandboxSession {
   sandboxId: string;
   sandboxProvider: string;
   sandboxUrl: string | null;
+  rawSandboxUrl: string | null;
+  sandboxName: string | null;
+  sandboxRuntimeStatus: string | null;
+  currentSnapshotId: string | null;
   status: SessionStatus;
   chatMessages: any[];
   conversationCtx: any | null;
@@ -29,7 +33,7 @@ export interface SandboxSession {
   updatedAt: Date;
 }
 
-const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const SESSION_TTL_MS = 10 * 365 * 24 * 60 * 60 * 1000; // Durable resumable workspaces
 
 /**
  * Create a new session. Upserts the user if they don't exist (handles JWT users
@@ -55,6 +59,10 @@ export async function createSession(
       sandboxId: data.sandboxId || `sb_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`,
       sandboxProvider: data.sandboxProvider || 'vercel',
       sandboxUrl: data.sandboxUrl || null,
+      rawSandboxUrl: data.rawSandboxUrl || null,
+      sandboxName: data.sandboxName || null,
+      sandboxRuntimeStatus: data.sandboxRuntimeStatus || null,
+      currentSnapshotId: data.currentSnapshotId || null,
       status: data.status || 'creating',
       chatMessages: data.chatMessages || [],
       conversationCtx: data.conversationCtx || null,
@@ -82,8 +90,10 @@ export async function getSession(sessionId: string): Promise<SandboxSession | nu
 
   // Check if session expired
   if (new Date() > session.expiresAt) {
-    await deleteSession(sessionId);
-    return null;
+    const refreshed = await updateSession(sessionId, {
+      expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+    });
+    return refreshed;
   }
 
   return session as unknown as SandboxSession;
@@ -101,8 +111,10 @@ export async function getSessionBySandboxId(sandboxId: string): Promise<SandboxS
 
   // Check if session expired
   if (new Date() > session.expiresAt) {
-    await deleteSession(session.id);
-    return null;
+    const refreshed = await updateSession(session.id, {
+      expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+    });
+    return refreshed;
   }
 
   return session as unknown as SandboxSession;
@@ -147,7 +159,9 @@ export async function setSessionSandbox(
   sessionId: string,
   sandboxId: string,
   provider: string,
-  sandboxUrl?: string
+  sandboxUrl?: string,
+  rawSandboxUrl?: string,
+  sandboxName?: string | null
 ): Promise<void> {
   await prisma.generationSession.updateMany({
     where: { id: sessionId },
@@ -155,6 +169,8 @@ export async function setSessionSandbox(
       sandboxId,
       sandboxProvider: provider,
       sandboxUrl: sandboxUrl || null,
+      rawSandboxUrl: rawSandboxUrl || sandboxUrl || null,
+      ...(sandboxName !== undefined ? { sandboxName } : {}),
       status: 'running',
       lastActiveAt: new Date(),
       updatedAt: new Date(),
@@ -323,6 +339,8 @@ export async function cleanupExpiredSessions(): Promise<number> {
       expiresAt: {
         lt: new Date(),
       },
+      sandboxName: null,
+      rawSandboxUrl: null,
     },
   });
 
@@ -337,6 +355,8 @@ export async function getSessionSandbox(sessionId: string): Promise<{
   sandboxId: string;
   provider: string;
   sandboxUrl: string | null;
+  rawSandboxUrl: string | null;
+  sandboxName: string | null;
 } | null> {
   const session = await getSession(sessionId);
   if (!session?.sandboxId) return null;
@@ -345,6 +365,8 @@ export async function getSessionSandbox(sessionId: string): Promise<{
     sandboxId: session.sandboxId,
     provider: session.sandboxProvider,
     sandboxUrl: session.sandboxUrl,
+    rawSandboxUrl: session.rawSandboxUrl || session.sandboxUrl,
+    sandboxName: session.sandboxName,
   };
 }
 
