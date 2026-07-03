@@ -292,6 +292,13 @@ function parseAIResponse(response: string): ParsedResponse {
 export async function POST(request: NextRequest) {
   try {
     const { response, isEdit = false, packages = [], sandboxId, uploadedImages } = await request.json();
+    console.log('[apply-ai-code-stream] Request received:', {
+      sandboxId,
+      isEdit,
+      packageCount: packages.length,
+      uploadedImageCount: uploadedImages?.length || 0,
+      uploadedImageNames: uploadedImages?.map((image: any) => image.label || image.name).slice(0, 8) || []
+    });
 
     const resolved = await resolveRequestSandbox(sandboxId);
     if (!resolved.ok) {
