@@ -156,6 +156,42 @@ function parseSseDataLine(line: string) {
   }
 }
 
+function stripLargeSessionContext(context: any) {
+  return {
+    ...context,
+    scrapedWebsites: (context.scrapedWebsites ?? []).map((website: any) => ({
+      url: website.url,
+      timestamp: website.timestamp,
+      title: website.content?.title,
+      source: website.content?.source,
+    })).slice(-5),
+    generatedComponents: (context.generatedComponents ?? []).map((component: any) => ({
+      name: component.name,
+      path: component.path,
+    })).slice(-50),
+    appliedCode: (context.appliedCode ?? []).slice(-20),
+    lastGeneratedCode: undefined,
+    uploadedImages: context.uploadedImages?.map((image: any) => ({
+      id: image.id,
+      type: image.type,
+      name: image.name,
+      label: image.label,
+      role: image.role,
+      notes: image.notes,
+      size: image.size,
+    })),
+    lastGeneratedImages: context.lastGeneratedImages?.map((image: any) => ({
+      id: image.id,
+      type: image.type,
+      name: image.name,
+      label: image.label,
+      role: image.role,
+      notes: image.notes,
+      size: image.size,
+    })),
+  };
+}
+
 interface SiteSummary {
   id: string;
   name: string;
@@ -356,6 +392,13 @@ function AISandboxPage() {
       siteId: overrideSiteId ?? activeSiteId ?? null,
     };
 
+    const dbPayload = {
+      ...payload,
+      chatMessages: payload.chatMessages.slice(-appConfig.ui.maxRecentMessagesContext),
+      conversationCtx: stripLargeSessionContext(conversationContext),
+      fileCache: {},
+    };
+
     // Always persist to localStorage so session survives a refresh on the same device
     // Also save file contents separately so they can be restored to a fresh sandbox
     try {
@@ -369,11 +412,14 @@ function AISandboxPage() {
     // Also persist to DB if user is logged in (for cross-device restore)
     if (!session?.user?.id) return;
     try {
-      await fetch('/api/generation-session', {
+      const response = await fetch('/api/generation-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(dbPayload),
       });
+      if (!response.ok) {
+        console.warn('[saveSession] DB save skipped:', response.status, response.statusText);
+      }
     } catch {
       // non-blocking — DB save failed, localStorage fallback already done
     }
@@ -1022,16 +1068,17 @@ function AISandboxPage() {
     setResponseArea(prev => [...prev, `[${type}] ${message}`]);
   };
 
-  const addChatMessage = (content: string, type: ChatMessage['type'], metadata?: ChatMessage['metadata']) => {
+  const addChatMessage = (content: unknown, type: ChatMessage['type'], metadata?: ChatMessage['metadata']) => {
+    const messageContent = getErrorMessage(content, '');
     setChatMessages(prev => {
       // Skip duplicate consecutive system messages
       if (type === 'system' && prev.length > 0) {
         const lastMessage = prev[prev.length - 1];
-        if (lastMessage.type === 'system' && lastMessage.content === content) {
+        if (lastMessage.type === 'system' && lastMessage.content === messageContent) {
           return prev; // Skip duplicate
         }
       }
-      return [...prev, { content, type, timestamp: new Date(), metadata }];
+      return [...prev, { content: messageContent, type, timestamp: new Date(), metadata }];
     });
   };
   
