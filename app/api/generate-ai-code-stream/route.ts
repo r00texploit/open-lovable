@@ -124,6 +124,26 @@ function cleanImageMetadata(value?: string): string {
   return trimmed || 'Not provided';
 }
 
+function getErrorMessage(value: unknown, fallback = 'Unknown error'): string {
+  if (!value) return fallback;
+  if (value instanceof Error) return value.message || fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    const maybeError = value as { message?: unknown; error?: unknown; cause?: unknown };
+    if (typeof maybeError.message === 'string') return maybeError.message;
+    if (typeof maybeError.error === 'string') return maybeError.error;
+    if (maybeError.cause) return getErrorMessage(maybeError.cause, fallback);
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return fallback;
+    }
+  }
+
+  return String(value);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -1609,8 +1629,7 @@ REMEMBER: It's better to generate fewer COMPLETE files than many INCOMPLETE file
         
         // Surface provider errors that AI SDK v5 only delivers via onError
         if (capturedStreamError) {
-          const errMessage =
-            (capturedStreamError as any)?.message || String(capturedStreamError);
+          const errMessage = getErrorMessage(capturedStreamError, 'AI provider request failed');
           await sendProgress({
             type: 'error',
             message: `AI provider error (${actualModel}): ${errMessage}`,
@@ -2083,7 +2102,7 @@ Provide the complete file content without any truncation. Include all necessary 
         } else {
           await sendProgress({ 
             type: 'error', 
-            error: (error as Error).message 
+            error: getErrorMessage(error, 'Generation failed')
           });
         }
       } finally {
@@ -2110,7 +2129,7 @@ Provide the complete file content without any truncation. Include all necessary 
     console.error('[generate-ai-code-stream] Error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: (error as Error).message 
+      error: getErrorMessage(error, 'Generation failed')
     }, { status: 500 });
   }
 }
