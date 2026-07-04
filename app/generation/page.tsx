@@ -120,6 +120,42 @@ interface ScrapeData {
   error?: string;
 }
 
+function getErrorMessage(value: unknown, fallback = 'Unknown error') {
+  if (!value) return fallback;
+  if (value instanceof Error) return value.message || fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    const maybeError = value as { message?: unknown; error?: unknown };
+    if (typeof maybeError.message === 'string') return maybeError.message;
+    if (typeof maybeError.error === 'string') return maybeError.error;
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return fallback;
+    }
+  }
+
+  return String(value);
+}
+
+function parseSseDataLine(line: string) {
+  if (!line.startsWith('data: ')) return null;
+
+  const payload = line.slice(6).trim();
+  if (!payload || payload === '[DONE]') return null;
+
+  try {
+    return JSON.parse(payload);
+  } catch (error) {
+    console.error('Failed to parse SSE data:', {
+      error: getErrorMessage(error),
+      payloadPreview: payload.slice(0, 500),
+    });
+    return null;
+  }
+}
+
 interface SiteSummary {
   id: string;
   name: string;
@@ -1049,10 +1085,9 @@ function AISandboxPage() {
         const lines = chunk.split('\n');
         
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          const data = parseSseDataLine(line);
+          if (data) {
             try {
-              const data = JSON.parse(line.slice(6));
-              
               switch (data.type) {
                 case 'command':
                   // Don't show npm install commands - they're handled by info messages
@@ -1079,7 +1114,7 @@ function AISandboxPage() {
                   break;
               }
             } catch (e) {
-              console.error('Failed to parse SSE data:', e);
+              console.error('Failed to process SSE data:', getErrorMessage(e));
             }
           }
         }
@@ -1372,10 +1407,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         const lines = chunk.split('\n');
         
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          const data = parseSseDataLine(line);
+          if (data) {
             try {
-              const data = JSON.parse(line.slice(6));
-              
               switch (data.type) {
                 case 'start':
                   // Don't add as chat message, just update state
@@ -1461,7 +1495,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   break;
                   
                 case 'error':
-                  addChatMessage(`Error: ${data.message || data.error || 'Unknown error'}`, 'system');
+                  addChatMessage(`Error: ${getErrorMessage(data.message || data.error)}`, 'system');
                   // Reset loading state on error
                   setLoading(false);
                   break;
@@ -1477,8 +1511,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   }
                   break;
               }
-            } catch {
-              // Ignore parse errors
+            } catch (error) {
+              console.error('Failed to process SSE data:', getErrorMessage(error));
             }
           }
         }
@@ -2738,10 +2772,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           buffer = lines.pop() || '';
           
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
+            const data = parseSseDataLine(line);
+            if (data) {
               try {
-                const data = JSON.parse(line.slice(6));
-                
                 if (data.type === 'status') {
                   setGenerationProgress(prev => ({ ...prev, status: data.message }));
                 } else if (data.type === 'thinking') {
@@ -2950,10 +2983,18 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   if (data.limitReached) {
                     router.push(data.upgradeUrl || '/pricing');
                   }
-                  throw new Error(data.error);
+                  const message = getErrorMessage(data.error || data.message, 'Generation failed');
+                  setGenerationProgress(prev => ({
+                    ...prev,
+                    isGenerating: false,
+                    isStreaming: false,
+                    isThinking: false,
+                    status: message,
+                  }));
+                  addChatMessage(message, 'error');
                 }
               } catch (e) {
-                console.error('Failed to parse SSE data:', e);
+                console.error('Failed to process SSE data:', getErrorMessage(e));
               }
             }
           }
@@ -2965,10 +3006,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         console.log('[chat] Processing remaining buffer:', buffer.length, 'bytes');
         const lines = buffer.split('\n');
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          const data = parseSseDataLine(line);
+          if (data) {
             try {
-              const data = JSON.parse(line.slice(6));
-
               if (data.type === 'complete') {
                 console.log('[chat] Processing late complete event from buffer');
                 generatedCode = data.generatedCode;
@@ -2999,7 +3039,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 // Don't throw here, just log it - the main processing already handled errors
               }
             } catch (e) {
-              console.error('Failed to parse remaining SSE data:', e);
+              console.error('Failed to process remaining SSE data:', getErrorMessage(e));
             }
           }
         }
@@ -4089,10 +4129,9 @@ Focus on the key sections and content, making it clean and modern.`;
           const lines = chunk.split('\n');
           
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
+            const data = parseSseDataLine(line);
+            if (data) {
               try {
-                const data = JSON.parse(line.slice(6));
-                
                 if (data.type === 'status') {
                   setGenerationProgress(prev => ({ ...prev, status: data.message }));
                 } else if (data.type === 'thinking') {
@@ -4226,9 +4265,22 @@ Focus on the key sections and content, making it clean and modern.`;
                     lastGeneratedCode: generatedCode,
                     lastGeneratedImages: uploadedImages.length > 0 ? uploadedImages : prev.lastGeneratedImages
                   }));
+                } else if (data.type === 'error') {
+                  if (data.limitReached) {
+                    router.push(data.upgradeUrl || '/pricing');
+                  }
+                  const message = getErrorMessage(data.error || data.message, 'Generation failed');
+                  setGenerationProgress(prev => ({
+                    ...prev,
+                    isGenerating: false,
+                    isStreaming: false,
+                    isThinking: false,
+                    status: message,
+                  }));
+                  addChatMessage(message, 'error');
                 }
               } catch (e) {
-                console.error('Failed to parse SSE data:', e);
+                console.error('Failed to process SSE data:', getErrorMessage(e));
               }
             }
           }
