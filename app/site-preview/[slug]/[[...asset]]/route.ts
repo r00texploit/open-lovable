@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findSiteBySlugForPreview, getPublishedAsset } from '@/lib/tenancy/site-publishing';
+import { findSiteBySlugForPreview, getPublishedAsset, readAssetBody } from '@/lib/tenancy/site-publishing';
 import { requireUser } from '@/lib/auth/server';
 
 export async function GET(_: NextRequest, context: { params: Promise<unknown> }) {
@@ -20,11 +20,17 @@ export async function GET(_: NextRequest, context: { params: Promise<unknown> })
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  return new NextResponse(Buffer.from(publishedAsset.content), {
-    status: 200,
-    headers: {
-      'Content-Type': publishedAsset.contentType,
-      'Cache-Control': 'private, no-store',
-    },
-  });
+  try {
+    const body = await readAssetBody(publishedAsset);
+    return new NextResponse(body, {
+      status: 200,
+      headers: {
+        'Content-Type': publishedAsset.contentType,
+        'Cache-Control': 'private, no-store',
+      },
+    });
+  } catch (error) {
+    console.error('[site-preview] Failed to load asset:', error);
+    return NextResponse.json({ error: 'Failed to load asset' }, { status: 502 });
+  }
 }

@@ -13,6 +13,19 @@ const PUBLIC_FILE = /\.(.*)$/;
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hostname = getRequestHostname(request.headers);
+
+  // Tenant hosts must be rewritten before any path-based skip: published
+  // sites request /assets/*.js etc., which would otherwise match
+  // PUBLIC_FILE and fall through to the platform app as 404s.
+  if (isTenantSubdomainHost(hostname) || isCustomDomainHost(hostname)) {
+    if (pathname.startsWith('/api') || pathname.startsWith('/_next') || pathname.startsWith('/site-host')) {
+      return NextResponse.next();
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = `/site-host/${encodeTenantHost(hostname)}${pathname}`;
+    return NextResponse.rewrite(url);
+  }
 
   if (
     pathname.startsWith('/api') ||
@@ -26,7 +39,6 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const hostname = getRequestHostname(request.headers);
   // Derive the cookie name from the actual request protocol instead of
   // NEXTAUTH_URL — a stale/localhost NEXTAUTH_URL otherwise makes getToken
   // look for the non-__Secure cookie and treat logged-in users as guests.
@@ -51,12 +63,6 @@ export default async function middleware(request: NextRequest) {
   if (isPlatformAppHost(hostname) && pathname === '/') {
     const url = request.nextUrl.clone();
     url.pathname = '/generation';
-    return NextResponse.rewrite(url);
-  }
-
-  if (isTenantSubdomainHost(hostname) || isCustomDomainHost(hostname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/site-host/${encodeTenantHost(hostname)}${pathname}`;
     return NextResponse.rewrite(url);
   }
 

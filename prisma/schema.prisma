@@ -151,7 +151,8 @@ model SiteAsset {
   siteId       String
   path         String
   contentType  String
-  content      Bytes
+  content      Bytes?   // Inline fallback when Blob storage is not configured
+  blobUrl      String?  // Public Vercel Blob URL when uploaded to Blob
   size         Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

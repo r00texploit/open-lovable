@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findSiteByHostname, getPublishedAsset } from '@/lib/tenancy/site-publishing';
+import {
+  findSiteByHostname,
+  getCacheControlForPath,
+  getPublishedAsset,
+  readAssetBody,
+} from '@/lib/tenancy/site-publishing';
 import { decodeTenantHost, getRootDomain } from '@/lib/tenancy/hostname';
 
 export async function GET(request: NextRequest, context: { params: Promise<unknown> }) {
@@ -23,11 +28,17 @@ export async function GET(request: NextRequest, context: { params: Promise<unkno
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  return new NextResponse(Buffer.from(publishedAsset.content), {
-    status: 200,
-    headers: {
-      'Content-Type': publishedAsset.contentType,
-      'Cache-Control': 'public, max-age=60',
-    },
-  });
+  try {
+    const body = await readAssetBody(publishedAsset);
+    return new NextResponse(body, {
+      status: 200,
+      headers: {
+        'Content-Type': publishedAsset.contentType,
+        'Cache-Control': getCacheControlForPath(publishedAsset.path),
+      },
+    });
+  } catch (error) {
+    console.error('[site-host] Failed to load asset:', error);
+    return NextResponse.json({ error: 'Failed to load asset' }, { status: 502 });
+  }
 }
