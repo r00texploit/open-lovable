@@ -30,16 +30,19 @@ import {
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
 import { extractSiteNameFromPrompt, slugifySiteName } from '@/lib/tenancy/site-naming';
+import { ensureImagesUploaded } from '@/lib/ai/ensure-images-uploaded';
 
 type UploadedImagePayload = {
   id?: string;
-  base64: string;
+  base64?: string;
   type: string;
   name: string;
   label?: string;
   role?: string;
   notes?: string;
   size?: number;
+  path?: string;
+  blobUrl?: string;
 };
 
 const MAX_CHAT_UPLOAD_IMAGES = 40;
@@ -1413,6 +1416,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         (window as any).pendingPackages = [];
       }
       
+      // Move image bytes to Blob storage first so the apply request body stays
+      // under the serverless size limit (base64 images otherwise 413).
+      const preparedImages = await ensureImagesUploaded(images);
+
       // Use streaming endpoint for real-time feedback
       const effectiveSandboxData = overrideSandboxData || sandboxData;
       console.log('[applyGeneratedCode] Fetching /api/apply-ai-code-stream:', {
@@ -1421,8 +1428,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         isEdit,
         sandboxId: effectiveSandboxData?.sandboxId,
         hasPendingPackages: pendingPackages.length > 0,
-        uploadedImageCount: images?.length || 0,
-        uploadedImageNames: images?.map(image => image.label || image.name).slice(0, 8) || []
+        uploadedImageCount: preparedImages?.length || 0,
+        uploadedImageNames: preparedImages?.map(image => image.label || image.name).slice(0, 8) || []
       });
       const response = await fetch('/api/apply-ai-code-stream', {
         method: 'POST',
@@ -1432,7 +1439,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           isEdit: isEdit,
           packages: pendingPackages,
           sandboxId: effectiveSandboxData?.sandboxId, // Pass the sandbox ID to ensure proper connection
-          uploadedImages: images && images.length > 0 ? images : undefined
+          uploadedImages: preparedImages && preparedImages.length > 0 ? preparedImages : undefined
         })
       });
       console.log('[applyGeneratedCode] Fetch response status:', response.status, response.ok);
@@ -2685,9 +2692,12 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     addChatMessage(message, 'user');
     setAiChatInput('');
 
-    // Clear uploaded images after sending
+    // Clear uploaded images after sending. Upload bytes to Blob first so the
+    // generate/apply request bodies stay under the serverless size limit.
     const imagesToSend = chatUploadedImages;
-    const imagesForGeneration = imagesToSend.length > 0 ? imagesToSend : undefined;
+    const imagesForGeneration = await ensureImagesUploaded(
+      imagesToSend.length > 0 ? imagesToSend : undefined
+    );
     setChatUploadedImages([]);
 
     // Store images in context for apply phase
@@ -4123,6 +4133,12 @@ ${filteredContext ? '- Apply the user\'s context/theme requirements throughout t
 Focus on the key sections and content, making it clean and modern.`;
         }
 
+        // Upload image bytes to Blob first so request bodies stay under the
+        // serverless size limit (base64 images otherwise 413 on apply/generate).
+        const preparedUploadedImages = await ensureImagesUploaded(
+          uploadedImages.length > 0 ? uploadedImages : undefined
+        );
+
         setGenerationProgress(prev => ({
           isGenerating: true,
           status: 'Initializing AI...',
@@ -4150,7 +4166,7 @@ Focus on the key sections and content, making it clean and modern.`;
               structure: structureContent,
               conversationContext: conversationContext
             },
-            uploadedImages: uploadedImages.length > 0 ? uploadedImages : undefined,
+            uploadedImages: preparedUploadedImages,
             aiImagesEnabled
           })
         });
@@ -4310,7 +4326,7 @@ Focus on the key sections and content, making it clean and modern.`;
                   setConversationContext(prev => ({
                     ...prev,
                     lastGeneratedCode: generatedCode,
-                    lastGeneratedImages: uploadedImages.length > 0 ? uploadedImages : prev.lastGeneratedImages
+                    lastGeneratedImages: preparedUploadedImages ?? prev.lastGeneratedImages
                   }));
                 } else if (data.type === 'error') {
                   if (data.limitReached) {
@@ -4367,7 +4383,7 @@ Focus on the key sections and content, making it clean and modern.`;
           setPromptInput(generatedCode);
 
           // Apply the code (first time is not edit mode)
-          await applyGeneratedCode(generatedCode, false, undefined, uploadedImages);
+          await applyGeneratedCode(generatedCode, false, undefined, preparedUploadedImages);
 
           addChatMessage(
             brandExtensionMode

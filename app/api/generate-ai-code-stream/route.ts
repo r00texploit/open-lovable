@@ -85,6 +85,8 @@ type UploadedImagePayload = {
   role?: string;
   notes?: string;
   size?: number;
+  path?: string;
+  blobUrl?: string;
 };
 
 function cleanImageMetadata(value?: string): string {
@@ -1259,14 +1261,17 @@ It's better to have 3 complete files than 10 incomplete files.`;
 
           const imageAssets: Array<{ path: string; image: UploadedImagePayload }> = [];
           imagesToProcess.forEach((img) => {
-            if (img?.base64) {
+            // Images may arrive inline (base64) or as a Blob URL reference once
+            // uploaded — accept either as the vision input.
+            const visionSource = img?.base64 || img?.blobUrl;
+            if (visionSource) {
               imageAssets.push({
                 path: getUploadedImagePublicPath(img),
                 image: img,
               });
               imageParts.push({
                 type: 'image',
-                image: img.base64,
+                image: visionSource,
                 mediaType: img.type || 'image/png'
               });
             }

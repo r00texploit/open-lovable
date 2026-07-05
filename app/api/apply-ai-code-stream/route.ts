@@ -5,7 +5,7 @@ import type { ConversationState } from '@/types/conversation';
 import { sanitizeLucideImports } from '@/lib/ai/sanitize-lucide-imports';
 import { createEmptyConversationState, resolveConversationSession } from '@/lib/session-helpers';
 import { updateConversationContext } from '@/lib/session-store';
-import { getUploadedImageSandboxPath } from '@/lib/ai/uploaded-image-paths';
+import { getUploadedImageSandboxPath, resolveUploadedImageBytes } from '@/lib/ai/uploaded-image-paths';
 import {
   getSandboxState,
   setSandboxState,
@@ -825,12 +825,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
             for (let i = 0; i < uploadedImages.length; i++) {
               const img = uploadedImages[i];
-              if (img.base64) {
+              // Bytes arrive inline (base64) or via a Blob URL reference.
+              const imageBuffer = await resolveUploadedImageBytes(img);
+              if (imageBuffer) {
                 const imagePath = getUploadedImageSandboxPath(img);
                 const imageName = imagePath.split('/').pop() || 'uploaded-image';
 
-                // Convert base64 to Buffer for writeFiles
-                const imageBuffer = Buffer.from(img.base64, 'base64');
                 imageFiles.push({ path: imagePath, content: imageBuffer });
 
                 // Add image to file cache so it appears in code explorer
