@@ -91,16 +91,21 @@ export const authOptions: NextAuthOptions = {
       }
 
       if (token.id) {
-        const { subscription, usage } = await getNormalizedSubscriptionState(token.id as string);
-        token.subscription = {
-          tier: subscription.tier,
-          status: subscription.status,
-        };
-        token.usage = {
-          generationsUsed: usage.generationsUsed,
-          generationsLimit: usage.generationsLimit,
-          resetDate: usage.resetDate.toISOString(),
-        };
+        try {
+          const { subscription, usage } = await getNormalizedSubscriptionState(token.id as string);
+          token.subscription = {
+            tier: subscription.tier,
+            status: subscription.status,
+          };
+          token.usage = {
+            generationsUsed: usage.generationsUsed,
+            generationsLimit: usage.generationsLimit,
+            resetDate: usage.resetDate.toISOString(),
+          };
+        } catch (error) {
+          // DB unavailable — keep existing token data rather than failing the whole session
+          console.error('[Auth JWT] Failed to load subscription state:', error);
+        }
       }
 
       return token;
@@ -164,8 +169,12 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, isNewUser }) {
       console.log('[Auth Events] signIn called:', { userId: user.id, provider: account?.provider, isNewUser });
       if (user.id) {
-        await ensureFreeEntitlements(user.id);
-        console.log('[Auth Events] Free entitlements ensured for user:', user.id);
+        try {
+          await ensureFreeEntitlements(user.id);
+          console.log('[Auth Events] Free entitlements ensured for user:', user.id);
+        } catch (error) {
+          console.error('[Auth Events] Failed to ensure free entitlements:', error);
+        }
       }
     },
   },
