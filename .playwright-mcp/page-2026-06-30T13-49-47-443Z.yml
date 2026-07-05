@@ -1,0 +1,93 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Noeron" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e8]:
+            - img [ref=e9]
+            - generic [ref=e16]: Noeron
+        - button "GPT-5" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: GPT-5
+          - img [ref=e21]
+        - generic [ref=e23]: Sandbox active
+        - button "AI Images requires Plus or Team plan — upgrade to generate real images with DALL-E 3" [disabled] [ref=e25]:
+          - generic [ref=e26]: 🔒
+          - text: AI Images
+      - generic [ref=e27]:
+        - button "New sandbox" [disabled] [ref=e28]:
+          - img [ref=e30]
+          - generic [ref=e32]: New sandbox
+        - button "Re-apply" [disabled] [ref=e33]:
+          - img [ref=e35]
+          - generic [ref=e37]: Re-apply
+        - button "Download ZIP" [ref=e38] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e42]: Download ZIP
+        - link "My Websites" [ref=e43] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e45]
+          - generic [ref=e47]: My Websites
+        - link "Settings" [ref=e48] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e50]
+          - generic [ref=e53]: Settings
+        - button "Sign out" [ref=e54] [cursor=pointer]:
+          - img [ref=e56]
+          - generic [ref=e58]: Sign out
+    - generic [ref=e59]:
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - button "Nuviq Coffee Menu (nuviq-menu)" [ref=e63] [cursor=pointer]:
+            - generic [ref=e64]: Nuviq Coffee Menu (nuviq-menu)
+            - img [ref=e65]
+          - generic [ref=e67]:
+            - generic [ref=e68]: Draft
+            - button "Copy URL" [ref=e69] [cursor=pointer]
+            - link "Preview Snapshot" [ref=e70] [cursor=pointer]:
+              - /url: /site-preview/nuviq-menu
+        - generic [ref=e71]:
+          - button "Publish current build" [ref=e72] [cursor=pointer]
+          - button "Unpublish" [disabled] [ref=e73]
+      - paragraph [ref=e74]: "Default URL: https://nuviq-menu.mydomain.com"
+    - generic [ref=e75]:
+      - generic [ref=e76]:
+        - generic [ref=e80]:
+          - generic [ref=e81]: Website URL
+          - textbox "https://example.com" [disabled] [ref=e82]
+        - generic [ref=e87]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - img [ref=e93]
+            - textbox "Describe what you want to build..." [ref=e96]
+          - generic [ref=e97]:
+            - button "Add image" [ref=e98] [cursor=pointer]:
+              - img [ref=e99]
+              - generic [ref=e103]: Add image
+            - button "Send" [disabled] [ref=e104]:
+              - generic [ref=e105]: Send
+              - img [ref=e106]
+      - generic [ref=e109]:
+        - generic [ref=e110]:
+          - generic [ref=e112]:
+            - button "Code" [ref=e113] [cursor=pointer]:
+              - generic [ref=e114]:
+                - img [ref=e115]
+                - generic [ref=e117]: Code
+            - button "View" [ref=e118] [cursor=pointer]:
+              - generic [ref=e119]:
+                - img [ref=e120]
+                - generic [ref=e123]: View
+          - generic [ref=e124]:
+            - generic [ref=e125]: Sandbox active
+            - link "Open in new tab" [ref=e127] [cursor=pointer]:
+              - /url: https://sb-6ne5cke19rqx.vercel.run
+              - img [ref=e128]
+        - generic [ref=e131]:
+          - iframe [ref=e132]:
+            - paragraph [ref=f1e5]:
+              - text: Sandbox Ready
+              - text: Start building your React app with Vite and Tailwind CSS!
+          - button "Refresh sandbox" [ref=e133] [cursor=pointer]:
+            - img [ref=e134]
+  - alert [ref=e3]

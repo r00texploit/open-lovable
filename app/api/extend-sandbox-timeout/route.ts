@@ -1,24 +1,19 @@
-import { NextResponse } from 'next/server';
-import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
+import { NextRequest, NextResponse } from 'next/server';
 import { appConfig } from '@/config/app.config';
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
-declare global {
-  var activeSandboxProvider: any;
-}
-
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    const provider = sandboxManager.getActiveProvider() || global.activeSandboxProvider;
+    const body = await request.json().catch(() => ({}));
+    const { searchParams } = new URL(request.url);
+    const sandboxId = body?.sandboxId || searchParams.get('sandboxId') || searchParams.get('sandbox');
+    const resolved = await resolveRequestSandbox(sandboxId);
 
-    if (!provider) {
-      return NextResponse.json({
-        success: false,
-        extended: false,
-        error: 'No active sandbox'
-      }, { status: 404 });
+    if (!resolved.ok) {
+      return resolved.response;
     }
 
-    const extended = await provider.extendTimeout(appConfig.vercelSandbox.keepAliveIntervalMs);
+    const extended = await resolved.value.provider.extendTimeout(appConfig.vercelSandbox.keepAliveIntervalMs);
 
     return NextResponse.json({
       success: true,

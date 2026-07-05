@@ -1,0 +1,3 @@
+[    3135ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ https://sb-2znri1pcxab5.vercel.run/node_modules/.vite/deps/chunk-FMOPAGIP.js?v=49baf8a6:21577
+[    3458ms] [INFO] Slow network is detected. See https://www.chromestatus.com/feature/5636954674692096 for more details. Fallback font will be used while loading: https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2 @ https://sb-2znri1pcxab5.vercel.run/:0
+[    4279ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-2znri1pcxab5.vercel.run/favicon.ico:0

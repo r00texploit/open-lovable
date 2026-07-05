@@ -22,6 +22,7 @@ import {
   incrementTokenUsage,
 } from '@/lib/usage/token-usage';
 import { getEnhancedSystemPrompt, enhanceUserPrompt } from '@/lib/ai/prompts';
+import { getUploadedImagePublicPath } from '@/lib/ai/uploaded-image-paths';
 import {
   getSandboxState,
   setSandboxState,
@@ -76,6 +77,41 @@ declare global {
   var sandboxState: SandboxState;
 }
 
+type UploadedImagePayload = {
+  base64?: string;
+  type?: string;
+  name?: string;
+  label?: string;
+  role?: string;
+  notes?: string;
+  size?: number;
+};
+
+function cleanImageMetadata(value?: string): string {
+  const trimmed = (value || '').replace(/\s+/g, ' ').trim();
+  return trimmed || 'Not provided';
+}
+
+function getErrorMessage(value: unknown, fallback = 'Unknown error'): string {
+  if (!value) return fallback;
+  if (value instanceof Error) return value.message || fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    const maybeError = value as { message?: unknown; error?: unknown; cause?: unknown };
+    if (typeof maybeError.message === 'string') return maybeError.message;
+    if (typeof maybeError.error === 'string') return maybeError.error;
+    if (maybeError.cause) return getErrorMessage(maybeError.cause, fallback);
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return fallback;
+    }
+  }
+
+  return String(value);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -91,7 +127,8 @@ export async function POST(request: NextRequest) {
     const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false, uploadedImage, uploadedImages, aiImagesEnabled = false } = await request.json();
 
     // Support both single uploadedImage and array uploadedImages for backwards compatibility
-    const imagesToProcess = uploadedImages || (uploadedImage ? [uploadedImage] : []);
+    const userImages = uploadedImages || (uploadedImage ? [uploadedImage] : []);
+    const imagesToProcess: UploadedImagePayload[] = userImages;
 
     // Get sandbox-scoped state for multi-sandbox support
     const sandboxId = context?.sandboxId || 'default';
@@ -359,14 +396,19 @@ User request: "${prompt}"`;
             console.log('[generate-ai-code-stream] WARNING: No manifest available for edit mode!');
             
             // Try to fetch files from sandbox if we have one
-            if (global.activeSandbox) {
+            if (context?.sandboxId) {
               await sendProgress({ type: 'status', message: 'Fetching current files from sandbox...' });
               
               try {
                 // Fetch files directly from sandbox
-                const filesResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/get-sandbox-files`, {
+                const filesUrl = new URL('/api/get-sandbox-files', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+                filesUrl.searchParams.set('sandboxId', context.sandboxId);
+                const filesResponse = await fetch(filesUrl, {
                   method: 'GET',
-                  headers: { 'Content-Type': 'application/json' }
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Cookie: request.headers.get('cookie') || '',
+                  }
                 });
                 
                 if (filesResponse.ok) {
@@ -931,13 +973,18 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
           console.log('[generate-ai-code-stream] - Has manifest:', !!sandboxState?.fileCache?.manifest);
           
           // If no backend files and we're in edit mode, try to fetch from sandbox
-          if (!hasBackendFiles && isEdit && (global.activeSandbox || context?.sandboxId)) {
+          if (!hasBackendFiles && isEdit && context?.sandboxId) {
             console.log('[generate-ai-code-stream] No backend files, attempting to fetch from sandbox...');
             
             try {
-              const filesResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/get-sandbox-files`, {
+              const filesUrl = new URL('/api/get-sandbox-files', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+              filesUrl.searchParams.set('sandboxId', context.sandboxId);
+              const filesResponse = await fetch(filesUrl, {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                  'Content-Type': 'application/json',
+                  Cookie: request.headers.get('cookie') || '',
+                }
               });
               
               if (filesResponse.ok) {
@@ -1210,12 +1257,13 @@ It's better to have 3 complete files than 10 incomplete files.`;
         if (imagesToProcess.length > 0) {
           const imageParts: any[] = [];
 
-          // Build stable path list: image-1.jpg, image-2.jpg ... matching what apply-ai-code-stream writes
-          const imagePaths: string[] = [];
-          imagesToProcess.forEach((img: any, index: number) => {
+          const imageAssets: Array<{ path: string; image: UploadedImagePayload }> = [];
+          imagesToProcess.forEach((img) => {
             if (img?.base64) {
-              const ext = (img.type || 'image/png').split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
-              imagePaths.push(`/images/image-${index + 1}.${ext}`);
+              imageAssets.push({
+                path: getUploadedImagePublicPath(img),
+                image: img,
+              });
               imageParts.push({
                 type: 'image',
                 image: img.base64,
@@ -1224,16 +1272,28 @@ It's better to have 3 complete files than 10 incomplete files.`;
             }
           });
 
-          const pathList = imagePaths.map((p, i) => `IMAGE_${i + 1}_PATH: ${p}`).join('\n');
+          const pathList = imageAssets.map(({ path, image }, i) => {
+            const fallbackLabel = image.name ? image.name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ') : `Image ${i + 1}`;
+            return [
+              `IMAGE_${i + 1}:`,
+              `- path: ${path}`,
+              `- original filename: ${cleanImageMetadata(image.name)}`,
+              `- label: ${cleanImageMetadata(image.label || fallbackLabel)}`,
+              `- role: ${cleanImageMetadata(image.role || 'Reference')}`,
+              `- notes: ${cleanImageMetadata(image.notes)}`,
+            ].join('\n');
+          }).join('\n\n');
 
           const dataUrlInstruction = `
 
-UPLOADED IMAGE PATHS (use these exact paths as <img src="..."> values):
+UPLOADED IMAGE ASSETS (use these exact paths as <img src="..."> values):
 ${pathList}
 
 CRITICAL IMAGE ASSET RULES:
 - These images are saved as real files in the app's public directory.
-- Use the exact paths above (e.g. src="/images/image-1.jpg") in every <img> tag or CSS url() that shows one of the uploaded images.
+- Use the exact paths above (e.g. src="${imageAssets[0]?.path || '/images/upload-example.jpg'}") in every <img> tag or CSS url() that shows one of the uploaded images.
+- Choose placement based on each asset's label, role, notes, and upload order.
+- Treat Logo assets as brand marks, Hero assets as primary visual candidates, Product assets as commerce/content imagery, Background assets as decorative surfaces, and Reference assets as style/context unless the user's prompt says otherwise.
 - Do NOT use data: URIs, do NOT use picsum.photos or placeholder URLs, do NOT invent filenames.
 - Make every used image responsive with className="w-full h-full object-cover" or equivalent.
 - Add meaningful alt text describing the image content.`;
@@ -1522,8 +1582,7 @@ REMEMBER: It's better to generate fewer COMPLETE files than many INCOMPLETE file
         
         // Surface provider errors that AI SDK v5 only delivers via onError
         if (capturedStreamError) {
-          const errMessage =
-            (capturedStreamError as any)?.message || String(capturedStreamError);
+          const errMessage = getErrorMessage(capturedStreamError, 'AI provider request failed');
           await sendProgress({
             type: 'error',
             message: `AI provider error (${actualModel}): ${errMessage}`,
@@ -1971,7 +2030,7 @@ Provide the complete file content without any truncation. Include all necessary 
         } else {
           await sendProgress({ 
             type: 'error', 
-            error: (error as Error).message 
+            error: getErrorMessage(error, 'Generation failed')
           });
         }
       } finally {
@@ -1998,7 +2057,7 @@ Provide the complete file content without any truncation. Include all necessary 
     console.error('[generate-ai-code-stream] Error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: (error as Error).message 
+      error: getErrorMessage(error, 'Generation failed')
     }, { status: 500 });
   }
 }

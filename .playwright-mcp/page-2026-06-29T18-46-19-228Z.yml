@@ -1,0 +1,125 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Noeron" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e8]:
+            - img [ref=e9]
+            - generic [ref=e16]: Noeron
+        - button "GPT-5" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: GPT-5
+          - img [ref=e21]
+        - generic [ref=e23]: Sandbox active
+        - button "AI Images requires Plus or Team plan — upgrade to generate real images with DALL-E 3" [disabled] [ref=e25]:
+          - generic [ref=e26]: 🔒
+          - text: AI Images
+      - generic [ref=e27]:
+        - button "New sandbox" [ref=e318] [cursor=pointer]:
+          - img [ref=e320]
+          - generic [ref=e322]: New sandbox
+        - button "Re-apply" [disabled] [ref=e323]:
+          - img [ref=e325]
+          - generic [ref=e327]: Re-apply
+        - button "Download ZIP" [ref=e328] [cursor=pointer]:
+          - img [ref=e330]
+          - generic [ref=e332]: Download ZIP
+        - link "My Websites" [ref=e333] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e335]
+          - generic [ref=e337]: My Websites
+        - link "Settings" [ref=e338] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e340]
+          - generic [ref=e343]: Settings
+        - button "Sign out" [ref=e344] [cursor=pointer]:
+          - img [ref=e346]
+          - generic [ref=e348]: Sign out
+    - generic [ref=e59]:
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - button "Nuviq Coffee Menu (nuviq-menu)" [ref=e63] [cursor=pointer]:
+            - generic [ref=e64]: Nuviq Coffee Menu (nuviq-menu)
+            - img [ref=e65]
+          - generic [ref=e67]:
+            - generic [ref=e68]: Draft
+            - button "Copy URL" [ref=e69] [cursor=pointer]
+            - link "Preview Snapshot" [ref=e70] [cursor=pointer]:
+              - /url: /site-preview/nuviq-menu
+        - generic [ref=e71]:
+          - button "Publish current build" [ref=e72] [cursor=pointer]
+          - button "Unpublish" [disabled] [ref=e73]
+      - paragraph [ref=e74]: "Default URL: https://nuviq-menu.mydomain.com"
+    - generic [ref=e75]:
+      - generic [ref=e76]:
+        - generic [ref=e80]:
+          - generic [ref=e81]: Website URL
+          - textbox "https://example.com" [disabled] [ref=e82]
+        - generic [ref=e83]:
+          - generic [ref=e87]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+          - generic [ref=e271]: "Build a premium MOBILE-FIRST animated digital menu page for Nuviq coffee shop. BRAND: Nuviq TAGLINE: Summer, sip by sip. SECONDARY: Sip. Chill. Repeat. VISUAL DIRECTION: Premium beachside summer menu. Cream beach umbrella, blue ocean background, soft sand surface, coconut-white packaging, royal blue Nuviq logo, blue hand-drawn shell illustrations, starfish, shells, coral, waves, mango-yellow dessert accent, soft sunlight, calm coastal luxury. THEME COLORS: - Primary Blue: #0D4FA3 - Deep Ocean Blue: #063B7A - Soft Sky Blue: #C4CBD7 - Sea Mist Blue: #98B0BD - Cream Sand: #F2E8DE - Warm Beige: #D9C3AC - Driftwood Beige: #C9A573 - Mango Yellow: #F2B20D - Coconut White: #FFF8EF - Soft Shadow Gray: #716E71 FONTS: - Headings: Poppins ExtraBold or Montserrat ExtraBold (rounded geometric) - Taglines: Montserrat SemiBold with wide letter spacing - Body: Inter or Manrope PAGE STRUCTURE: 1. Sticky mobile header with Nuviq logo, back arrow, search icon 2. Compact hero (max 260px mobile) with Nuviq wordmark, tagline \"SUMMER, SIP BY SIP.\", and \"Explore Menu\" CTA 3. Sticky category tabs: Hot Drinks, Cold Drinks, Dessert, Other 4. Search bar with placeholder \"Search Nuviq menu...\" 5. Featured carousel with: Ice Spanish Latte (27), Iced Nuviq Macchiato (28), Coconut Cloudy Matcha (35), Coconut Mango Cake (40) 6. Menu sections with items and prices MENU ITEMS: HOT DRINKS: Hot Spanish (27), Hot Spanish Cortado (27), Hot Cortado (26), Hot Americano (25), Hot V60 Nutty Tobacco (37), Hot V60 Vimto (35), Hot V60 Candy (37), Hot V60 Coconut (36), Hot V60 Grape (35), Hot V60 Ethiopia (34), Cappuccino (26), Flat White (26), Espresso (20), Double Espresso (23), Piccolo (25) COLD DRINKS: Hibiscus (31), Ice Americano (25), Ice Espresso (23), Ice Coconut V60 (36), Ice Candy V60 (37), Ice Grape V60 (35), Ice Ethiopia V60 (34), Ice Vimto V60 (35), Ice Nutty Tobacco V60 (37), Ice Spanish Latte (27), Iced Nuviq Macchiato (28), Iced Matcha (35), Coconut Cloudy Matcha (35), Coconut Cloudy Espresso (33), Acai Smoothie (38), Strawberry Mojito (24), Blueberry Mojito (24), Creamy 60 (32) DESSERT: London Cheesecake (32), Marshmallow Nutella Cake (32), Coconut Mango Cake (40) OTHER: Water (5), Sparkling Water (6) DESIGN RULES: - Mobile-first (390px width priority) - Use ONLY CSS/Tailwind animations, NO framer-motion - Coconut White cards with Sea Mist Blue borders - Blue shell line-art pattern - Mango Yellow only for dessert accents and prices - Sticky header and category tabs - Item cards: image on right, name/price on left - Tap opens detail bottom sheet - Floating bottom CTA bar ANIMATED ICONS (CSS only): - Shell icons gently float up/down - Wave icons slowly move horizontally - Starfish rotates 2-4 degrees - Coffee steam animates softly for hot drinks - No heavy animation, keep it calm and premium BACKGROUND: Cream Sand base, subtle sand texture, soft ocean gradient, umbrella shadow overlay, blue shell line-art pattern. Use React, Tailwind CSS, and CSS animations only. NO framer-motion, NO GSAP, NO Three.js."
+          - generic [ref=e272]:
+            - generic [ref=e273]: Generating code...
+            - generic [ref=e305]:
+              - generic [ref=e349]:
+                - img [ref=e350]
+                - text: index.css
+              - generic [ref=e352]:
+                - img [ref=e353]
+                - text: App.jsx
+              - generic [ref=e355]:
+                - img [ref=e356]
+                - text: Header.jsx
+              - generic [ref=e358]:
+                - img [ref=e359]
+                - text: Hero.jsx
+              - generic [ref=e361]:
+                - img [ref=e362]
+                - text: CategoryTabs.jsx
+              - generic [ref=e364]:
+                - img [ref=e365]
+                - text: SearchBar.jsx
+              - generic [ref=e367]:
+                - img [ref=e368]
+                - text: FeaturedCarousel.jsx
+            - generic [ref=e308]:
+              - generic [ref=e312]: AI Response Stream
+              - code [ref=e316]:
+                - text: "</div> <p className={[\"mt-1 text-[13px] font-bold\", isDessert ? \"text-[#F2B20D]\" : \"text-[#063B7A]\"].join(\" \")}> {item.price} </p> </div> <div className=\"w-20 h-16 rounded-lg overflow-hidden bg-[#F2E8DE] border border-[#98B0BD]/60\"> {item.image ? ( <img src={item.image} alt={`${item.name} image`} className=\"w-full h-full object-cover\" /> ) : ( <div className=\"w-full h-full flex items-center justify-center bg-[#C4CBD7]/40 text-[#063B7A] text-xs font-semibold\"> H2O </div> )} </div> </button> );"
+                - text: "}"
+                - text: "export default function MenuSection({ title, items, onSelect }) { return ( <div className=\"w-full\"> <div className=\"flex items-center justify-between\"> <h3 className=\"text-[15px] font-extrabold tracking-wide text-[#0D4FA3]\">{title}</h3> <"
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - img [ref=e93]
+            - textbox "Describe what you want to build..." [active] [ref=e96]
+          - generic [ref=e97]:
+            - button "Add image" [ref=e98] [cursor=pointer]:
+              - img [ref=e99]
+              - generic [ref=e103]: Add image
+            - button "Send" [disabled] [ref=e104]:
+              - generic [ref=e105]: Send
+              - img [ref=e106]
+      - generic [ref=e109]:
+        - generic [ref=e110]:
+          - generic [ref=e112]:
+            - button "Code" [ref=e113] [cursor=pointer]:
+              - generic [ref=e114]:
+                - img [ref=e115]
+                - generic [ref=e117]: Code
+            - button "View" [ref=e118] [cursor=pointer]:
+              - generic [ref=e119]:
+                - img [ref=e120]
+                - generic [ref=e123]: View
+          - generic [ref=e165]:
+            - generic [ref=e166]: Sandbox active
+            - link "Open in new tab" [ref=e168] [cursor=pointer]:
+              - /url: https://sb-40u9e94wztlv.vercel.run
+              - img [ref=e169]
+        - generic [ref=e125]:
+          - iframe [ref=e171]:
+            - paragraph [ref=f2e5]:
+              - text: Sandbox Ready
+              - text: Start building your React app with Vite and Tailwind CSS!
+          - button "Refresh sandbox" [ref=e172] [cursor=pointer]:
+            - img [ref=e173]
+  - alert [ref=e3]

@@ -1,0 +1,47 @@
+[     412ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     612ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     742ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     931ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     934ms] [LOG] [Fast Refresh] done in 294ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     937ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782827368547_91072527&model=google/gemini-3-pro-preview:0
+[     943ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     943ms] [LOG] [home] Restoring session for sandbox: sb_1782827368547_91072527 @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3625ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_78tGBU5ZHw4W9wDbztBvu2RUda9v, url: https://sb-4g4f1rv2krek.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T13:53:43.888Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3653ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3834ms] [LOG] [home] Session restored (sandbox alive): sb_1782827368547_91072527 @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3843ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3844ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    5837ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    7115ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_78tGBU5ZHw4W9wDbztBvu2RUda9v, url: https://sb-4g4f1rv2krek.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T13:53:47.559Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    7138ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    7139ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    8044ms] [LOG] [site auto-select] Updating existing sandbox session with siteId: cmqwdq9lx00nkitm0b5h3j1rm @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    9020ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   10395ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_78tGBU5ZHw4W9wDbztBvu2RUda9v, url: https://sb-4g4f1rv2krek.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T13:53:50.843Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   10953ms] [LOG] [site auto-select] Session updated: {session: Object} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   10953ms] [LOG] [site auto-select] Updating sandboxData previewUrl: https://nuviq-menu.noeron.net @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   37142ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   39856ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_78tGBU5ZHw4W9wDbztBvu2RUda9v, url: https://sb-4g4f1rv2krek.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T13:54:20.103Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   67142ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   69829ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_78tGBU5ZHw4W9wDbztBvu2RUda9v, url: https://sb-4g4f1rv2krek.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T13:54:50.108Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   97143ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   99810ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_78tGBU5ZHw4W9wDbztBvu2RUda9v, url: https://sb-4g4f1rv2krek.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T13:55:20.100Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  127144ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  129798ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_78tGBU5ZHw4W9wDbztBvu2RUda9v, url: https://sb-4g4f1rv2krek.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T13:55:50.107Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157145ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158024ms] [LOG] [startGeneration] Sandbox already exists: sbx_78tGBU5ZHw4W9wDbztBvu2RUda9v @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158024ms] [LOG] [chat] Using backend file cache for context @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158025ms] [LOG] [chat] Sending context to AI: @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158025ms] [LOG] [chat] - sandboxId: sbx_78tGBU5ZHw4W9wDbztBvu2RUda9v @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158025ms] [LOG] [chat] - isEdit: false @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158051ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158053ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158804ms] [LOG] [health-check] Skipping initial health check - generation or code application in progress @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  159843ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_78tGBU5ZHw4W9wDbztBvu2RUda9v, url: https://sb-4g4f1rv2krek.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T13:56:20.144Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  164376ms] [ERROR] Failed to load resource: the server responded with a status of 429 (Too Many Requests) @ http://localhost:3000/api/generate-ai-code-stream:0
+[  164396ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  164397ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  164557ms] [WARNING] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  164565ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  164754ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  164757ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/pricing:0

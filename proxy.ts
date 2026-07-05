@@ -4,26 +4,30 @@ import { getToken } from 'next-auth/jwt';
 import {
   encodeTenantHost,
   getRequestHostname,
+  getRootDomain,
   isCustomDomainHost,
   isPlatformAppHost,
   isTenantSubdomainHost,
 } from '@/lib/tenancy/hostname';
 
-const PUBLIC_FILE = /\.(.*)$/;
-
 export default async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
   const hostname = getRequestHostname(request.headers);
 
+  // Explicitly exclude www and root domain from tenant routing
+  const rootDomain = getRootDomain();
+  const isPlatformDomain = hostname === rootDomain || hostname === `www.${rootDomain}`;
+
   // Tenant hosts must be rewritten before any path-based skip: published
-  // sites request /assets/*.js etc., which would otherwise match
-  // PUBLIC_FILE and fall through to the platform app as 404s.
-  if (isTenantSubdomainHost(hostname) || isCustomDomainHost(hostname)) {
+  // sites request /assets/*.js etc., which would otherwise fall through
+  // to the platform app as 404s.
+  if (!isPlatformDomain && (isTenantSubdomainHost(hostname) || isCustomDomainHost(hostname))) {
     if (pathname.startsWith('/api') || pathname.startsWith('/_next') || pathname.startsWith('/site-host')) {
       return NextResponse.next();
     }
     const url = request.nextUrl.clone();
     url.pathname = `/site-host/${encodeTenantHost(hostname)}${pathname}`;
+    url.search = search;
     return NextResponse.rewrite(url);
   }
 
@@ -33,8 +37,7 @@ export default async function middleware(request: NextRequest) {
     pathname.startsWith('/site-host') ||
     pathname.startsWith('/favicon') ||
     pathname.startsWith('/brand') ||
-    pathname.startsWith('/site-preview') ||
-    PUBLIC_FILE.test(pathname)
+    pathname.startsWith('/site-preview')
   ) {
     return NextResponse.next();
   }

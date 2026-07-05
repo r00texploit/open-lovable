@@ -21,7 +21,10 @@ class SandboxManager {
   /**
    * Get or create a sandbox provider for the given sandbox ID
    */
-  async getOrCreateProvider(sandboxId: string): Promise<SandboxProvider> {
+  async getOrCreateProvider(
+    sandboxId: string,
+    session?: { sandboxName?: string | null }
+  ): Promise<SandboxProvider> {
     // Check if we already have this sandbox
     const existing = this.sandboxes.get(sandboxId);
     if (existing) {
@@ -34,7 +37,7 @@ class SandboxManager {
       const provider = await SandboxFactory.create();
       // Both VercelProvider and E2BProvider expose a reconnect(sandboxId) method
       if (typeof (provider as any).reconnect === 'function') {
-        await (provider as any).reconnect(sandboxId);
+        await (provider as any).reconnect(session?.sandboxName || sandboxId, sandboxId);
         this.sandboxes.set(sandboxId, {
           sandboxId,
           provider,
@@ -176,6 +179,13 @@ class SandboxManager {
     }
     
     return null;
+  }
+
+  /**
+   * Get the active app/session sandbox ID used as the manager key.
+   */
+  getActiveSandboxId(): string | null {
+    return this.activeSandboxId;
   }
 
   /**

@@ -162,7 +162,7 @@ export async function findSiteByHostname(hostname: string) {
   return prisma.site.findFirst({
     where: {
       OR: [
-        ...(isCustomDomainHost(hostname) ? [{ customDomain: hostname }] : []),
+        ...(isCustomDomainHost(hostname) ? [{ customDomain: hostname, customDomainVerified: true }] : []),
         ...(subdomain ? [{ subdomain }] : []),
       ],
     },
@@ -264,3 +264,4 @@ async function readDistFiles(provider: SandboxProvider) {
 
   return files;
 }
+

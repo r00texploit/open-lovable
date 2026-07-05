@@ -5,6 +5,9 @@ import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 import { createSession, getSession } from '@/lib/session-store';
 import { requireUser } from '@/lib/auth/server';
 import { setSandboxState, setSandboxProvider } from '@/lib/sandbox/sandbox-state';
+import { registerPreviewMapping, buildPreviewUrl } from '@/lib/tenancy/preview-mapping';
+import { prisma } from '@/lib/db/prisma';
+import { buildPersistentSandboxName } from '@/lib/sandbox/persistent-sandbox';
 
 // ponytail: global state kept for backward compat
 // Use session-scoped sandboxes via sandboxManager
@@ -28,12 +31,47 @@ export async function POST(request: Request) {
   const sessionId = request.headers.get('x-session-id') || crypto.randomUUID();
   let session = await getSession(sessionId);
 
+  if (session && session.userId !== user.id) {
+    return NextResponse.json({ error: 'Sandbox session not found' }, { status: 404 });
+  }
+
   try {
+    // Parse request body to get optional siteId
+    let requestBody: { siteId?: string } = {};
+    try {
+      requestBody = await request.json();
+    } catch {
+      // No body or invalid JSON, continue with empty object
+    }
+
+    console.log(`[create-ai-sandbox-v2] Request body:`, requestBody);
+    console.log(`[create-ai-sandbox-v2] Session exists:`, !!session, session?.siteId ? `with siteId: ${session.siteId}` : 'without siteId');
+
+    let validSiteId: string | null = null;
+    if (requestBody.siteId) {
+      const ownedSite = await prisma.site.findFirst({
+        where: { id: requestBody.siteId, userId: user.id },
+        select: { id: true },
+      });
+      validSiteId = ownedSite?.id ?? null;
+    }
+
     if (!session) {
       session = await createSession(user.id, {
         sandboxId: `sb_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`,
         sandboxProvider: process.env.SANDBOX_PROVIDER || 'vercel',
+        siteId: validSiteId,
       });
+      console.log(`[create-ai-sandbox-v2] Created new session with siteId:`, validSiteId);
+    } else if (validSiteId && !session.siteId) {
+      // Update existing session with siteId if provided
+      const { updateSession } = await import('@/lib/session-store');
+      session = await updateSession(session.id, { siteId: validSiteId });
+      console.log(`[create-ai-sandbox-v2] Updated existing session with siteId:`, validSiteId);
+    }
+
+    if (!session) {
+      return NextResponse.json({ error: 'Failed to create or retrieve session' }, { status: 500 });
     }
 
     console.log(`[create-ai-sandbox-v2] Creating sandbox for session ${session.id}...`);
@@ -57,18 +95,59 @@ export async function POST(request: Request) {
 
     // Create new sandbox using factory
     const provider = await SandboxFactory.create();
-    const sandboxInfo = await provider.createSandbox();
-    
-    console.log('[create-ai-sandbox-v2] Setting up Vite React app...');
-    await provider.setupViteApp();
+    const sandboxName = buildPersistentSandboxName(session.id, session.siteId);
+    const sandboxInfo = await provider.createSandbox({
+      appSandboxId: session.sandboxId,
+      sandboxName,
+      setupOnCreate: true,
+    });
     
     // Register with sandbox manager keyed by session and user
     sandboxManager.registerSandboxForUser(user.id, session.sandboxId, provider);
 
+    // Get site info for custom preview URL
+    let previewUrl = sandboxInfo.url;
+    let siteSlug: string | null = null;
+
+    console.log(`[create-ai-sandbox-v2] Checking for site association. session.siteId:`, session.siteId);
+
+    if (session.siteId) {
+      const site = await prisma.site.findUnique({
+        where: { id: session.siteId },
+        select: { id: true, slug: true, subdomain: true, userId: true }
+      });
+
+      console.log(`[create-ai-sandbox-v2] Found site:`, site ? { id: site.id, slug: site.slug, subdomain: site.subdomain } : null);
+
+      if (site) {
+        siteSlug = site.slug;
+        // Register preview mapping for the site subdomain
+        registerPreviewMapping(
+          site.subdomain,
+          sandboxInfo.url,
+          session.sandboxId,
+          site.id,
+          site.userId
+        );
+        // Use custom preview URL
+        previewUrl = buildPreviewUrl(site.subdomain);
+        console.log(`[create-ai-sandbox-v2] Preview URL registered: ${site.subdomain} -> ${sandboxInfo.url}`);
+        console.log(`[create-ai-sandbox-v2] Custom preview URL: ${previewUrl}`);
+      } else {
+        console.log(`[create-ai-sandbox-v2] Site not found for siteId:`, session.siteId);
+      }
+    } else {
+      console.log(`[create-ai-sandbox-v2] No siteId associated with session`);
+    }
+
     // Update session with sandbox URL
     const { updateSession } = await import('@/lib/session-store');
     await updateSession(session.id, {
-      sandboxUrl: sandboxInfo.url,
+      sandboxUrl: previewUrl,
+      rawSandboxUrl: sandboxInfo.url,
+      sandboxName: sandboxInfo.sandboxName || sandboxName,
+      sandboxRuntimeStatus: sandboxInfo.runtimeStatus || 'running',
+      currentSnapshotId: sandboxInfo.currentSnapshotId || null,
       status: 'running',
     });
 
@@ -85,17 +164,23 @@ export async function POST(request: Request) {
       sandbox: provider,
       sandboxData: {
         sandboxId: session.sandboxId,
-        url: sandboxInfo.url
+        url: sandboxInfo.url,
+        previewUrl,
+        sandboxName: sandboxInfo.sandboxName || sandboxName,
       }
     });
 
     console.log(`[create-ai-sandbox-v2] Sandbox ready at: ${sandboxInfo.url} for session ${session.id}`);
+    console.log(`[create-ai-sandbox-v2] Preview URL: ${previewUrl}`);
 
     return NextResponse.json({
       success: true,
       sessionId: session.id,
       sandboxId: session.sandboxId,
       url: sandboxInfo.url,
+      previewUrl: previewUrl,
+      sandboxName: sandboxInfo.sandboxName || sandboxName,
+      siteSlug: siteSlug,
       provider: sandboxInfo.provider,
       message: 'Sandbox created and Vite React app initialized'
     });

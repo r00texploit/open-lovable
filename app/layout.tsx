@@ -46,14 +46,14 @@ export const metadata: Metadata = {
   authors: [{ name: "Noeron" }],
   creator: "Noeron",
   publisher: "Noeron",
-  metadataBase: new URL("https://noeron.io"),
+  metadataBase: new URL("https://noeron.net"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://noeron.io",
+    url: "https://noeron.net",
     siteName: "Noeron",
     title: "Noeron - AI Website Builder",
     description: "Transform any idea into a production-ready React application with AI. No coding required.",

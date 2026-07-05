@@ -1,0 +1,81 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Noeron" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]:
+            - img [ref=e7]
+            - generic [ref=e14]: Noeron
+        - button "Sonnet 4" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: Sonnet 4
+          - img [ref=e19]
+        - generic [ref=e21]: Not connected
+        - button "AI Images requires Plus or Team plan — upgrade to generate real images with DALL-E 3" [disabled] [ref=e23]:
+          - generic [ref=e24]: 🔒
+          - text: AI Images
+      - generic [ref=e25]:
+        - button "New sandbox" [disabled] [ref=e26]:
+          - img [ref=e28]
+          - generic [ref=e30]: New sandbox
+        - button "Re-apply" [disabled] [ref=e31]:
+          - img [ref=e33]
+          - generic [ref=e35]: Re-apply
+        - button "Download ZIP" [disabled] [ref=e36]:
+          - img [ref=e38]
+          - generic [ref=e40]: Download ZIP
+        - link "My Websites" [ref=e41] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e43]
+          - generic [ref=e45]: My Websites
+        - link "Settings" [ref=e46] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e48]
+          - generic [ref=e51]: Settings
+        - button "Sign out" [ref=e52] [cursor=pointer]:
+          - img [ref=e54]
+          - generic [ref=e56]: Sign out
+    - generic [ref=e58]:
+      - generic [ref=e59]:
+        - button "Loading sites..." [disabled] [ref=e61]:
+          - generic [ref=e62]: Loading sites...
+          - img [ref=e63]
+        - generic [ref=e65]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=e66]:
+        - textbox "Site name" [ref=e67]
+        - textbox "site-slug" [ref=e68]
+        - button "Create site" [disabled] [ref=e69]
+    - generic [ref=e70]:
+      - generic [ref=e71]:
+        - generic [ref=e75]:
+          - generic [ref=e76]: Website URL
+          - textbox "https://example.com" [disabled] [ref=e77]
+        - generic [ref=e82]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - img [ref=e88]
+            - textbox "Describe what you want to build..." [ref=e91]
+          - generic [ref=e92]:
+            - button "Add image" [ref=e93] [cursor=pointer]:
+              - img [ref=e94]
+              - generic [ref=e98]: Add image
+            - button "Send" [disabled] [ref=e99]:
+              - generic [ref=e100]: Send
+              - img [ref=e101]
+      - generic [ref=e104]:
+        - generic [ref=e107]:
+          - button "Code" [ref=e108] [cursor=pointer]:
+            - generic [ref=e109]:
+              - img [ref=e110]
+              - generic [ref=e112]: Code
+          - button "View" [ref=e113] [cursor=pointer]:
+            - generic [ref=e114]:
+              - img [ref=e115]
+              - generic [ref=e118]: View
+        - generic [ref=e121]:
+          - img [ref=e123]
+          - heading "Start building" [level=3] [ref=e126]
+          - paragraph [ref=e127]: Paste a URL or describe what you want to create.
+          - link "New website" [ref=e128] [cursor=pointer]:
+            - /url: /
+  - alert [ref=e129]

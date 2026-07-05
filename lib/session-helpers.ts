@@ -170,7 +170,9 @@ export async function getSandboxStateFromSession(
     sandbox: null, // Provider should be reconnected separately
     sandboxData: session.sandboxId ? {
       sandboxId: session.sandboxId,
-      url: session.sandboxUrl || ''
+      url: session.rawSandboxUrl || session.sandboxUrl || '',
+      previewUrl: session.sandboxUrl || undefined,
+      sandboxName: session.sandboxName || undefined,
     } : null
   };
 }

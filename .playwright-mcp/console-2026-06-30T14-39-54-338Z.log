@@ -1,0 +1,363 @@
+[     268ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     411ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     411ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     411ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782829457179_e0a8b87e&model=openai/gpt-5:0
+[     470ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[     514ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     514ms] [LOG] [home] Restoring session for sandbox: sb_1782829457179_e0a8b87e @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     528ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[     529ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782829457179_e0a8b87e&model=openai/gpt-5:0
+[     552ms] [LOG] [Fast Refresh] done in 126ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3445ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T14:39:54.854Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3478ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3621ms] [LOG] [home] Session restored (sandbox alive): sb_1782829457179_e0a8b87e @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3637ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    3638ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    5516ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    6941ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T14:39:58.761Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    6966ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    6967ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[    8864ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   10279ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T14:40:02.076Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   36970ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   39518ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T14:40:31.354Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   66969ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   69552ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(0), lastHealthCheck: 2026-06-30T14:41:01.342Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   74587ms] [LOG] [startGeneration] Sandbox already exists: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   74587ms] [LOG] [chat] Using backend file cache for context @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   74587ms] [LOG] [chat] Sending context to AI: @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   74587ms] [LOG] [chat] - sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   74587ms] [LOG] [chat] - isEdit: false @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   74611ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   74613ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   74731ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   74852ms] [LOG] [Fast Refresh] done in 222ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   75364ms] [LOG] [health-check] Skipping initial health check - generation or code application in progress @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[   78330ms] [LOG] [chat] Received chunk: 127 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  104620ms] [LOG] [health-check] Skipping health check - generation or code application in progress @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  134615ms] [LOG] [health-check] Skipping health check - generation or code application in progress @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  147541ms] [LOG] [chat] Received chunk: 249 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  147672ms] [LOG] [chat] Received chunk: 254 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  147708ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  147743ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  147755ms] [LOG] [chat] Received chunk: 189 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  147855ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  147871ms] [LOG] [chat] Received chunk: 258 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  147966ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  147979ms] [LOG] [chat] Received chunk: 257 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148081ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148099ms] [LOG] [chat] Received chunk: 314 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148216ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148237ms] [LOG] [chat] Received chunk: 189 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148322ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148343ms] [LOG] [chat] Received chunk: 194 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148449ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148468ms] [LOG] [chat] Received chunk: 192 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148584ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148605ms] [LOG] [chat] Received chunk: 129 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148620ms] [LOG] [chat] Received chunk: 125 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148713ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148730ms] [LOG] [chat] Received chunk: 256 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148808ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148825ms] [LOG] [chat] Received chunk: 252 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148925ms] [LOG] [chat] Received chunk: 126 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  148946ms] [LOG] [chat] Received chunk: 192 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149029ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149046ms] [LOG] [chat] Received chunk: 129 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149151ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149170ms] [LOG] [chat] Received chunk: 253 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149270ms] [LOG] [chat] Received chunk: 66 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149290ms] [LOG] [chat] Received chunk: 246 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149397ms] [LOG] [chat] Received chunk: 125 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149523ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149550ms] [LOG] [chat] Received chunk: 247 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149771ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149791ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149805ms] [LOG] [chat] Received chunk: 191 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149879ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149895ms] [LOG] [chat] Received chunk: 125 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149909ms] [LOG] [chat] Received chunk: 123 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  149998ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150014ms] [LOG] [chat] Received chunk: 251 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150120ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150140ms] [LOG] [chat] Received chunk: 129 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150156ms] [LOG] [chat] Received chunk: 126 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150245ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150262ms] [LOG] [chat] Received chunk: 250 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150412ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150432ms] [LOG] [chat] Received chunk: 315 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150498ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150515ms] [LOG] [chat] Received chunk: 188 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150624ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150644ms] [LOG] [chat] Received chunk: 251 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150764ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150783ms] [LOG] [chat] Received chunk: 321 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150898ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  150919ms] [LOG] [chat] Received chunk: 192 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151047ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151071ms] [LOG] [chat] Received chunk: 261 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151187ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151209ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151225ms] [LOG] [chat] Received chunk: 193 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151337ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151357ms] [LOG] [chat] Received chunk: 322 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151482ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151506ms] [LOG] [chat] Received chunk: 256 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151638ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151664ms] [LOG] [chat] Received chunk: 187 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151792ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151818ms] [LOG] [chat] Received chunk: 189 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  151900ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152015ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152044ms] [LOG] [chat] Received chunk: 254 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152139ms] [LOG] [chat] Received chunk: 66 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152159ms] [LOG] [chat] Received chunk: 251 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152258ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152276ms] [LOG] [chat] Received chunk: 252 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152387ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152408ms] [LOG] [chat] Received chunk: 252 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152504ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152527ms] [LOG] [chat] Received chunk: 253 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152632ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152656ms] [LOG] [chat] Received chunk: 262 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152774ms] [LOG] [chat] Received chunk: 66 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  152794ms] [LOG] [chat] Received chunk: 309 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153030ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153066ms] [LOG] [chat] Received chunk: 253 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153139ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153162ms] [LOG] [chat] Received chunk: 129 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153255ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153276ms] [LOG] [chat] Received chunk: 250 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153376ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153398ms] [LOG] [chat] Received chunk: 248 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153417ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153493ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153510ms] [LOG] [chat] Received chunk: 126 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153527ms] [LOG] [chat] Received chunk: 124 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153589ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153608ms] [LOG] [chat] Received chunk: 187 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153703ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153712ms] [LOG] [chat] Received chunk: 132 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153722ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153729ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153823ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153845ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153862ms] [LOG] [chat] Received chunk: 194 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153950ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  153968ms] [LOG] [chat] Received chunk: 255 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154065ms] [LOG] [chat] Received chunk: 67 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154088ms] [LOG] [chat] Received chunk: 259 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154190ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154213ms] [LOG] [chat] Received chunk: 129 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154292ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154314ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154333ms] [LOG] [chat] Received chunk: 186 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154406ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154426ms] [LOG] [chat] Received chunk: 314 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154534ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154545ms] [LOG] [chat] Received chunk: 193 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154642ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154651ms] [LOG] [chat] Received chunk: 127 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154659ms] [LOG] [chat] Received chunk: 124 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154763ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154774ms] [LOG] [chat] Received chunk: 66 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154785ms] [LOG] [chat] Received chunk: 125 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154793ms] [LOG] [chat] Received chunk: 126 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154892ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154893ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  154921ms] [LOG] [chat] Received chunk: 191 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155018ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155044ms] [LOG] [chat] Received chunk: 190 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155163ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155187ms] [LOG] [chat] Received chunk: 251 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155282ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155306ms] [LOG] [chat] Received chunk: 254 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155429ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155453ms] [LOG] [chat] Received chunk: 255 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155471ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155567ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155591ms] [LOG] [chat] Received chunk: 181 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155722ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155732ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155741ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155750ms] [LOG] [chat] Received chunk: 129 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155757ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155798ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155814ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155821ms] [LOG] [chat] Received chunk: 124 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155909ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155934ms] [LOG] [chat] Received chunk: 191 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  155953ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156029ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156049ms] [LOG] [chat] Received chunk: 131 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156069ms] [LOG] [chat] Received chunk: 126 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156159ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156277ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156303ms] [LOG] [chat] Received chunk: 125 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156449ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156479ms] [LOG] [chat] Received chunk: 256 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156534ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156555ms] [LOG] [chat] Received chunk: 185 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156613ms] [LOG] [chat] Received chunk: 66 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156628ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156635ms] [LOG] [chat] Received chunk: 185 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156745ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156756ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156852ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156866ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156873ms] [LOG] [chat] Received chunk: 125 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156881ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  156988ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157056ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157080ms] [LOG] [chat] Received chunk: 126 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157103ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157120ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157139ms] [LOG] [chat] Received chunk: 124 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157157ms] [LOG] [chat] Received chunk: 129 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157174ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157193ms] [LOG] [chat] Received chunk: 67 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157210ms] [LOG] [chat] Received chunk: 193 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157227ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157242ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157259ms] [LOG] [chat] Received chunk: 129 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157273ms] [LOG] [chat] Received chunk: 123 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157280ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157293ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157299ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157314ms] [LOG] [chat] Received chunk: 66 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157320ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157332ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157344ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157351ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157360ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157369ms] [LOG] [chat] Received chunk: 67 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157385ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157401ms] [LOG] [chat] Received chunk: 66 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157424ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157438ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157446ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157461ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157477ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157488ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157506ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157513ms] [LOG] [chat] Received chunk: 66 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157535ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157547ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157561ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157573ms] [LOG] [chat] Received chunk: 69 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157593ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157599ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157619ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157632ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157646ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157660ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157674ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157682ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157693ms] [LOG] [chat] Received chunk: 68 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157709ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157722ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157736ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157748ms] [LOG] [chat] Received chunk: 66 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157759ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157770ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157785ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157797ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157820ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157837ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157851ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157863ms] [LOG] [chat] Received chunk: 63 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157875ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157886ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157903ms] [LOG] [chat] Received chunk: 67 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157922ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157933ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157941ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157950ms] [LOG] [chat] Received chunk: 65 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157960ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  157998ms] [LOG] [chat] Received chunk: 60 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158015ms] [LOG] [chat] Received chunk: 64 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158034ms] [LOG] [chat] Received chunk: 62 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158051ms] [LOG] [chat] Received chunk: 61 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  158068ms] [LOG] [chat] Received chunk: 123 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  159108ms] [LOG] [chat] Received chunk: 2005 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161238ms] [LOG] [chat] Received chunk: 2235 bytes @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161238ms] [LOG] [chat] Token usage: {type: usage, tokens: 13676, chargedTokens: 13676, inputTokens: 8459, outputTokens: 5217} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161241ms] [LOG] [startGeneration] Initial sandboxData: {sandboxData: true, sandboxPromise: false} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161242ms] [LOG] [startGeneration] Checking conditions for applyGeneratedCode: {hasActiveSandboxData: true, hasGeneratedCode: true, generatedCodeLength: 1694, sandboxCreating: false, activeSandboxDataId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161242ms] [LOG] [startGeneration] Calling applyGeneratedCode with: {generatedCodeLength: 1694, isEdit: false, sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161242ms] [LOG] [applyGeneratedCode] STARTED: {codeLength: 1694, isEdit: false, hasOverrideSandboxData: false, currentSandboxDataId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161242ms] [LOG] [applyGeneratedCode] Fetching /api/apply-ai-code-stream: {hasCode: true, codeLength: 1694, isEdit: false, sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, hasPendingPackages: false} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161270ms] [LOG] [health-check] Stopping periodic health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161273ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161370ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161381ms] [LOG] [Fast Refresh] done in 112ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  161918ms] [LOG] [applyGeneratedCode] Fetch response status: 200 true @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  162024ms] [LOG] [health-check] Skipping initial health check - generation or code application in progress @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  163754ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-1xk5otlfdamk.vercel.run/src/main.tsx?t=1782830556599:0
+[  164469ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  172574ms] [LOG] [applyGeneratedCode] Updating sandbox data from response: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  172575ms] [LOG] [applyGeneratedCode] Response data: {success: true, results: Object, explanation: , structure: null, message: Successfully applied 4 files} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  172575ms] [LOG] [applyGeneratedCode] Debug info: undefined @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  172576ms] [LOG] [applyGeneratedCode] Current sandboxData: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, provider: vercel, success: true, filesTracked: Array(0)} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  172576ms] [LOG] [applyGeneratedCode] Current iframe element: JSHandle@node @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  172577ms] [LOG] [applyGeneratedCode] Current iframe src: https://sb-1xk5otlfdamk.vercel.run/ @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  163754ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-1xk5otlfdamk.vercel.run/src/main.tsx?t=1782830556599:0
+[  174873ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-1xk5otlfdamk.vercel.run/src/main.tsx?t=1782830556599:0
+[  175791ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  182411ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  182432ms] [LOG] [Fast Refresh] done in 124ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  189057ms] [LOG] [fetchSandboxFiles] Updated file list: 8 files @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  189058ms] [LOG] [build-test] Skipping build test - would need API endpoint @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  189058ms] [LOG] [applyGeneratedCode] Packages installed: false, refresh delay: 2000ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  191276ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  163754ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-1xk5otlfdamk.vercel.run/src/main.tsx?t=1782830556599:0
+[  174873ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-1xk5otlfdamk.vercel.run/src/main.tsx?t=1782830556599:0
+[  193125ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-1xk5otlfdamk.vercel.run/src/main.tsx?t=1782830556599:0
+[  163754ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-1xk5otlfdamk.vercel.run/src/main.tsx?t=1782830556599:0
+[  174873ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-1xk5otlfdamk.vercel.run/src/main.tsx?t=1782830556599:0
+[  193125ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-1xk5otlfdamk.vercel.run/src/main.tsx?t=1782830556599:0
+[  193807ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-1xk5otlfdamk.vercel.run/src/main.tsx?t=1782830556599:0
+[  194376ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(4), lastHealthCheck: 2026-06-30T14:43:05.631Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  194455ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  221279ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  224226ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(4), lastHealthCheck: 2026-06-30T14:43:35.658Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  251277ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  253971ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(4), lastHealthCheck: 2026-06-30T14:44:05.659Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  281276ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  284149ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(4), lastHealthCheck: 2026-06-30T14:44:35.647Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  294069ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sb-1xk5otlfdamk.vercel.run/src/main.tsx?t=1782830556599:0
+[  294663ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  311278ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  313999ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(4), lastHealthCheck: 2026-06-30T14:45:05.639Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  341278ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  344410ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(4), lastHealthCheck: 2026-06-30T14:45:35.654Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  350197ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  351648ms] [LOG] [Fast Refresh] done in 1551ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  371277ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  373934ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(4), lastHealthCheck: 2026-06-30T14:46:05.635Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  401277ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  404193ms] [LOG] [checkSandboxStatus] Setting sandboxData from API: {sandboxId: sbx_7mBmK4io4Lz7BFLAMasNz3B06Zhm, url: https://sb-1xk5otlfdamk.vercel.run, filesTracked: Array(4), lastHealthCheck: 2026-06-30T14:46:35.655Z} @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  416250ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=JFkCDhrciPfVdcjQyBQf-' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  417253ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=JFkCDhrciPfVdcjQyBQf-' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_client_0u10hp_._.js:13422
+[  419225ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  420726ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  420930ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  420931ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  420933ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782829457179_e0a8b87e&model=openai/gpt-5:0
+[  421069ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  421556ms] [LOG] [Fast Refresh] done in 590ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  421561ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  421606ms] [LOG] [home] Cleared old conversation data on mount @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  421606ms] [LOG] [home] Restoring session for sandbox: sb_1782829457179_e0a8b87e @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  421655ms] [LOG] [checkSandboxStatus] No existing sandboxData, clearing state @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  421714ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/generation?sandbox=sb_1782829457179_e0a8b87e&model=openai/gpt-5:0
+[  428083ms] [LOG] [home] Session restored (sandbox alive): sb_1782829457179_e0a8b87e @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  428110ms] [LOG] [health-check] Starting periodic sandbox health check @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  428213ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/api/extend-sandbox-timeout:0
+[  428214ms] [LOG] [keep-alive] Sandbox lifetime not extended: No active sandbox @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  428873ms] [LOG] [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  430334ms] [LOG] [iframe] Loaded successfully @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  446226ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  446230ms] [LOG] [Fast Refresh] done in 107ms @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  458114ms] [LOG] [health-check] Running periodic health check... @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
+[  458141ms] [LOG] [checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved @ http://localhost:3000/_next/static/chunks/1zcb_next_dist_1skd1x8._.js:2477
