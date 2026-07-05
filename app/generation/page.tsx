@@ -270,6 +270,10 @@ function AISandboxPage() {
   const [homeUrlInput, setHomeUrlInput] = useState('');
   const [homeContextInput, setHomeContextInput] = useState('');
   const [activeTab, setActiveTab] = useState<'generation' | 'preview'>('preview');
+  // On mobile the chat and preview panes can't sit side by side, so only one
+  // shows at a time and this toggles between them (ignored at md+).
+  const [mobileView, setMobileView] = useState<'chat' | 'preview'>('chat');
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showStyleSelector, setShowStyleSelector] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [showLoadingBackground, setShowLoadingBackground] = useState(false);
@@ -3239,6 +3243,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       setTimeout(() => {
         // Switch to preview but keep files for display
         setActiveTab('preview');
+        setMobileView('preview'); // Surface the result on mobile's single pane
       }, 1000); // Reduced from 3000ms to 1000ms
     } catch (error: any) {
       setChatMessages(prev => prev.filter(msg => msg.content !== 'Thinking...'));
@@ -4441,6 +4446,7 @@ Focus on the key sections and content, making it clean and modern.`;
         setTimeout(() => {
           // Switch back to preview tab but keep files
           setActiveTab('preview');
+          setMobileView('preview'); // Surface the result on mobile's single pane
         }, 1000); // Show completion briefly then switch
       } catch (error: any) {
         addChatMessage(`Failed to clone website: ${error.message}`, 'system');
@@ -4549,8 +4555,59 @@ Focus on the key sections and content, making it clean and modern.`;
             label="Sign out"
             onClick={() => signOut({ callbackUrl: '/' })}
           />
+          {/* Mobile-only: reveal the model/status/AI-images controls that are hidden below sm. */}
+          <button
+            type="button"
+            onClick={() => setShowMobileMenu((v) => !v)}
+            aria-expanded={showMobileMenu}
+            aria-label="More controls"
+            className="sm:hidden inline-flex items-center justify-center rounded-lg border border-border-muted bg-background-lighter p-2 text-foreground transition-colors hover:bg-warm-800/5"
+          >
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
         </div>
       </div>
+
+      {/* Mobile settings panel: surfaces controls that are desktop-only in the header. */}
+      {showMobileMenu && (
+        <div className="sm:hidden border-b border-border-muted bg-background-lighter/95 backdrop-blur-xl px-4 py-3 flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-warm-500">Model</label>
+            <BrandSelect
+              value={aiModel}
+              onChange={(newModel) => {
+                setAiModel(newModel);
+                const params = new URLSearchParams(searchParams);
+                params.set('model', newModel);
+                if (sandboxData?.sandboxId) {
+                  params.set('sandbox', sandboxData.sandboxId);
+                }
+                router.push(`/generation?${params.toString()}`);
+              }}
+              options={appConfig.ai.availableModels.map(model => ({
+                value: model,
+                label: appConfig.ai.modelDisplayNames?.[model] || model,
+              }))}
+              className="w-full"
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-warm-500">Status</span>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${status.active ? 'bg-warm-100 text-warm-800' : 'bg-warm-200 text-warm-600'}`}>
+              {status.text}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-warm-500">AI images</span>
+            <AiImagesToggle
+              enabled={aiImagesEnabled}
+              onChange={setAiImagesEnabled}
+              canUse={canUseAiImages}
+              disabled={loading || generationProgress.isGenerating}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="border-b border-border-muted bg-warm-025 px-4 py-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -4566,7 +4623,7 @@ Focus on the key sections and content, making it clean and modern.`;
                 ...(sites.length > 0 ? [{ value: '', label: 'Select a site' }] : []),
                 ...sites.map((site) => ({ value: site.id, label: `${site.name} (${site.slug})` })),
               ]}
-              className="min-w-[240px]"
+              className="w-full sm:min-w-[240px]"
               disabled={sitesLoading || sites.length === 0}
             />
 
@@ -4682,11 +4739,11 @@ Focus on the key sections and content, making it clean and modern.`;
         {siteError && <p className="mt-2 text-sm text-red-600">{siteError}</p>}
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Center Panel - AI Chat (1/3 of remaining width) */}
-        <div className="flex-1 max-w-[400px] flex flex-col border-r border-[var(--border-default)] bg-[var(--bg-primary)] overflow-hidden h-full">
-          {/* Scrollable Header Section - constrained height */}
-          <div className="flex-shrink-0 overflow-y-auto max-h-[35%] border-b border-[var(--border-default)] scrollbar-thin">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        {/* Center Panel - AI Chat. Full width on mobile (toggled), fixed 400px on desktop. */}
+        <div className={`${mobileView === 'chat' ? 'flex' : 'hidden'} md:flex w-full md:w-[400px] md:max-w-[400px] flex-1 md:flex-none flex-col border-r border-[var(--border-default)] bg-[var(--bg-primary)] overflow-hidden h-full`}>
+          {/* Scrollable Header Section - constrained height on desktop, natural on mobile */}
+          <div className="flex-shrink-0 overflow-y-auto md:max-h-[35%] border-b border-[var(--border-default)] scrollbar-thin">
             {/* Sidebar Input Component */}
             {!hasInitialSubmission ? (
               <div className="p-4 border-b border-[var(--border-default)]">
@@ -5191,7 +5248,7 @@ Focus on the key sections and content, making it clean and modern.`;
           </div>
 
           {/* Input Area - fixed at bottom */}
-          <div className="flex-shrink-0 p-4 border-t border-[var(--border-default)] bg-[var(--bg-primary)] max-h-[40%] overflow-y-auto">
+          <div className="flex-shrink-0 p-4 border-t border-[var(--border-default)] bg-[var(--bg-primary)] md:max-h-[40%] overflow-y-auto">
             <HeroInput
               value={aiChatInput}
               onChange={setAiChatInput}
@@ -5204,8 +5261,8 @@ Focus on the key sections and content, making it clean and modern.`;
           </div>
         </div>
 
-        {/* Right Panel - Preview or Generation (2/3 of remaining width) */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Right Panel - Preview or Generation. Full width on mobile (toggled), fills remaining space on desktop. */}
+        <div className={`${mobileView === 'preview' ? 'flex' : 'hidden'} md:flex flex-1 flex-col overflow-hidden`}>
           <div className="px-3 pt-4 pb-4 bg-[var(--bg-primary)] border-b border-[var(--border-default)] flex justify-between items-center">
             <div className="flex items-center gap-2">
               {/* Toggle-style Code/View switcher */}
@@ -5286,6 +5343,35 @@ Focus on the key sections and content, making it clean and modern.`;
           </div>
           <div className="flex-1 relative overflow-hidden">
             {renderMainContent()}
+          </div>
+        </div>
+
+        {/* Mobile-only pane switcher: chat and preview can't share the narrow
+            viewport, so one shows at a time and this toggles between them. */}
+        <div className="md:hidden flex-shrink-0 border-t border-[var(--border-default)] bg-background-lighter/95 backdrop-blur-xl px-3 py-2">
+          <div className="inline-flex w-full bg-warm-100 border border-warm-750/12 rounded-xl p-1" role="tablist" aria-label="Switch panel">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileView === 'chat'}
+              onClick={() => setMobileView('chat')}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                mobileView === 'chat' ? 'bg-white text-warm-800 shadow-sm' : 'text-warm-500'
+              }`}
+            >
+              Chat
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileView === 'preview'}
+              onClick={() => setMobileView('preview')}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                mobileView === 'preview' ? 'bg-white text-warm-800 shadow-sm' : 'text-warm-500'
+              }`}
+            >
+              Preview
+            </button>
           </div>
         </div>
       </div>
