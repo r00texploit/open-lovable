@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { parseMorphEdits, applyMorphEditToFile } from '@/lib/morph-fast-apply';
 import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
-
-declare global {
-  var conversationState: ConversationState | null;
-}
+import { appConfig } from '@/config/app.config';
+import { createEmptyConversationState, resolveConversationSession } from '@/lib/session-helpers';
+import { updateConversationContext } from '@/lib/session-store';
 
 interface ParsedResponse {
   explanation: string;
@@ -136,7 +135,7 @@ declare global {
 
 export async function POST(request: NextRequest) {
   try {
-    const { response, isEdit = false, packages = [] } = await request.json();
+    const { response, isEdit = false, packages = [], sandboxId } = await request.json();
     
     if (!response) {
       return NextResponse.json({
@@ -791,7 +790,7 @@ body {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               missingImports,
-              model: 'claude-sonnet-4-20250514'
+              model: appConfig.ai.defaultModel
             })
           }
         );
@@ -817,33 +816,39 @@ body {
       }
     }
     
-    // Track applied files in conversation state
-    if (global.conversationState && results.filesCreated.length > 0) {
-      // Update the last message metadata with edited files
-      const messages = global.conversationState.context.messages;
-      if (messages.length > 0) {
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage.role === 'user') {
-          lastMessage.metadata = {
-            ...lastMessage.metadata,
-            editedFiles: results.filesCreated
-          };
+    // Track applied files in the session-scoped conversation state
+    if (results.filesCreated.length > 0) {
+      const conversationSession = await resolveConversationSession(sandboxId);
+      if (conversationSession) {
+        const conversationState =
+          (conversationSession.conversationCtx as ConversationState | null) ?? createEmptyConversationState();
+
+        // Update the last message metadata with edited files
+        const messages = conversationState.context.messages;
+        if (messages.length > 0) {
+          const lastMessage = messages[messages.length - 1];
+          if (lastMessage.role === 'user') {
+            lastMessage.metadata = {
+              ...lastMessage.metadata,
+              editedFiles: results.filesCreated
+            };
+          }
         }
-      }
-      
-      // Track applied code in project evolution
-      if (global.conversationState.context.projectEvolution) {
-        global.conversationState.context.projectEvolution.majorChanges.push({
+
+        // Track applied code in project evolution
+        conversationState.context.projectEvolution.majorChanges.push({
           timestamp: Date.now(),
           description: parsed.explanation || 'Code applied',
           filesAffected: results.filesCreated
         });
+
+        conversationState.lastUpdated = Date.now();
+        await updateConversationContext(conversationSession.id, conversationState).catch((error) => {
+          console.error('[apply-ai-code] Failed to persist conversation state:', error);
+        });
+
+        console.log('[apply-ai-code] Updated conversation state with applied files:', results.filesCreated);
       }
-      
-      // Update last updated timestamp
-      global.conversationState.lastUpdated = Date.now();
-      
-      console.log('[apply-ai-code] Updated conversation state with applied files:', results.filesCreated);
     }
     
     return NextResponse.json(responseData);

@@ -5,11 +5,53 @@
  * These provide a clean migration path from global.* to session-based storage.
  */
 
-import { getSession, updateSession, updateFileCache, addSessionFile, updateConversationContext } from './session-store';
+import { getSession, getSessionBySandboxId, updateSession, updateFileCache, addSessionFile, updateConversationContext } from './session-store';
 import type { SandboxSession } from './session-store';
 import type { ConversationState, ConversationMessage, ConversationEdit } from '@/types/conversation';
 import type { FileManifest } from '@/types/file-manifest';
 import type { SandboxState } from '@/types/sandbox';
+
+export function createEmptyConversationState(): ConversationState {
+  return {
+    conversationId: `conv-${Date.now()}`,
+    startedAt: Date.now(),
+    lastUpdated: Date.now(),
+    context: {
+      messages: [],
+      edits: [],
+      projectEvolution: { majorChanges: [] },
+      userPreferences: {}
+    }
+  };
+}
+
+/**
+ * Resolve the GenerationSession that owns a conversation, by sandbox ID first
+ * and falling back to the user's most recent session. When userId is provided,
+ * a sandbox match belonging to a different user is rejected.
+ */
+export async function resolveConversationSession(
+  sandboxId?: string | null,
+  userId?: string | null
+): Promise<SandboxSession | null> {
+  if (sandboxId && sandboxId !== 'default') {
+    const bySandbox = await getSessionBySandboxId(sandboxId);
+    if (bySandbox && (!userId || bySandbox.userId === userId)) {
+      return bySandbox;
+    }
+  }
+
+  if (userId) {
+    const { prisma } = await import('@/lib/db/prisma');
+    const latest = await prisma.generationSession.findFirst({
+      where: { userId },
+      orderBy: { lastActiveAt: 'desc' },
+    });
+    return (latest as unknown as SandboxSession) || null;
+  }
+
+  return null;
+}
 
 /**
  * Get or initialize conversation state for a session.
@@ -37,17 +79,7 @@ export async function getOrInitConversationState(
   }
 
   // Initialize new conversation state (no DB update needed if no session)
-  const newState: ConversationState = {
-    conversationId: `conv-${Date.now()}`,
-    startedAt: Date.now(),
-    lastUpdated: Date.now(),
-    context: {
-      messages: [],
-      edits: [],
-      projectEvolution: { majorChanges: [] },
-      userPreferences: {}
-    }
-  };
+  const newState = createEmptyConversationState();
 
   if (session) {
     await updateConversationContext(session.id, newState);

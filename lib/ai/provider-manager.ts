@@ -96,6 +96,13 @@ export function getProviderForModel(modelId: string): ProviderResolution {
     return { client, actualModel: 'moonshotai/kimi-k2-instruct-0905' };
   }
 
+  // gpt-oss models are served by Groq, whose catalog uses the full
+  // "openai/gpt-oss-*" id — must be matched before the openai/ prefix check
+  if (modelId.includes('gpt-oss')) {
+    const client = getOrCreateClient('groq');
+    return { client, actualModel: modelId };
+  }
+
   if (isAnthropic) {
     const client = getOrCreateClient('anthropic');
     return { client, actualModel: modelId.replace('anthropic/', '') };

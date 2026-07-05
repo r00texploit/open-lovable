@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { createGroq } from '@ai-sdk/groq';
-import { createAnthropic } from '@ai-sdk/anthropic';
-import { createOpenAI } from '@ai-sdk/openai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText } from 'ai';
+import { getProviderForModel } from '@/lib/ai/provider-manager';
+import { createEmptyConversationState, resolveConversationSession } from '@/lib/session-helpers';
+import { updateConversationContext } from '@/lib/session-store';
 import type { SandboxState } from '@/types/sandbox';
 import { selectFilesForEdit, getFileContents, formatFilesForAI } from '@/lib/context-selector';
 import { executeSearchPlan, formatSearchResultsForAI, selectTargetFile } from '@/lib/file-search-executor';
@@ -33,36 +32,6 @@ import {
 
 // Force dynamic route to enable streaming
 export const dynamic = 'force-dynamic';
-
-// Check if we're using Vercel AI Gateway
-const isUsingAIGateway = !!process.env.AI_GATEWAY_API_KEY;
-const aiGatewayBaseURL = 'https://ai-gateway.vercel.sh/v1';
-
-console.log('[generate-ai-code-stream] AI Gateway config:', {
-  isUsingAIGateway,
-  hasGroqKey: !!process.env.GROQ_API_KEY,
-  hasAIGatewayKey: !!process.env.AI_GATEWAY_API_KEY
-});
-
-const groq = createGroq({
-  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.GROQ_API_KEY,
-  baseURL: isUsingAIGateway ? aiGatewayBaseURL : undefined,
-});
-
-const anthropic = createAnthropic({
-  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.ANTHROPIC_API_KEY,
-  baseURL: isUsingAIGateway ? aiGatewayBaseURL : (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1'),
-});
-
-const googleGenerativeAI = createGoogleGenerativeAI({
-  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.GEMINI_API_KEY,
-  baseURL: isUsingAIGateway ? aiGatewayBaseURL : undefined,
-});
-
-const openai = createOpenAI({
-  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.OPENAI_API_KEY,
-  baseURL: isUsingAIGateway ? aiGatewayBaseURL : process.env.OPENAI_BASE_URL,
-});
 
 // Helper function to analyze user preferences from conversation history
 function analyzeUserPreferences(messages: ConversationMessage[]): {
@@ -105,7 +74,6 @@ function analyzeUserPreferences(messages: ConversationMessage[]): {
 
 declare global {
   var sandboxState: SandboxState;
-  var conversationState: ConversationState | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -137,21 +105,22 @@ export async function POST(request: NextRequest) {
     console.log('[generate-ai-code-stream] - currentFiles count:', context?.currentFiles ? Object.keys(context.currentFiles).length : 0);
     console.log('[generate-ai-code-stream] - uploadedImages:', imagesToProcess.length > 0 ? `${imagesToProcess.length} image(s)` : 'none');
     
-    // Initialize conversation state if not exists
-    if (!global.conversationState) {
-      global.conversationState = {
-        conversationId: `conv-${Date.now()}`,
-        startedAt: Date.now(),
-        lastUpdated: Date.now(),
-        context: {
-          messages: [],
-          edits: [],
-          projectEvolution: { majorChanges: [] },
-          userPreferences: {}
-        }
-      };
-    }
-    
+    // Conversation state is scoped to the user's generation session (never a
+    // process-wide global — that leaked context between users).
+    const conversationSession = await resolveConversationSession(context?.sandboxId, userId);
+    const conversationState: ConversationState =
+      (conversationSession?.conversationCtx as ConversationState | null | undefined) ??
+      createEmptyConversationState();
+
+    const persistConversationState = async () => {
+      conversationState.lastUpdated = Date.now();
+      if (conversationSession) {
+        await updateConversationContext(conversationSession.id, conversationState).catch((error) => {
+          console.error('[generate-ai-code-stream] Failed to persist conversation state:', error);
+        });
+      }
+    };
+
     // Add user message to conversation history
     const userMessage: ConversationMessage = {
       id: `msg-${Date.now()}`,
@@ -162,19 +131,21 @@ export async function POST(request: NextRequest) {
         sandboxId: context?.sandboxId
       }
     };
-    global.conversationState.context.messages.push(userMessage);
-    
+    conversationState.context.messages.push(userMessage);
+
     // Clean up old messages to prevent unbounded growth
     const maxMsgs = appConfig.ui.maxRecentMessagesContext;
-    if (global.conversationState.context.messages.length > maxMsgs) {
-      global.conversationState.context.messages = global.conversationState.context.messages.slice(-Math.floor(maxMsgs * 0.75));
+    if (conversationState.context.messages.length > maxMsgs) {
+      conversationState.context.messages = conversationState.context.messages.slice(-Math.floor(maxMsgs * 0.75));
       console.log('[generate-ai-code-stream] Trimmed conversation history to prevent context overflow');
     }
-    
+
     // Clean up old edits
-    if (global.conversationState.context.edits.length > 10) {
-      global.conversationState.context.edits = global.conversationState.context.edits.slice(-8);
+    if (conversationState.context.edits.length > 10) {
+      conversationState.context.edits = conversationState.context.edits.slice(-8);
     }
+
+    await persistConversationState();
     
     // Debug: Show a sample of actual file content
     if (context?.currentFiles && Object.keys(context.currentFiles).length > 0) {
@@ -569,15 +540,15 @@ Remember: You are a SURGEON making a precise incision, not an artist repainting 
         
         // Build conversation context for system prompt
         let conversationContext = '';
-        if (global.conversationState && global.conversationState.context.messages.length > 1) {
+        if (conversationState && conversationState.context.messages.length > 1) {
           console.log('[generate-ai-code-stream] Building conversation context');
-          console.log('[generate-ai-code-stream] Total messages:', global.conversationState.context.messages.length);
-          console.log('[generate-ai-code-stream] Total edits:', global.conversationState.context.edits.length);
+          console.log('[generate-ai-code-stream] Total messages:', conversationState.context.messages.length);
+          console.log('[generate-ai-code-stream] Total edits:', conversationState.context.edits.length);
           
           conversationContext = `\n\n## Conversation History (Recent)\n`;
           
           // Include only the last 3 edits to save context
-          const recentEdits = global.conversationState.context.edits.slice(-3);
+          const recentEdits = conversationState.context.edits.slice(-3);
           if (recentEdits.length > 0) {
             console.log('[generate-ai-code-stream] Including', recentEdits.length, 'recent edits in context');
             conversationContext += `\n### Recent Edits:\n`;
@@ -587,7 +558,7 @@ Remember: You are a SURGEON making a precise incision, not an artist repainting 
           }
           
           // Include recently created files - CRITICAL for preventing duplicates
-          const recentMsgs = global.conversationState.context.messages.slice(-5);
+          const recentMsgs = conversationState.context.messages.slice(-5);
           const recentlyCreatedFiles: string[] = [];
           recentMsgs.forEach(msg => {
             if (msg.metadata?.editedFiles) {
@@ -617,7 +588,7 @@ Remember: You are a SURGEON making a precise incision, not an artist repainting 
           }
           
           // Include only last 2 major changes
-          const majorChanges = global.conversationState.context.projectEvolution.majorChanges.slice(-2);
+          const majorChanges = conversationState.context.projectEvolution.majorChanges.slice(-2);
           if (majorChanges.length > 0) {
             conversationContext += `\n### Recent Changes:\n`;
             majorChanges.forEach(change => {
@@ -626,7 +597,7 @@ Remember: You are a SURGEON making a precise incision, not an artist repainting 
           }
           
           // Keep user preferences - they're concise
-          const userPrefs = analyzeUserPreferences(global.conversationState.context.messages);
+          const userPrefs = analyzeUserPreferences(conversationState.context.messages);
           if (userPrefs.commonPatterns.length > 0) {
             conversationContext += `\n### User Preferences:\n`;
             conversationContext += `- Edit style: ${userPrefs.preferredEditStyle}\n`;
@@ -1210,29 +1181,9 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
         const isGoogle = model.startsWith('google/');
         const isOpenAI = model.startsWith('openai/');
         const isKimiGroq = model === 'moonshotai/kimi-k2-instruct-0905';
-        const modelProvider = isAnthropic ? anthropic : 
-                              (isOpenAI ? openai : 
-                              (isGoogle ? googleGenerativeAI : 
-                              (isKimiGroq ? groq : groq)));
-        
-        // Fix model name transformation for different providers
-        let actualModel: string;
-        if (isAnthropic) {
-          actualModel = model.replace('anthropic/', '');
-        } else if (isOpenAI) {
-          actualModel = model.replace('openai/', '');
-        } else if (isKimiGroq) {
-          // Kimi on Groq - use full model string
-          actualModel = 'moonshotai/kimi-k2-instruct-0905';
-        } else if (isGoogle) {
-          // Google uses specific model names - convert our naming to theirs  
-          actualModel = model.replace('google/', '');
-        } else {
-          actualModel = model;
-        }
+        let { client: modelProvider, actualModel } = getProviderForModel(model);
 
         console.log(`[generate-ai-code-stream] Using provider: ${isAnthropic ? 'Anthropic' : isGoogle ? 'Google' : isOpenAI ? 'OpenAI' : 'Groq'}, model: ${actualModel}`);
-        console.log(`[generate-ai-code-stream] AI Gateway enabled: ${isUsingAIGateway}`);
         console.log(`[generate-ai-code-stream] Model string: ${model}`);
 
         // Build user message content - support multimodal with images
@@ -1419,11 +1370,13 @@ REMEMBER: It's better to generate fewer COMPLETE files than many INCOMPLETE file
               // Wait before retry with exponential backoff
               await new Promise(resolve => setTimeout(resolve, retryCount * 2000));
               
-              // If Groq fails, try switching to a fallback model
+              // If Groq fails, try switching to the configured fallback model
               if (isGroqServiceError && retryCount === maxRetries) {
-                console.log('[generate-ai-code-stream] Groq service unavailable, falling back to GPT-4');
-                streamOptions.model = openai('gpt-4-turbo');
-                actualModel = 'gpt-4-turbo';
+                const fallbackModel = appConfig.ai.fallbackModel;
+                console.log(`[generate-ai-code-stream] Groq service unavailable, falling back to ${fallbackModel}`);
+                const fallback = getProviderForModel(fallbackModel);
+                streamOptions.model = fallback.client(fallback.actualModel);
+                actualModel = fallback.actualModel;
               }
             } else {
               // Final error, send to user
@@ -1896,34 +1849,10 @@ Original request: ${prompt}
 Provide the complete file content without any truncation. Include all necessary imports, complete all functions, and close all tags properly.`;
                 
                 // Make a focused API call to complete this specific file
-                // Create a new client for the completion based on the provider
-                let completionClient;
-                if (model.includes('gpt') || model.includes('openai')) {
-                  completionClient = openai;
-                } else if (model.includes('claude')) {
-                  completionClient = anthropic;
-                } else if (model === 'moonshotai/kimi-k2-instruct-0905') {
-                  completionClient = groq;
-                } else {
-                  completionClient = groq;
-                }
-                
-                // Determine the correct model name for the completion
-                let completionModelName: string;
-                if (model === 'moonshotai/kimi-k2-instruct-0905') {
-                  completionModelName = 'moonshotai/kimi-k2-instruct-0905';
-                } else if (model.includes('openai')) {
-                  completionModelName = model.replace('openai/', '');
-                } else if (model.includes('anthropic')) {
-                  completionModelName = model.replace('anthropic/', '');
-                } else if (model.includes('google')) {
-                  completionModelName = model.replace('google/', '');
-                } else {
-                  completionModelName = model;
-                }
-                
+                const completion = getProviderForModel(model);
+
                 const completionResult = await streamText({
-                  model: completionClient(completionModelName),
+                  model: completion.client(completion.actualModel),
                   messages: [
                     { 
                       role: 'system', 
@@ -2002,7 +1931,7 @@ Provide the complete file content without any truncation. Include all necessary 
         });
         
         // Track edit in conversation history
-        if (isEdit && editContext && global.conversationState) {
+        if (isEdit && editContext && conversationState) {
           const editRecord: ConversationEdit = {
             timestamp: Date.now(),
             userRequest: prompt,
@@ -2012,23 +1941,22 @@ Provide the complete file content without any truncation. Include all necessary 
             outcome: 'success' // Assuming success if we got here
           };
           
-          global.conversationState.context.edits.push(editRecord);
+          conversationState.context.edits.push(editRecord);
           
           // Track major changes
           if (editContext.editIntent.type === 'ADD_FEATURE' || files.length > 3) {
-            global.conversationState.context.projectEvolution.majorChanges.push({
+            conversationState.context.projectEvolution.majorChanges.push({
               timestamp: Date.now(),
               description: editContext.editIntent.description,
               filesAffected: editContext.primaryFiles
             });
           }
           
-          // Update last updated timestamp
-          global.conversationState.lastUpdated = Date.now();
-          
+          await persistConversationState();
+
           console.log('[generate-ai-code-stream] Updated conversation history with edit:', editRecord);
         }
-        
+
       } catch (error) {
         console.error('[generate-ai-code-stream] Stream processing error:', error);
         

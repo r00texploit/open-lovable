@@ -65,20 +65,23 @@ export const appConfig = {
   ai: {
     // Default AI model
     defaultModel: 'openai/gpt-5',
-    
+
+    // Model used when the primary provider is unavailable after retries
+    fallbackModel: 'openai/gpt-5',
+
     // Available models
     availableModels: [
       'openai/gpt-5',
       'moonshotai/kimi-k2-instruct-0905',
-      'anthropic/claude-sonnet-4-20250514',
+      'anthropic/claude-sonnet-5',
       'google/gemini-3-pro-preview'
     ],
-    
+
     // Model display names
     modelDisplayNames: {
       'openai/gpt-5': 'GPT-5',
       'moonshotai/kimi-k2-instruct-0905': 'Kimi K2 (Groq)',
-      'anthropic/claude-sonnet-4-20250514': 'Sonnet 4',
+      'anthropic/claude-sonnet-5': 'Sonnet 5',
       'google/gemini-3-pro-preview': 'Gemini 3 Pro (Preview)'
     } as Record<string, string>,
     

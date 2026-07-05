@@ -5,6 +5,8 @@ import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
 import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 import { sanitizeLucideImports } from '@/lib/ai/sanitize-lucide-imports';
+import { createEmptyConversationState, resolveConversationSession } from '@/lib/session-helpers';
+import { updateConversationContext } from '@/lib/session-store';
 import {
   getSandboxState,
   setSandboxState,
@@ -15,7 +17,6 @@ import {
 } from '@/lib/sandbox/sandbox-state';
 
 declare global {
-  var conversationState: ConversationState | null;
   var activeSandboxProvider: any;
   var activeSandbox: any;
   var existingFiles: Set<string>;
@@ -902,29 +903,36 @@ export async function POST(request: NextRequest) {
           message: `Successfully applied ${changedFiles.length} files`
         });
 
-        // Track applied files in conversation state
-        if (global.conversationState && changedFiles.length > 0) {
-          const messages = global.conversationState.context.messages;
-          if (messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-            if (lastMessage.role === 'user') {
-              lastMessage.metadata = {
-                ...lastMessage.metadata,
-                editedFiles: changedFiles
-              };
-            }
-          }
+        // Track applied files in the session-scoped conversation state
+        if (changedFiles.length > 0) {
+          const conversationSession = await resolveConversationSession(effectiveSandboxId);
+          if (conversationSession) {
+            const conversationState =
+              (conversationSession.conversationCtx as ConversationState | null) ?? createEmptyConversationState();
 
-          // Track applied code in project evolution
-          if (global.conversationState.context.projectEvolution) {
-            global.conversationState.context.projectEvolution.majorChanges.push({
+            const messages = conversationState.context.messages;
+            if (messages.length > 0) {
+              const lastMessage = messages[messages.length - 1];
+              if (lastMessage.role === 'user') {
+                lastMessage.metadata = {
+                  ...lastMessage.metadata,
+                  editedFiles: changedFiles
+                };
+              }
+            }
+
+            // Track applied code in project evolution
+            conversationState.context.projectEvolution.majorChanges.push({
               timestamp: Date.now(),
               description: parsed.explanation || 'Code applied',
               filesAffected: changedFiles
             });
-          }
 
-          global.conversationState.lastUpdated = Date.now();
+            conversationState.lastUpdated = Date.now();
+            await updateConversationContext(conversationSession.id, conversationState).catch((error) => {
+              console.error('[apply-ai-code-stream] Failed to persist conversation state:', error);
+            });
+          }
         }
 
       } catch (error) {

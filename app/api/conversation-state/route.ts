@@ -1,25 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ConversationState } from '@/types/conversation';
+import { requireUser } from '@/lib/auth/server';
+import { createEmptyConversationState, resolveConversationSession } from '@/lib/session-helpers';
+import { updateConversationContext } from '@/lib/session-store';
 
-declare global {
-  var conversationState: ConversationState | null;
+// Conversation state lives on the caller's GenerationSession row, never in
+// process globals — globals leaked conversation context between users.
+
+async function loadUserConversation(userId: string, sandboxId?: string | null) {
+  const session = await resolveConversationSession(sandboxId, userId);
+  const state = (session?.conversationCtx as ConversationState | null | undefined) ?? null;
+  return { session, state };
+}
+
+async function persist(sessionId: string, state: ConversationState) {
+  state.lastUpdated = Date.now();
+  await updateConversationContext(sessionId, state);
 }
 
 // GET: Retrieve current conversation state
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    if (!global.conversationState) {
+    const auth = await requireUser();
+    if (!auth) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const sandboxId = request.nextUrl.searchParams.get('sandboxId');
+    const { state } = await loadUserConversation(auth.user.id, sandboxId);
+
+    if (!state) {
       return NextResponse.json({
         success: true,
         state: null,
         message: 'No active conversation'
       });
     }
-    
-    return NextResponse.json({
-      success: true,
-      state: global.conversationState
-    });
+
+    return NextResponse.json({ success: true, state });
   } catch (error) {
     console.error('[conversation-state] Error getting state:', error);
     return NextResponse.json({
@@ -32,102 +50,75 @@ export async function GET() {
 // POST: Reset or update conversation state
 export async function POST(request: NextRequest) {
   try {
-    const { action, data } = await request.json();
-    
+    const auth = await requireUser();
+    if (!auth) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { action, data, sandboxId } = await request.json();
+    const { session, state } = await loadUserConversation(auth.user.id, sandboxId);
+
     switch (action) {
-      case 'reset':
-        global.conversationState = {
-          conversationId: `conv-${Date.now()}`,
-          startedAt: Date.now(),
-          lastUpdated: Date.now(),
-          context: {
-            messages: [],
-            edits: [],
-            projectEvolution: { majorChanges: [] },
-            userPreferences: {}
-          }
-        };
-        
-        console.log('[conversation-state] Reset conversation state');
-        
+      case 'reset': {
+        const fresh = createEmptyConversationState();
+        if (session) {
+          await persist(session.id, fresh);
+        }
         return NextResponse.json({
           success: true,
           message: 'Conversation state reset',
-          state: global.conversationState
+          state: fresh
         });
-        
-      case 'clear-old':
-        // Clear old conversation data but keep recent context
-        if (!global.conversationState) {
-          // Initialize conversation state if it doesn't exist
-          global.conversationState = {
-            conversationId: `conv-${Date.now()}`,
-            startedAt: Date.now(),
-            lastUpdated: Date.now(),
-            context: {
-              messages: [],
-              edits: [],
-              projectEvolution: { majorChanges: [] },
-              userPreferences: {}
-            }
-          };
-          
-          console.log('[conversation-state] Initialized new conversation state for clear-old');
-          
-          return NextResponse.json({
-            success: true,
-            message: 'New conversation state initialized',
-            state: global.conversationState
-          });
+      }
+
+      case 'clear-old': {
+        const current = state ?? createEmptyConversationState();
+        current.context.messages = current.context.messages.slice(-5);
+        current.context.edits = current.context.edits.slice(-3);
+        current.context.projectEvolution.majorChanges =
+          current.context.projectEvolution.majorChanges.slice(-2);
+        if (session) {
+          await persist(session.id, current);
         }
-        
-        // Keep only recent data
-        global.conversationState.context.messages = global.conversationState.context.messages.slice(-5);
-        global.conversationState.context.edits = global.conversationState.context.edits.slice(-3);
-        global.conversationState.context.projectEvolution.majorChanges = 
-          global.conversationState.context.projectEvolution.majorChanges.slice(-2);
-        
-        console.log('[conversation-state] Cleared old conversation data');
-        
         return NextResponse.json({
           success: true,
           message: 'Old conversation data cleared',
-          state: global.conversationState
+          state: current
         });
-        
-      case 'update':
-        if (!global.conversationState) {
+      }
+
+      case 'update': {
+        if (!state || !session) {
           return NextResponse.json({
             success: false,
             error: 'No active conversation to update'
           }, { status: 400 });
         }
-        
-        // Update specific fields if provided
+
         if (data) {
           if (data.currentTopic) {
-            global.conversationState.context.currentTopic = data.currentTopic;
+            state.context.currentTopic = data.currentTopic;
           }
           if (data.userPreferences) {
-            global.conversationState.context.userPreferences = {
-              ...global.conversationState.context.userPreferences,
+            state.context.userPreferences = {
+              ...state.context.userPreferences,
               ...data.userPreferences
             };
           }
-          
-          global.conversationState.lastUpdated = Date.now();
+          await persist(session.id, state);
         }
-        
+
         return NextResponse.json({
           success: true,
           message: 'Conversation state updated',
-          state: global.conversationState
+          state
         });
-        
+      }
+
       default:
         return NextResponse.json({
           success: false,
-          error: 'Invalid action. Use "reset" or "update"'
+          error: 'Invalid action. Use "reset", "clear-old" or "update"'
         }, { status: 400 });
     }
   } catch (error) {
@@ -140,12 +131,19 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE: Clear conversation state
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
-    global.conversationState = null;
-    
-    console.log('[conversation-state] Cleared conversation state');
-    
+    const auth = await requireUser();
+    if (!auth) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const sandboxId = request.nextUrl.searchParams.get('sandboxId');
+    const { session } = await loadUserConversation(auth.user.id, sandboxId);
+    if (session) {
+      await persist(session.id, createEmptyConversationState());
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Conversation state cleared'
