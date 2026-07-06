@@ -4,11 +4,32 @@ import { authOptions } from '@/lib/auth/auth-options';
 import { prisma } from '@/lib/db/prisma';
 import { buildPreviewUrl } from '@/lib/tenancy/preview-mapping';
 
-// GET /api/generation-session — list user's recent sessions
-export async function GET() {
+// GET /api/generation-session — list user's recent sessions.
+// With ?siteId= returns the single best session for that site instead:
+// the most recent one that actually has generated files, so "Edit site"
+// restores real code rather than whichever blank sandbox was touched last.
+export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const siteId = request.nextUrl.searchParams.get('siteId');
+  if (siteId) {
+    const siteSessions = await prisma.generationSession.findMany({
+      where: { userId: session.user.id, siteId },
+      orderBy: { lastActiveAt: 'desc' },
+      take: 10,
+    });
+
+    const hasFiles = (s: (typeof siteSessions)[number]) => {
+      const cache = s.fileCache as { files?: Record<string, unknown> } | Record<string, unknown> | null;
+      const files = (cache && typeof cache === 'object' && 'files' in cache ? (cache as any).files : cache) || {};
+      return Object.keys(files).length > 0;
+    };
+
+    const best = siteSessions.find(hasFiles) ?? siteSessions[0] ?? null;
+    return NextResponse.json({ session: best });
   }
 
   const sessions = await prisma.generationSession.findMany({

@@ -589,26 +589,50 @@ function AISandboxPage() {
       
       if (!isMounted) return;
 
-      // Check if sandbox ID is in URL
+      // Check if sandbox/site IDs are in URL
       const sandboxIdParam = searchParams.get('sandbox');
+      const siteIdParam = searchParams.get('site');
 
       setLoading(true);
       try {
-        if (sandboxIdParam) {
-          console.log('[home] Restoring session for sandbox:', sandboxIdParam);
+        // An explicit site param (the /sites Edit flow) wins over any sandbox
+        // param left in the URL: resolve the site's own session so we restore
+        // the code that actually built it, not a stale/blank sandbox.
+        let savedSession: any = null;
+        let effectiveSandboxId = sandboxIdParam;
+
+        if (siteIdParam) {
+          setActiveSiteId(siteIdParam);
+          activeSiteIdRef.current = siteIdParam;
+          try {
+            const res = await fetch(`/api/generation-session?siteId=${encodeURIComponent(siteIdParam)}`);
+            if (res.ok) {
+              const body = await res.json();
+              if (body.session?.sandboxId) {
+                savedSession = body.session;
+                effectiveSandboxId = body.session.sandboxId;
+                console.log('[home] Resolved session for site:', siteIdParam, '->', effectiveSandboxId);
+              }
+            }
+          } catch { /* DB unavailable — fall back to sandbox param */ }
+        }
+
+        if (effectiveSandboxId) {
+          console.log('[home] Restoring session for sandbox:', effectiveSandboxId);
 
           // Load saved session — DB first, localStorage fallback
-          let savedSession: any = null;
-          try {
-            const sessionRes = await fetch(`/api/generation-session/${sandboxIdParam}`);
-            if (sessionRes.ok) {
-              const body = await sessionRes.json();
-              if (body.session) savedSession = body.session;
-            }
-          } catch { /* DB unavailable */ }
           if (!savedSession) {
             try {
-              const raw = localStorage.getItem(`noeron_session_${sandboxIdParam}`);
+              const sessionRes = await fetch(`/api/generation-session/${effectiveSandboxId}`);
+              if (sessionRes.ok) {
+                const body = await sessionRes.json();
+                if (body.session) savedSession = body.session;
+              }
+            } catch { /* DB unavailable */ }
+          }
+          if (!savedSession) {
+            try {
+              const raw = localStorage.getItem(`noeron_session_${effectiveSandboxId}`);
               if (raw) savedSession = JSON.parse(raw);
             } catch { /* parse error */ }
           }
@@ -621,7 +645,8 @@ function AISandboxPage() {
                 timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
               })));
             }
-            if (savedSession.siteId) setActiveSiteId(savedSession.siteId);
+            // An explicit ?site= param wins over the session's stored siteId
+            if (savedSession.siteId && !siteIdParam) setActiveSiteId(savedSession.siteId);
             if (savedSession.aiModel) setAiModel(savedSession.aiModel);
             if (savedSession.conversationCtx) {
               setConversationContext(prev => ({
@@ -686,7 +711,7 @@ function AISandboxPage() {
             updateStatus('Sandbox active', true);
             setShowHomeScreen(false);
             sandboxCreated = true;
-            console.log('[home] Session restored (sandbox alive):', sandboxIdParam);
+            console.log('[home] Session restored (sandbox alive):', effectiveSandboxId);
           } else {
             if (savedUrl) console.log('[home] Saved sandbox expired — creating fresh sandbox, chat history preserved');
             sandboxCreated = true;
@@ -696,7 +721,7 @@ function AISandboxPage() {
             if (freshSandbox?.sandboxId) {
               let savedFiles: Record<string, string> | null = null;
               try {
-                const raw = localStorage.getItem(`noeron_files_${sandboxIdParam}`);
+                const raw = localStorage.getItem(`noeron_files_${effectiveSandboxId}`);
                 if (raw) savedFiles = JSON.parse(raw);
               } catch { /* parse error */ }
               if (!savedFiles && savedSession?.fileCache) {
@@ -772,14 +797,13 @@ function AISandboxPage() {
   }, [session?.user?.id]);
 
   useEffect(() => {
-    const selectedSiteId = activeSiteId || sites[0]?.id;
+    // Only attach a sandbox session to a site the user (or a restored
+    // session) explicitly selected. Falling back to sites[0] silently
+    // re-bound blank sandboxes to unrelated sites and hijacked their
+    // draft previews.
+    const selectedSiteId = activeSiteId;
     if (!selectedSiteId) {
       return;
-    }
-
-    if (!activeSiteId) {
-      setActiveSiteId(selectedSiteId);
-      activeSiteIdRef.current = selectedSiteId;
     }
 
     if (!sandboxData?.sandboxId) {
@@ -1924,6 +1948,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   const publishActiveSite = async () => {
     if (!activeSiteId || !sandboxData?.sandboxId) {
       setSiteError('Create a site and generate a build before publishing.');
+      return;
+    }
+
+    // Guard against publishing a session with no generated code: a
+    // mis-restored blank sandbox would build the empty scaffold and
+    // overwrite the live site's assets.
+    if (Object.keys(sandboxFiles).length === 0) {
+      setSiteError('This session has no generated code to publish. Generate or restore your site first, then publish.');
       return;
     }
 
