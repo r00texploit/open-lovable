@@ -9,6 +9,9 @@ import {
 } from '@/lib/session-store';
 import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
 import { SandboxFactory } from '@/lib/sandbox/factory';
+import { registerPreviewMapping, buildPreviewUrl, removePreviewMapping } from '@/lib/tenancy/preview-mapping';
+import { prisma } from '@/lib/db/prisma';
+import { buildPersistentSandboxName } from '@/lib/sandbox/persistent-sandbox';
 
 /**
  * GET /api/sandboxes
@@ -29,7 +32,7 @@ export async function GET(request: NextRequest) {
       return {
         ...sb,
         isActive: !!provider && provider.isAlive(),
-        canReconnect: !provider && !!sb.sandboxUrl,
+        canReconnect: !provider && !!(sb.sandboxName || sb.rawSandboxUrl || sb.sandboxUrl),
       };
     });
 
@@ -88,18 +91,49 @@ export async function POST(request: NextRequest) {
 
     // Create the actual sandbox
     const provider = await SandboxFactory.create();
-    const sandboxInfo = await provider.createSandbox();
-
-    // Setup the Vite app
-    await provider.setupViteApp();
+    const sandboxName = buildPersistentSandboxName(dbSession.id, dbSession.siteId);
+    const sandboxInfo = await provider.createSandbox({
+      appSandboxId: sandboxId,
+      sandboxName,
+      setupOnCreate: true,
+    });
 
     // Register with sandbox manager for the user
     sandboxManager.registerSandboxForUser(session.user.id, sandboxId, provider);
 
+    // Check if this sandbox is associated with a site for custom preview URL
+    let previewUrl = sandboxInfo.url;
+    let siteSlug: string | null = null;
+
+    if (dbSession.siteId) {
+      const site = await prisma.site.findUnique({
+        where: { id: dbSession.siteId },
+        select: { id: true, slug: true, subdomain: true, userId: true }
+      });
+
+      if (site) {
+        siteSlug = site.slug;
+        // Register preview mapping for the site subdomain
+        registerPreviewMapping(
+          site.subdomain,
+          sandboxInfo.url,
+          sandboxId,
+          site.id,
+          site.userId
+        );
+        // Use custom preview URL
+        previewUrl = buildPreviewUrl(site.subdomain);
+      }
+    }
+
     // Update session with sandbox URL
     const { updateSession } = await import('@/lib/session-store');
     await updateSession(dbSession.id, {
-      sandboxUrl: sandboxInfo.url,
+      sandboxUrl: previewUrl,
+      rawSandboxUrl: sandboxInfo.url,
+      sandboxName: sandboxInfo.sandboxName || sandboxName,
+      sandboxRuntimeStatus: sandboxInfo.runtimeStatus || 'running',
+      currentSnapshotId: sandboxInfo.currentSnapshotId || null,
       status: 'running',
     });
 
@@ -109,6 +143,9 @@ export async function POST(request: NextRequest) {
         id: dbSession.id,
         sandboxId,
         url: sandboxInfo.url,
+        previewUrl,
+        sandboxName: sandboxInfo.sandboxName || sandboxName,
+        siteSlug,
         provider: sandboxInfo.provider,
         status: 'running',
         name,
@@ -155,6 +192,23 @@ export async function DELETE(request: NextRequest) {
 
         if (!sandboxSession) {
           return { sandboxId, success: false, error: 'Not found or access denied' };
+        }
+
+        // Remove preview mapping if exists
+        try {
+          const { getSandboxWithUser } = await import('@/lib/session-store');
+          const sandboxSession = await getSandboxWithUser(sandboxId, session.user.id);
+          if (sandboxSession?.siteId) {
+            const site = await prisma.site.findUnique({
+              where: { id: sandboxSession.siteId },
+              select: { subdomain: true }
+            });
+            if (site) {
+              removePreviewMapping(site.subdomain);
+            }
+          }
+        } catch (e) {
+          console.warn(`[sandboxes] Failed to remove preview mapping for ${sandboxId}:`, e);
         }
 
         // Terminate the sandbox if it's running

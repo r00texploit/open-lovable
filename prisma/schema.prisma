@@ -109,6 +109,10 @@ model GenerationSession {
   sandboxId       String    @unique
   sandboxProvider String    @default("vercel")
   sandboxUrl      String?
+  rawSandboxUrl   String?
+  sandboxName     String?   @unique
+  sandboxRuntimeStatus String?
+  currentSnapshotId String?
   status          String    @default("creating")
   chatMessages    Json      @default("[]")
   conversationCtx Json?
@@ -124,6 +128,7 @@ model GenerationSession {
   site            Site?     @relation(fields: [siteId], references: [id], onDelete: SetNull)
 
   @@index([userId, lastActiveAt])
+  @@index([siteId, lastActiveAt])
 }
 
 model Site {

@@ -70,6 +70,20 @@ export abstract class BaseSandboxProvider extends SandboxProvider {
   }
 
   /**
+   * Write multiple files with Buffer support
+   * Default implementation: loop over files and call writeFile
+   * Override this in providers that have native bulk write support
+   */
+  async writeFiles(files: Array<{ path: string; content: Buffer }>): Promise<void> {
+    this.logger.info(`Writing ${files.length} files via base provider`);
+    for (const file of files) {
+      // Convert Buffer to base64 string for writeFile
+      const base64Content = file.content.toString('base64');
+      await this.writeFile(file.path, base64Content);
+    }
+  }
+
+  /**
    * Remove all tracked files
    */
   protected clearTrackedFiles(): void {

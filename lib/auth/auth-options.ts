@@ -7,6 +7,8 @@ import { verifyPassword } from '@/lib/auth/password';
 import { signInSchema } from '@/lib/validations/auth';
 import { ensureFreeEntitlements, getNormalizedSubscriptionState } from '@/lib/usage/token-usage';
 
+const fallbackUsageResetDate = () => new Date().toISOString();
+
 export const authOptions: NextAuthOptions = {
   // Required in production — without it every /api/auth/* route 500s with NO_SECRET
   secret: process.env.NEXTAUTH_SECRET,
@@ -39,44 +41,49 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
+          // Validate credentials format
+          const result = signInSchema.safeParse({
+            email: credentials.email,
+            password: credentials.password,
+          });
+
+          if (!result.success) {
+            return null;
+          }
+
+          // Find user by email (stored lowercased at registration)
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email.trim().toLowerCase() },
+          });
+
+          // Check if user exists and has a password (not OAuth only)
+          if (!user || !user.password) {
+            return null;
+          }
+
+          // Verify password
+          const isValid = await verifyPassword(credentials.password, user.password);
+
+          if (!isValid) {
+            return null;
+          }
+
+          // Return user without password
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+          };
+        } catch (error) {
+          console.error('[Auth Credentials] Authorization failed:', error);
           return null;
         }
-
-        // Validate credentials format
-        const result = signInSchema.safeParse({
-          email: credentials.email,
-          password: credentials.password,
-        });
-
-        if (!result.success) {
-          return null;
-        }
-
-        // Find user by email (stored lowercased at registration)
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.trim().toLowerCase() },
-        });
-
-        // Check if user exists and has a password (not OAuth only)
-        if (!user || !user.password) {
-          return null;
-        }
-
-        // Verify password
-        const isValid = await verifyPassword(credentials.password, user.password);
-
-        if (!isValid) {
-          return null;
-        }
-
-        // Return user without password
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-        };
       },
     }),
   ],
@@ -105,6 +112,15 @@ export const authOptions: NextAuthOptions = {
         } catch (error) {
           // DB unavailable — keep existing token data rather than failing the whole session
           console.error('[Auth JWT] Failed to load subscription state:', error);
+          token.subscription = token.subscription || {
+            tier: 'free',
+            status: 'active',
+          };
+          token.usage = token.usage || {
+            generationsUsed: 0,
+            generationsLimit: 50000,
+            resetDate: fallbackUsageResetDate(),
+          };
         }
       }
 

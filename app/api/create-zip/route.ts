@@ -1,37 +1,18 @@
 import { NextResponse } from 'next/server';
-import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
-import type { SandboxProvider } from '@/lib/sandbox/types';
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
     const { sandboxId } = body as { sandboxId?: string };
+    const resolved = await resolveRequestSandbox(sandboxId);
 
-    let provider: SandboxProvider | null = null;
-
-    if (sandboxId) {
-      provider = sandboxManager.getProvider(sandboxId);
-      if (!provider) {
-        try {
-          provider = await sandboxManager.getOrCreateProvider(sandboxId);
-        } catch {
-          // fall through to active provider
-        }
-      }
+    if (!resolved.ok) {
+      return resolved.response;
     }
 
-    if (!provider) {
-      provider = sandboxManager.getActiveProvider();
-    }
-
-    if (!provider) {
-      return NextResponse.json(
-        { success: false, error: 'No active sandbox. Please create or reconnect to a sandbox first.' },
-        { status: 400 }
-      );
-    }
-
-    console.log('[create-zip] Creating project zip...');
+    const provider = resolved.value.provider;
+    console.log('[create-zip] Creating project zip for sandbox:', resolved.value.sandboxId);
 
     const zipCmd = [
       'set -e',

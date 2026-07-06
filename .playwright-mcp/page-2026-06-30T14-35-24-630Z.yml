@@ -1,0 +1,100 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - generic [ref=f3e3]:
+      - generic [ref=f3e4]:
+        - link "Noeron" [ref=f3e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f3e6]:
+            - img [ref=f3e7]
+            - generic [ref=f3e14]: Noeron
+        - button "GPT-5" [ref=f3e17] [cursor=pointer]:
+          - generic [ref=f3e18]: GPT-5
+          - img [ref=f3e19]
+        - generic [ref=f3e21]: Sandbox active
+        - button "AI Images requires Plus or Team plan — upgrade to generate real images with DALL-E 3" [disabled] [ref=f3e23]:
+          - generic [ref=f3e24]: 🔒
+          - text: AI Images
+      - generic [ref=f3e25]:
+        - button "New sandbox" [ref=f3e271] [cursor=pointer]:
+          - img [ref=f3e273]
+          - generic [ref=f3e275]: New sandbox
+        - button "Re-apply" [ref=f3e276] [cursor=pointer]:
+          - img [ref=f3e278]
+          - generic [ref=f3e280]: Re-apply
+        - button "Download ZIP" [ref=f3e281] [cursor=pointer]:
+          - img [ref=f3e283]
+          - generic [ref=f3e285]: Download ZIP
+        - link "My Websites" [ref=f3e286] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=f3e288]
+          - generic [ref=f3e290]: My Websites
+        - link "Settings" [ref=f3e291] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=f3e293]
+          - generic [ref=f3e296]: Settings
+        - button "Sign out" [ref=f3e297] [cursor=pointer]:
+          - img [ref=f3e299]
+          - generic [ref=f3e301]: Sign out
+    - generic [ref=f3e58]:
+      - generic [ref=f3e59]:
+        - button "No sites yet" [disabled] [ref=f3e161]:
+          - generic [ref=f3e62]: No sites yet
+          - img [ref=f3e63]
+        - generic [ref=f3e65]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=f3e66]:
+        - textbox "Site name" [ref=f3e67]
+        - textbox "site-slug" [ref=f3e68]
+        - button "Create site" [disabled] [ref=f3e69]
+    - generic [ref=f3e70]:
+      - generic [ref=f3e71]:
+        - generic [ref=f3e75]:
+          - generic [ref=f3e76]: Website URL
+          - textbox "https://example.com" [ref=f3e77]
+        - generic [ref=f3e78]:
+          - generic [ref=f3e82]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+          - generic [ref=f3e268]: Create a green button that says "Click me"
+          - generic [ref=f3e304]:
+            - generic [ref=f3e305]: Code generated successfully!
+            - generic [ref=f3e306]:
+              - generic [ref=f3e307]: "Generated Files:"
+              - generic [ref=f3e309]: Hero.jsx
+          - generic [ref=f3e313]:
+            - generic [ref=f3e314]: Applied 1 files successfully!
+            - generic [ref=f3e315]:
+              - generic [ref=f3e316]: "Files Updated:"
+              - generic [ref=f3e318]: Hero.jsx
+        - generic [ref=f3e85]:
+          - generic [ref=f3e86]:
+            - img [ref=f3e88]
+            - textbox "Describe what you want to build..." [ref=f3e91]
+          - generic [ref=f3e92]:
+            - button "Add image" [ref=f3e93] [cursor=pointer]:
+              - img [ref=f3e94]
+              - generic [ref=f3e98]: Add image
+            - button "Send" [disabled] [ref=f3e99]:
+              - generic [ref=f3e100]: Send
+              - img [ref=f3e101]
+      - generic [ref=f3e104]:
+        - generic [ref=f3e105]:
+          - generic [ref=f3e107]:
+            - button "Code" [ref=f3e108] [cursor=pointer]:
+              - generic [ref=f3e109]:
+                - img [ref=f3e110]
+                - generic [ref=f3e112]: Code
+            - button "View" [ref=f3e113] [cursor=pointer]:
+              - generic [ref=f3e114]:
+                - img [ref=f3e115]
+                - generic [ref=f3e118]: View
+          - generic [ref=f3e162]:
+            - generic [ref=f3e163]: Sandbox active
+            - link "Open in new tab" [ref=f3e165] [cursor=pointer]:
+              - /url: https://sb-533yign5v72h.vercel.run
+              - img [ref=f3e166]
+        - generic [ref=f3e120]:
+          - iframe [ref=f3e168]:
+            - paragraph [ref=f4e5]:
+              - text: Sandbox Ready
+              - text: Start building your React app with Vite and Tailwind CSS!
+          - button "Refresh sandbox" [ref=f3e169] [cursor=pointer]:
+            - img [ref=f3e170]
+  - alert [ref=f3e129]

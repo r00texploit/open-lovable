@@ -1,0 +1,81 @@
+- generic [active] [ref=f5e1]:
+  - generic [ref=f5e2]:
+    - generic [ref=f5e3]:
+      - generic [ref=f5e4]:
+        - link "Noeron" [ref=f5e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f5e6]:
+            - img [ref=f5e7]
+            - generic [ref=f5e14]: Noeron
+        - button "Gemini 3 Pro (Preview)" [ref=f5e17] [cursor=pointer]:
+          - generic [ref=f5e18]: Gemini 3 Pro (Preview)
+          - img [ref=f5e19]
+        - generic [ref=f5e21]: Not connected
+        - button "AI Images requires Plus or Team plan — upgrade to generate real images with DALL-E 3" [disabled] [ref=f5e23]:
+          - generic [ref=f5e24]: 🔒
+          - text: AI Images
+      - generic [ref=f5e25]:
+        - button "New sandbox" [ref=f5e26] [cursor=pointer]:
+          - img [ref=f5e28]
+          - generic [ref=f5e30]: New sandbox
+        - button "Re-apply" [disabled] [ref=f5e31]:
+          - img [ref=f5e33]
+          - generic [ref=f5e35]: Re-apply
+        - button "Download ZIP" [disabled] [ref=f5e36]:
+          - img [ref=f5e38]
+          - generic [ref=f5e40]: Download ZIP
+        - link "My Websites" [ref=f5e41] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=f5e43]
+          - generic [ref=f5e45]: My Websites
+        - link "Settings" [ref=f5e46] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=f5e48]
+          - generic [ref=f5e51]: Settings
+        - button "Sign out" [ref=f5e52] [cursor=pointer]:
+          - img [ref=f5e54]
+          - generic [ref=f5e56]: Sign out
+    - generic [ref=f5e58]:
+      - generic [ref=f5e59]:
+        - button "Loading sites..." [disabled] [ref=f5e61]:
+          - generic [ref=f5e62]: Loading sites...
+          - img [ref=f5e63]
+        - generic [ref=f5e65]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=f5e66]:
+        - textbox "Site name" [ref=f5e67]
+        - textbox "site-slug" [ref=f5e68]
+        - button "Create site" [disabled] [ref=f5e69]
+    - generic [ref=f5e70]:
+      - generic [ref=f5e71]:
+        - generic [ref=f5e75]:
+          - generic [ref=f5e76]: Website URL
+          - textbox "https://example.com" [ref=f5e77]
+        - generic [ref=f5e82]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+        - generic [ref=f5e85]:
+          - generic [ref=f5e86]:
+            - img [ref=f5e88]
+            - textbox "Describe what you want to build..." [ref=f5e91]
+          - generic [ref=f5e92]:
+            - button "Add image" [ref=f5e93] [cursor=pointer]:
+              - img [ref=f5e94]
+              - generic [ref=f5e98]: Add image
+            - button "Send" [disabled] [ref=f5e99]:
+              - generic [ref=f5e100]: Send
+              - img [ref=f5e101]
+      - generic [ref=f5e104]:
+        - generic [ref=f5e107]:
+          - button "Code" [ref=f5e108] [cursor=pointer]:
+            - generic [ref=f5e109]:
+              - img [ref=f5e110]
+              - generic [ref=f5e112]: Code
+          - button "View" [ref=f5e113] [cursor=pointer]:
+            - generic [ref=f5e114]:
+              - img [ref=f5e115]
+              - generic [ref=f5e118]: View
+        - generic [ref=f5e121]:
+          - img [ref=f5e123]
+          - heading "Start building" [level=3] [ref=f5e126]
+          - paragraph [ref=f5e127]: Paste a URL or describe what you want to create.
+          - link "New website" [ref=f5e128] [cursor=pointer]:
+            - /url: /
+  - alert [ref=f5e129]

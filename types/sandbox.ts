@@ -18,6 +18,8 @@ export interface SandboxState {
   sandboxData: {
     sandboxId: string;
     url: string;
+    previewUrl?: string;
+    sandboxName?: string;
   } | null;
 }
 

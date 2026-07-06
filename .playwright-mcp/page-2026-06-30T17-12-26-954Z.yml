@@ -1,0 +1,88 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - generic [ref=f1e3]:
+      - generic [ref=f1e4]:
+        - link "Noeron" [ref=f1e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f1e6]:
+            - img [ref=f1e7]
+            - generic [ref=f1e14]: Noeron
+        - button "GPT-5" [ref=f1e17] [cursor=pointer]:
+          - generic [ref=f1e18]: GPT-5
+          - img [ref=f1e19]
+        - generic [ref=f1e21]: Sandbox active
+        - button "AI Images requires Plus or Team plan — upgrade to generate real images with DALL-E 3" [disabled] [ref=f1e23]:
+          - generic [ref=f1e24]: 🔒
+          - text: AI Images
+      - generic [ref=f1e25]:
+        - button "New sandbox" [disabled] [ref=f1e130]:
+          - img [ref=f1e132]
+          - generic [ref=f1e134]: New sandbox
+        - button "Re-apply" [disabled] [ref=f1e135]:
+          - img [ref=f1e137]
+          - generic [ref=f1e139]: Re-apply
+        - button "Download ZIP" [ref=f1e140] [cursor=pointer]:
+          - img [ref=f1e142]
+          - generic [ref=f1e144]: Download ZIP
+        - link "My Websites" [ref=f1e145] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=f1e147]
+          - generic [ref=f1e149]: My Websites
+        - link "Settings" [ref=f1e150] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=f1e152]
+          - generic [ref=f1e155]: Settings
+        - button "Sign out" [ref=f1e156] [cursor=pointer]:
+          - img [ref=f1e158]
+          - generic [ref=f1e160]: Sign out
+    - generic [ref=f1e58]:
+      - generic [ref=f1e59]:
+        - button "No sites yet" [disabled] [ref=f1e161]:
+          - generic [ref=f1e62]: No sites yet
+          - img [ref=f1e63]
+        - generic [ref=f1e65]: Create a site record to attach this build to a live tenant URL.
+      - generic [ref=f1e66]:
+        - textbox "Site name" [ref=f1e67]
+        - textbox "site-slug" [ref=f1e68]
+        - button "Create site" [disabled] [ref=f1e69]
+    - generic [ref=f1e70]:
+      - generic [ref=f1e71]:
+        - generic [ref=f1e75]:
+          - generic [ref=f1e76]: Website URL
+          - textbox "https://example.com" [disabled] [ref=f1e77]
+        - generic [ref=f1e82]: "Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I'll automatically create a sandbox for you if needed! Tip: If you see package errors like \"react-router-dom not found\", just type \"npm install\" or \"check packages\" to automatically install missing packages."
+        - generic [ref=f1e85]:
+          - generic [ref=f1e86]:
+            - img [ref=f1e88]
+            - textbox "Describe what you want to build..." [ref=f1e91]
+          - generic [ref=f1e92]:
+            - button "Add image" [ref=f1e93] [cursor=pointer]:
+              - img [ref=f1e94]
+              - generic [ref=f1e98]: Add image
+            - button "Send" [disabled] [ref=f1e99]:
+              - generic [ref=f1e100]: Send
+              - img [ref=f1e101]
+      - generic [ref=f1e104]:
+        - generic [ref=f1e105]:
+          - generic [ref=f1e107]:
+            - button "Code" [ref=f1e108] [cursor=pointer]:
+              - generic [ref=f1e109]:
+                - img [ref=f1e110]
+                - generic [ref=f1e112]: Code
+            - button "View" [ref=f1e113] [cursor=pointer]:
+              - generic [ref=f1e114]:
+                - img [ref=f1e115]
+                - generic [ref=f1e118]: View
+          - generic [ref=f1e162]:
+            - generic [ref=f1e163]: Sandbox active
+            - link "Open in new tab" [ref=f1e165] [cursor=pointer]:
+              - /url: https://sb-6ly2nadlsdbb.vercel.run
+              - img [ref=f1e166]
+        - generic [ref=f1e120]:
+          - iframe [ref=f1e168]:
+            - paragraph [ref=f2e5]:
+              - text: Sandbox Ready
+              - text: Start building your React app with Vite and Tailwind CSS!
+          - button "Refresh sandbox" [ref=f1e169] [cursor=pointer]:
+            - img [ref=f1e170]
+  - alert [ref=f1e129]

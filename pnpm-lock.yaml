@@ -138,8 +138,8 @@ importers:
         specifier: ^2.5.0
         version: 2.5.0
       '@vercel/sandbox':
-        specifier: ^0.0.24
-        version: 0.0.24
+        specifier: ^2.3.0
+        version: 2.3.0
       ai:
         specifier: ^5.0.0
         version: 5.0.196(zod@3.25.76)
@@ -1481,9 +1481,6 @@ packages:
   '@types/lodash@4.17.24':
     resolution: {integrity: sha512-gIW7lQLZbue7lRSWEFql49QJJWThrTFFeIMJdp3eH4tKoxm1OvEPg02rm4wCCSHS0cL3/Fizimb35b7k8atwsQ==}
 
-  '@types/ms@2.1.0':
-    resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
-
   '@types/node-fetch@2.6.13':
     resolution: {integrity: sha512-QGpRVpzSaUs30JBSGPjOg4Uveu384erbHBoT1zeONvyCfwQxIkUshLAOqN/k9EjGviPRmWTTe6aH2qySWKTVSw==}
 
@@ -1697,23 +1694,26 @@ packages:
     resolution: {integrity: sha512-kQF8LGie/Hbdq9/psJxLE7owRTcqMQMhgybU04gCeR7cbQAr5t8OrjefDNColJv1QSSucFt4pLwRiARVmlOnug==}
     engines: {node: '>= 18'}
 
-  '@vercel/oidc@2.0.2':
-    resolution: {integrity: sha512-59PBFx3T+k5hLTEWa3ggiMpGRz1OVvl9eN8SUai+A43IsqiOuAe7qPBf+cray/Fj6mkgnxm/D7IAtjc8zSHi7g==}
-    engines: {node: '>= 18'}
-
   '@vercel/oidc@3.1.0':
     resolution: {integrity: sha512-Fw28YZpRnA3cAHHDlkt7xQHiJ0fcL+NRcIqsocZQUSmbzeIKRpwttJjik5ZGanXP+vlA4SbTg+AbA3bP363l+w==}
+    engines: {node: '>= 20'}
+
+  '@vercel/oidc@3.2.0':
+    resolution: {integrity: sha512-UycprH3T6n3jH0k44NHMa7pnFHGu/N05MjojYr+Mc6I7obkoLIJujSWwin1pCvdy/eOxrI/l3uDLQsmcrOb4ug==}
     engines: {node: '>= 20'}
 
   '@vercel/oidc@3.8.0':
     resolution: {integrity: sha512-r00laGW6Pv778RoR6M2NxX91ycSj+PBwVo+fOb9Bif+F0IyUKt25zrvBzfEzQpeAzbqOgPZyQibEWDdDFApd+A==}
     engines: {node: '>= 20'}
 
-  '@vercel/sandbox@0.0.24':
-    resolution: {integrity: sha512-Uff1hZF/bz5v0Vt8D6LlOQPn9hkRqMs8W3nKG+8uXTEOTGVy/5mJzTOZt1V7PQrU0EgEqNpGyq+KA7b+2C8gWA==}
+  '@vercel/sandbox@2.3.0':
+    resolution: {integrity: sha512-KLhc/sj2JuftgWEivPmmDq3iFLIoYU0XIv+44paTyhk5eGGaqNl6dQdxXSqOf+N31jh55m4UWY7i8oJy8oJRrQ==}
 
   '@webgpu/types@0.1.70':
     resolution: {integrity: sha512-LFiNHHKMvmAEvwVew3JLJmTdShhbdwRFSImUshGhE2mGE8ybQzIo63l5uRp+YKnNx+8Qno8Kf6gN+DKMreIJCA==}
+
+  '@workflow/serde@4.1.0-beta.2':
+    resolution: {integrity: sha512-8kkeoQKLDaKXefjV5dbhBj2aErfKp1Mc4pb6tj8144cF+Em5SPbyMbyLCHp+BVrFfFVCBluCtMx+jjvaFVZGww==}
 
   '@xmldom/xmldom@0.8.13':
     resolution: {integrity: sha512-KRYzxepc14G/CEpEGc3Yn+JKaAeT63smlDr+vjB8jRfgTBBI9wRj/nkQEO+ucV8p8I9bfKLWp37uHgFrbntPvw==}
@@ -2753,6 +2753,9 @@ packages:
 
   jose@5.10.0:
     resolution: {integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==}
+
+  jose@6.2.3:
+    resolution: {integrity: sha512-YYVDInQKFJfR/xa3ojUTl8c2KoTwiL1R5Wg9YCydwH0x0B9grbzlg5HC7mMjCtUJjbQ/YnGEZIhI5tCgfTb4Hw==}
 
   jotai@2.20.0:
     resolution: {integrity: sha512-b5GAqgmXmXzB4WPaTH26ppk9Sl7AA9WSQX7yfdM+gJ1rFROiWcVbi97gFuN/yVCojOcbcvop2sfLL+fjxW0JVg==}
@@ -3829,9 +3832,9 @@ packages:
     resolution: {integrity: sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==}
     engines: {node: '>=0.10.0'}
 
-  xdg-app-paths@5.5.1:
-    resolution: {integrity: sha512-hI3flOB4PLZIy5prbtTpirobtPE2ZtZ52szO+2mM9Efp6ErM398La+C1lIpNWDfNoQk+6Lsi6nMcCwVB7pxeMQ==}
-    engines: {node: '>= 6.0'}
+  xdg-app-paths@5.1.0:
+    resolution: {integrity: sha512-RAQ3WkPf4KTU1A8RtFx3gWywzVKe00tfOPFfl2NDGqbIFENQO4kqAJp7mhQjNj/33W5x5hiWWUdyfPq/5SU3QA==}
+    engines: {node: '>=6'}
 
   xdg-portable@7.3.0:
     resolution: {integrity: sha512-sqMMuL1rc0FmMBOzCpd0yuy9trqF2yTTVe+E9ogwCSWQCdDEtQUwrZPT6AxqtsFGRNxycgncbP/xmOOSPw5ZUw==}
@@ -3857,14 +3860,14 @@ packages:
     peerDependencies:
       zod: ^3.25.28 || ^4
 
-  zod@3.24.4:
-    resolution: {integrity: sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==}
-
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
   zod@4.1.11:
     resolution: {integrity: sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg==}
+
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
 
@@ -5017,8 +5020,6 @@ snapshots:
 
   '@types/lodash@4.17.24': {}
 
-  '@types/ms@2.1.0': {}
-
   '@types/node-fetch@2.6.13':
     dependencies:
       '@types/node': 20.19.41
@@ -5218,19 +5219,16 @@ snapshots:
 
   '@vercel/cli-config@0.2.0':
     dependencies:
-      xdg-app-paths: 5.5.1
+      xdg-app-paths: 5.1.0
       zod: 4.1.11
 
   '@vercel/cli-exec@1.0.0':
     dependencies:
       execa: 5.1.1
 
-  '@vercel/oidc@2.0.2':
-    dependencies:
-      '@types/ms': 2.1.0
-      ms: 2.1.3
-
   '@vercel/oidc@3.1.0': {}
+
+  '@vercel/oidc@3.2.0': {}
 
   '@vercel/oidc@3.8.0':
     dependencies:
@@ -5238,20 +5236,26 @@ snapshots:
       '@vercel/cli-exec': 1.0.0
       jose: 5.10.0
 
-  '@vercel/sandbox@0.0.24':
+  '@vercel/sandbox@2.3.0':
     dependencies:
-      '@vercel/oidc': 2.0.2
+      '@vercel/oidc': 3.2.0
+      '@workflow/serde': 4.1.0-beta.2
       async-retry: 1.3.3
+      jose: 6.2.3
       jsonlines: 0.1.1
       ms: 2.1.3
+      picocolors: 1.1.1
       tar-stream: 3.1.7
       undici: 7.27.1
-      zod: 3.24.4
+      xdg-app-paths: 5.1.0
+      zod: 4.4.3
     transitivePeerDependencies:
       - bare-abort-controller
       - react-native-b4a
 
   '@webgpu/types@0.1.70': {}
+
+  '@workflow/serde@4.1.0-beta.2': {}
 
   '@xmldom/xmldom@0.8.13': {}
 
@@ -6459,6 +6463,8 @@ snapshots:
 
   jose@5.10.0: {}
 
+  jose@6.2.3: {}
+
   jotai@2.20.0(@types/react@19.2.17)(react@18.3.1):
     optionalDependencies:
       '@types/react': 19.2.17
@@ -7626,9 +7632,8 @@ snapshots:
 
   word-wrap@1.2.5: {}
 
-  xdg-app-paths@5.5.1:
+  xdg-app-paths@5.1.0:
     dependencies:
-      os-paths: 4.4.0
       xdg-portable: 7.3.0
 
   xdg-portable@7.3.0:
@@ -7647,8 +7652,8 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  zod@3.24.4: {}
-
   zod@3.25.76: {}
 
   zod@4.1.11: {}
+
+  zod@4.4.3: {}

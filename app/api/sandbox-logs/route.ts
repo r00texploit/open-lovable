@@ -1,31 +1,30 @@
 import { NextResponse } from 'next/server';
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
-declare global {
-  var activeSandbox: any;
+function shellQuote(value: string) {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    if (!global.activeSandbox) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No active sandbox' 
-      }, { status: 400 });
+    const { searchParams } = new URL(request.url);
+    const resolved = await resolveRequestSandbox(searchParams.get('sandboxId') || searchParams.get('sandbox'));
+
+    if (!resolved.ok) {
+      return resolved.response;
     }
     
-    console.log('[sandbox-logs] Fetching Vite dev server logs...');
+    const provider = resolved.value.provider;
+    console.log('[sandbox-logs] Fetching Vite dev server logs for sandbox:', resolved.value.sandboxId);
     
     // Check if Vite processes are running
-    const psResult = await global.activeSandbox.runCommand({
-      cmd: 'ps',
-      args: ['aux']
-    });
+    const psResult = await provider.runCommand('ps aux');
     
     let viteRunning = false;
     const logContent: string[] = [];
     
     if (psResult.exitCode === 0) {
-      const psOutput = await psResult.stdout();
+      const psOutput = psResult.stdout || '';
       const viteProcesses = psOutput.split('\n').filter((line: string) => 
         line.toLowerCase().includes('vite') || 
         line.toLowerCase().includes('npm run dev')
@@ -43,23 +42,17 @@ export async function GET() {
     
     // Try to read any recent log files
     try {
-      const findResult = await global.activeSandbox.runCommand({
-        cmd: 'find',
-        args: ['/tmp', '-name', '*vite*', '-name', '*.log', '-type', 'f']
-      });
+      const findResult = await provider.runCommand(`find /tmp -name '*vite*' -name '*.log' -type f`);
       
       if (findResult.exitCode === 0) {
-        const logFiles = (await findResult.stdout()).split('\n').filter((f: string) => f.trim());
+        const logFiles = (findResult.stdout || '').split('\n').filter((f: string) => f.trim());
         
         for (const logFile of logFiles.slice(0, 2)) {
           try {
-            const catResult = await global.activeSandbox.runCommand({
-              cmd: 'tail',
-              args: ['-n', '10', logFile]
-            });
+            const catResult = await provider.runCommand(`tail -n 10 ${shellQuote(logFile)}`);
             
             if (catResult.exitCode === 0) {
-              const logFileContent = await catResult.stdout();
+              const logFileContent = catResult.stdout || '';
               logContent.push(`--- ${logFile} ---`);
               logContent.push(logFileContent);
             }

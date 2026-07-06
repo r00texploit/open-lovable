@@ -29,11 +29,70 @@ import {
 } from '@/lib/icons';
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
+import { extractSiteNameFromPrompt, slugifySiteName } from '@/lib/tenancy/site-naming';
+import { ensureImagesUploaded } from '@/lib/ai/ensure-images-uploaded';
+
+type UploadedImagePayload = {
+  id?: string;
+  base64?: string;
+  type: string;
+  name: string;
+  label?: string;
+  role?: string;
+  notes?: string;
+  size?: number;
+  path?: string;
+  blobUrl?: string;
+};
+
+const MAX_CHAT_UPLOAD_IMAGES = 40;
+
+const getImagesForGeneratedCode = (
+  code: string,
+  currentImages?: UploadedImagePayload[],
+  fallbackImages?: UploadedImagePayload[]
+) => {
+  if (!/\/images\/(?:image-\d+|upload-[a-f0-9]{12})\.(png|jpe?g|gif|webp|avif)/i.test(code)) {
+    return undefined;
+  }
+
+  if (currentImages && currentImages.length > 0) {
+    return currentImages;
+  }
+
+  if (fallbackImages && fallbackImages.length > 0) {
+    return fallbackImages;
+  }
+
+  return undefined;
+};
 
 interface SandboxData {
   sandboxId: string;
   url: string;
+  previewUrl?: string;
+  rawSandboxUrl?: string;
   [key: string]: any;
+}
+
+function buildClientTenantUrl(subdomain: string) {
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net';
+  return `https://${subdomain}.${rootDomain}`;
+}
+
+function buildDraftPreviewUrl(previewUrl: string | undefined, rawUrl: string | undefined) {
+  const url = previewUrl || rawUrl;
+  if (!url || url === rawUrl) {
+    return url;
+  }
+
+  try {
+    const draftUrl = new URL(url);
+    draftUrl.searchParams.set('draft', '1');
+    return draftUrl.toString();
+  } catch {
+    return `${url}${url.includes('?') ? '&' : '?'}draft=1`;
+  }
 }
 
 interface ChatMessage {
@@ -62,6 +121,78 @@ interface ScrapeData {
   metadata?: any;
   message?: string;
   error?: string;
+}
+
+function getErrorMessage(value: unknown, fallback = 'Unknown error') {
+  if (!value) return fallback;
+  if (value instanceof Error) return value.message || fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    const maybeError = value as { message?: unknown; error?: unknown };
+    if (typeof maybeError.message === 'string') return maybeError.message;
+    if (typeof maybeError.error === 'string') return maybeError.error;
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return fallback;
+    }
+  }
+
+  return String(value);
+}
+
+function parseSseDataLine(line: string) {
+  if (!line.startsWith('data: ')) return null;
+
+  const payload = line.slice(6).trim();
+  if (!payload || payload === '[DONE]') return null;
+
+  try {
+    return JSON.parse(payload);
+  } catch (error) {
+    console.error('Failed to parse SSE data:', {
+      error: getErrorMessage(error),
+      payloadPreview: payload.slice(0, 500),
+    });
+    return null;
+  }
+}
+
+function stripLargeSessionContext(context: any) {
+  return {
+    ...context,
+    scrapedWebsites: (context.scrapedWebsites ?? []).map((website: any) => ({
+      url: website.url,
+      timestamp: website.timestamp,
+      title: website.content?.title,
+      source: website.content?.source,
+    })).slice(-5),
+    generatedComponents: (context.generatedComponents ?? []).map((component: any) => ({
+      name: component.name,
+      path: component.path,
+    })).slice(-50),
+    appliedCode: (context.appliedCode ?? []).slice(-20),
+    lastGeneratedCode: undefined,
+    uploadedImages: context.uploadedImages?.map((image: any) => ({
+      id: image.id,
+      type: image.type,
+      name: image.name,
+      label: image.label,
+      role: image.role,
+      notes: image.notes,
+      size: image.size,
+    })),
+    lastGeneratedImages: context.lastGeneratedImages?.map((image: any) => ({
+      id: image.id,
+      type: image.type,
+      name: image.name,
+      label: image.label,
+      role: image.role,
+      notes: image.notes,
+      size: image.size,
+    })),
+  };
 }
 
 interface SiteSummary {
@@ -122,7 +253,7 @@ function AISandboxPage() {
   const [aiEnabled] = useState(true);
   const [aiImagesEnabled, setAiImagesEnabled] = useState(false);
   const canUseAiImages = ['plus', 'team'].includes(session?.user?.subscription?.tier ?? '');
-  const [chatUploadedImages, setChatUploadedImages] = useState<{ base64: string; type: string; name: string }[]>([]);
+  const [chatUploadedImages, setChatUploadedImages] = useState<UploadedImagePayload[]>([]);
   const searchParams = useSearchParams();
   const router = useRouter();
   const [aiModel, setAiModel] = useState(() => {
@@ -139,6 +270,10 @@ function AISandboxPage() {
   const [homeUrlInput, setHomeUrlInput] = useState('');
   const [homeContextInput, setHomeContextInput] = useState('');
   const [activeTab, setActiveTab] = useState<'generation' | 'preview'>('preview');
+  // On mobile the chat and preview panes can't sit side by side, so only one
+  // shows at a time and this toggles between them (ignored at md+).
+  const [mobileView, setMobileView] = useState<'chat' | 'preview'>('chat');
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showStyleSelector, setShowStyleSelector] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [showLoadingBackground, setShowLoadingBackground] = useState(false);
@@ -148,7 +283,7 @@ function AISandboxPage() {
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
   const [isPreparingDesign, setIsPreparingDesign] = useState(false);
   const [targetUrl, setTargetUrl] = useState<string>('');
-  const [uploadedImages, setUploadedImages] = useState<{ base64: string; type: string; name: string }[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImagePayload[]>([]);
   const [sidebarScrolled, setSidebarScrolled] = useState(false);
   const [screenshotCollapsed, setScreenshotCollapsed] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'gathering' | 'planning' | 'generating' | null>(null);
@@ -164,6 +299,7 @@ function AISandboxPage() {
   const [siteError, setSiteError] = useState<string | null>(null);
   const [siteActionLoading, setSiteActionLoading] = useState<'create' | 'publish' | 'unpublish' | null>(null);
   const [siteStatusMessage, setSiteStatusMessage] = useState<string | null>(null);
+  const [showNewSiteForm, setShowNewSiteForm] = useState(false);
   
   const [conversationContext, setConversationContext] = useState<{
     scrapedWebsites: Array<{ url: string; content: any; timestamp: Date }>;
@@ -171,22 +307,35 @@ function AISandboxPage() {
     appliedCode: Array<{ files: string[]; timestamp: Date }>;
     currentProject: string;
     lastGeneratedCode?: string;
-    uploadedImages?: Array<{ base64: string; type: string; name: string }>;
+    uploadedImages?: UploadedImagePayload[];
+    lastGeneratedImages?: UploadedImagePayload[];
   }>({
     scrapedWebsites: [],
     generatedComponents: [],
     appliedCode: [],
     currentProject: '',
     lastGeneratedCode: undefined,
-    uploadedImages: undefined
+    uploadedImages: undefined,
+    lastGeneratedImages: undefined
   });
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const codeDisplayRef = useRef<HTMLDivElement>(null);
   const saveSessionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sandboxDataRef = useRef<SandboxData | null>(null);
+  const activeSiteIdRef = useRef('');
+  const attachedSandboxSiteRef = useRef('');
   const sandboxJustCreatedAt = useRef<number>(0);
   const codeApplicationInProgress = useRef<boolean>(false);
+
+  useEffect(() => {
+    sandboxDataRef.current = sandboxData;
+  }, [sandboxData]);
+
+  useEffect(() => {
+    activeSiteIdRef.current = activeSiteId;
+  }, [activeSiteId]);
 
   const fileTypeFromPath = useCallback((path: string) => {
     const fileExt = path.split('.').pop() || '';
@@ -232,7 +381,11 @@ function AISandboxPage() {
     const payload = {
       sandboxId: sd.sandboxId,
       sandboxProvider: sd.provider ?? 'vercel',
-      sandboxUrl: sd.url ?? null,
+      sandboxUrl: sd.previewUrl || sd.url || null,
+      rawSandboxUrl: sd.rawSandboxUrl || sd.url || null,
+      sandboxName: sd.sandboxName || null,
+      sandboxRuntimeStatus: sd.runtimeStatus || sd.sandboxRuntimeStatus || null,
+      currentSnapshotId: sd.currentSnapshotId || null,
       chatMessages: (overrideMessages ?? chatMessages).map(m => ({
         content: m.content,
         type: m.type,
@@ -244,6 +397,13 @@ function AISandboxPage() {
       homeContextInput,
       aiModel,
       siteId: overrideSiteId ?? activeSiteId ?? null,
+    };
+
+    const dbPayload = {
+      ...payload,
+      chatMessages: payload.chatMessages.slice(-appConfig.ui.maxRecentMessagesContext),
+      conversationCtx: stripLargeSessionContext(conversationContext),
+      fileCache: {},
     };
 
     // Always persist to localStorage so session survives a refresh on the same device
@@ -259,11 +419,14 @@ function AISandboxPage() {
     // Also persist to DB if user is logged in (for cross-device restore)
     if (!session?.user?.id) return;
     try {
-      await fetch('/api/generation-session', {
+      const response = await fetch('/api/generation-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(dbPayload),
       });
+      if (!response.ok) {
+        console.warn('[saveSession] DB save skipped:', response.status, response.statusText);
+      }
     } catch {
       // non-blocking — DB save failed, localStorage fallback already done
     }
@@ -308,6 +471,7 @@ function AISandboxPage() {
   // Store flag to trigger generation after component mounts
   const [shouldAutoGenerate, setShouldAutoGenerate] = useState(false);
   const activeSite = sites.find((site) => site.id === activeSiteId) || null;
+  const isShowingCreateSiteForm = !activeSite || showNewSiteForm;
 
   // Clear old conversation data on component mount and create/restore sandbox
   useEffect(() => {
@@ -425,26 +589,50 @@ function AISandboxPage() {
       
       if (!isMounted) return;
 
-      // Check if sandbox ID is in URL
+      // Check if sandbox/site IDs are in URL
       const sandboxIdParam = searchParams.get('sandbox');
+      const siteIdParam = searchParams.get('site');
 
       setLoading(true);
       try {
-        if (sandboxIdParam) {
-          console.log('[home] Restoring session for sandbox:', sandboxIdParam);
+        // An explicit site param (the /sites Edit flow) wins over any sandbox
+        // param left in the URL: resolve the site's own session so we restore
+        // the code that actually built it, not a stale/blank sandbox.
+        let savedSession: any = null;
+        let effectiveSandboxId = sandboxIdParam;
+
+        if (siteIdParam) {
+          setActiveSiteId(siteIdParam);
+          activeSiteIdRef.current = siteIdParam;
+          try {
+            const res = await fetch(`/api/generation-session?siteId=${encodeURIComponent(siteIdParam)}`);
+            if (res.ok) {
+              const body = await res.json();
+              if (body.session?.sandboxId) {
+                savedSession = body.session;
+                effectiveSandboxId = body.session.sandboxId;
+                console.log('[home] Resolved session for site:', siteIdParam, '->', effectiveSandboxId);
+              }
+            }
+          } catch { /* DB unavailable — fall back to sandbox param */ }
+        }
+
+        if (effectiveSandboxId) {
+          console.log('[home] Restoring session for sandbox:', effectiveSandboxId);
 
           // Load saved session — DB first, localStorage fallback
-          let savedSession: any = null;
-          try {
-            const sessionRes = await fetch(`/api/generation-session/${sandboxIdParam}`);
-            if (sessionRes.ok) {
-              const body = await sessionRes.json();
-              if (body.session) savedSession = body.session;
-            }
-          } catch { /* DB unavailable */ }
           if (!savedSession) {
             try {
-              const raw = localStorage.getItem(`noeron_session_${sandboxIdParam}`);
+              const sessionRes = await fetch(`/api/generation-session/${effectiveSandboxId}`);
+              if (sessionRes.ok) {
+                const body = await sessionRes.json();
+                if (body.session) savedSession = body.session;
+              }
+            } catch { /* DB unavailable */ }
+          }
+          if (!savedSession) {
+            try {
+              const raw = localStorage.getItem(`noeron_session_${effectiveSandboxId}`);
               if (raw) savedSession = JSON.parse(raw);
             } catch { /* parse error */ }
           }
@@ -457,7 +645,8 @@ function AISandboxPage() {
                 timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
               })));
             }
-            if (savedSession.siteId) setActiveSiteId(savedSession.siteId);
+            // An explicit ?site= param wins over the session's stored siteId
+            if (savedSession.siteId && !siteIdParam) setActiveSiteId(savedSession.siteId);
             if (savedSession.aiModel) setAiModel(savedSession.aiModel);
             if (savedSession.conversationCtx) {
               setConversationContext(prev => ({
@@ -490,8 +679,8 @@ function AISandboxPage() {
             }
           }
 
-          // Probe the saved sandbox URL before loading it — Vercel sandboxes expire after 15 min
-          const savedUrl: string | null = savedSession?.sandboxUrl ?? null;
+          // Probe the raw saved sandbox URL before loading it. Persistent sandboxes may resume on demand.
+          const savedUrl: string | null = savedSession?.rawSandboxUrl ?? savedSession?.sandboxUrl ?? null;
           let sandboxAlive = false;
           if (savedUrl) {
             try {
@@ -511,13 +700,18 @@ function AISandboxPage() {
             setSandboxData({
               sandboxId: savedSession.sandboxId,
               url: savedUrl,
+              rawSandboxUrl: savedUrl,
+              previewUrl: savedSession.sandboxUrl && savedSession.sandboxUrl !== savedUrl
+                ? savedSession.sandboxUrl
+                : undefined,
+              sandboxName: savedSession.sandboxName,
               provider: savedSession.sandboxProvider ?? 'vercel',
               success: true,
             } as any);
             updateStatus('Sandbox active', true);
             setShowHomeScreen(false);
             sandboxCreated = true;
-            console.log('[home] Session restored (sandbox alive):', sandboxIdParam);
+            console.log('[home] Session restored (sandbox alive):', effectiveSandboxId);
           } else {
             if (savedUrl) console.log('[home] Saved sandbox expired — creating fresh sandbox, chat history preserved');
             sandboxCreated = true;
@@ -527,7 +721,7 @@ function AISandboxPage() {
             if (freshSandbox?.sandboxId) {
               let savedFiles: Record<string, string> | null = null;
               try {
-                const raw = localStorage.getItem(`noeron_files_${sandboxIdParam}`);
+                const raw = localStorage.getItem(`noeron_files_${effectiveSandboxId}`);
                 if (raw) savedFiles = JSON.parse(raw);
               } catch { /* parse error */ }
               if (!savedFiles && savedSession?.fileCache) {
@@ -565,6 +759,9 @@ function AISandboxPage() {
               }
             }
           }
+        } else if (isStartingNewGeneration || generationProgress.isGenerating) {
+          console.log('[home] Generation in progress, skipping auto sandbox creation...');
+          // Don't create sandbox - the generation flow will handle it
         } else {
           console.log('[home] No sandbox in URL, creating new sandbox automatically...');
           sandboxCreated = true;
@@ -600,10 +797,59 @@ function AISandboxPage() {
   }, [session?.user?.id]);
 
   useEffect(() => {
-    if (!activeSiteId && sites.length > 0) {
-      setActiveSiteId(sites[0].id);
+    // Only attach a sandbox session to a site the user (or a restored
+    // session) explicitly selected. Falling back to sites[0] silently
+    // re-bound blank sandboxes to unrelated sites and hijacked their
+    // draft previews.
+    const selectedSiteId = activeSiteId;
+    if (!selectedSiteId) {
+      return;
     }
-  }, [activeSiteId, sites]);
+
+    if (!sandboxData?.sandboxId) {
+      return;
+    }
+
+    const selectedSite = sites.find(s => s.id === selectedSiteId);
+    if (!selectedSite?.subdomain) {
+      return;
+    }
+
+    const customPreviewUrl = buildClientTenantUrl(selectedSite.subdomain);
+    if (sandboxData.previewUrl === customPreviewUrl) {
+      return;
+    }
+
+    const attachKey = `${sandboxData.sandboxId}:${selectedSiteId}`;
+    if (attachedSandboxSiteRef.current === attachKey) {
+      return;
+    }
+    attachedSandboxSiteRef.current = attachKey;
+
+    console.log('[site auto-attach] Updating existing sandbox session with siteId:', selectedSiteId);
+    fetch('/api/generation-session', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ siteId: selectedSiteId, sandboxId: sandboxData.sandboxId }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to attach sandbox session to site');
+        }
+
+        console.log('[site auto-attach] Session updated:', data);
+        setSandboxData(prev => prev ? {
+          ...prev,
+          previewUrl: customPreviewUrl,
+          rawSandboxUrl: prev.rawSandboxUrl || prev.url,
+        } : prev);
+      })
+      .catch(err => {
+        attachedSandboxSiteRef.current = '';
+        console.error('[site auto-attach] Failed to update session:', err);
+      });
+  }, [activeSiteId, sites, sandboxData?.sandboxId, sandboxData?.previewUrl]);
   
   useEffect(() => {
     // Handle Escape key for home screen
@@ -732,7 +978,11 @@ function AISandboxPage() {
 
     const intervalMs = appConfig.vercelSandbox.keepAliveIntervalMs;
     const extendSandbox = () => {
-      fetch('/api/extend-sandbox-timeout', { method: 'POST' })
+      fetch('/api/extend-sandbox-timeout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sandboxId: sandboxData.sandboxId }),
+      })
         .then(res => res.json())
         .then(data => {
           if (!data.extended) {
@@ -849,16 +1099,17 @@ function AISandboxPage() {
     setResponseArea(prev => [...prev, `[${type}] ${message}`]);
   };
 
-  const addChatMessage = (content: string, type: ChatMessage['type'], metadata?: ChatMessage['metadata']) => {
+  const addChatMessage = (content: unknown, type: ChatMessage['type'], metadata?: ChatMessage['metadata']) => {
+    const messageContent = getErrorMessage(content, '');
     setChatMessages(prev => {
       // Skip duplicate consecutive system messages
       if (type === 'system' && prev.length > 0) {
         const lastMessage = prev[prev.length - 1];
-        if (lastMessage.type === 'system' && lastMessage.content === content) {
+        if (lastMessage.type === 'system' && lastMessage.content === messageContent) {
           return prev; // Skip duplicate
         }
       }
-      return [...prev, { content, type, timestamp: new Date(), metadata }];
+      return [...prev, { content: messageContent, type, timestamp: new Date(), metadata }];
     });
   };
   
@@ -894,7 +1145,7 @@ function AISandboxPage() {
       const response = await fetch('/api/install-packages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packages })
+        body: JSON.stringify({ packages, sandboxId: sandboxData.sandboxId })
       });
       
       if (!response.ok) {
@@ -912,10 +1163,9 @@ function AISandboxPage() {
         const lines = chunk.split('\n');
         
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          const data = parseSseDataLine(line);
+          if (data) {
             try {
-              const data = JSON.parse(line.slice(6));
-              
               switch (data.type) {
                 case 'command':
                   // Don't show npm install commands - they're handled by info messages
@@ -942,7 +1192,7 @@ function AISandboxPage() {
                   break;
               }
             } catch (e) {
-              console.error('Failed to parse SSE data:', e);
+              console.error('Failed to process SSE data:', getErrorMessage(e));
             }
           }
         }
@@ -953,15 +1203,28 @@ function AISandboxPage() {
   };
 
   const checkSandboxStatus = async (autoRecreate = true) => {
+    if (!sandboxData?.sandboxId) {
+      return;
+    }
+
+    if (sandboxCreationRef.current || codeApplicationInProgress.current || generationProgress.isGenerating || isStartingNewGeneration) {
+      console.log('[checkSandboxStatus] Skipping status check while sandbox operation is in progress');
+      return;
+    }
+
     try {
       // Use checkHealth=true to get actual health status including 502 detection
-      const response = await fetch('/api/sandbox-status?checkHealth=true');
+      const response = await fetch(`/api/sandbox-status?checkHealth=true&sandboxId=${encodeURIComponent(sandboxData.sandboxId)}`);
       const data = await response.json();
 
       if (data.needsRecreation && autoRecreate) {
-        // Safety check: don't recreate if code application is in progress
+        // Safety check: don't recreate if code application or generation is in progress
         if (codeApplicationInProgress.current) {
           console.log('[checkSandboxStatus] Sandbox needs recreation but code application is in progress, skipping recreation');
+          return;
+        }
+        if (generationProgress.isGenerating || isStartingNewGeneration) {
+          console.log('[checkSandboxStatus] Sandbox needs recreation but generation is in progress, skipping recreation');
           return;
         }
         console.log('[checkSandboxStatus] Sandbox needs recreation, auto-recreating...');
@@ -981,7 +1244,23 @@ function AISandboxPage() {
 
       if (data.active && data.healthy && data.sandboxData) {
         console.log('[checkSandboxStatus] Setting sandboxData from API:', data.sandboxData);
-        setSandboxData(data.sandboxData);
+        // Merge with existing sandboxData to preserve previewUrl
+        setSandboxData(prev => {
+          const incomingPreviewUrl = data.sandboxData.previewUrl;
+          const incomingRawUrl = data.sandboxData.url;
+          const preservedPreviewUrl = prev?.previewUrl && prev.previewUrl !== prev.url
+            ? prev.previewUrl
+            : undefined;
+
+          return {
+            ...(prev || {}),
+            ...data.sandboxData,
+            rawSandboxUrl: data.sandboxData.rawSandboxUrl || prev?.rawSandboxUrl || incomingRawUrl,
+            previewUrl: incomingPreviewUrl && incomingPreviewUrl !== incomingRawUrl
+              ? incomingPreviewUrl
+              : (preservedPreviewUrl || incomingPreviewUrl),
+          };
+        });
         updateStatus('Sandbox active', true);
       } else if (data.active && !data.healthy) {
         // Sandbox exists but not responding
@@ -1030,10 +1309,12 @@ function AISandboxPage() {
     setScreenshotError(null);
     
     try {
+      const effectiveSiteId = activeSiteIdRef.current || activeSiteId;
+      console.log('[createSandbox] Creating sandbox with siteId:', effectiveSiteId);
       const response = await fetch('/api/create-ai-sandbox-v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
+        body: JSON.stringify({ siteId: effectiveSiteId })
       });
       
       const data = await response.json();
@@ -1042,14 +1323,26 @@ function AISandboxPage() {
       if (data.success) {
         sandboxCreationRef.current = false; // Reset the ref on success
         console.log('[createSandbox] Setting sandboxData from creation:', data);
-        setSandboxData(data);
+        // Merge with existing sandboxData to preserve previewUrl
+        setSandboxData(prev => {
+          const nextSandboxData = {
+            ...data,
+            // Keep previewUrl if it exists in current data and new data doesn't have one
+            // or if new data's previewUrl is the same as url (not a custom domain)
+            previewUrl: (data.previewUrl && data.previewUrl !== data.url)
+              ? data.previewUrl
+              : (prev?.sandboxId === data.sandboxId ? (prev?.previewUrl || data.previewUrl) : data.previewUrl),
+          };
+          sandboxDataRef.current = nextSandboxData;
+          return nextSandboxData;
+        });
         updateStatus('Sandbox active', true);
         log('Sandbox created successfully!');
         log(`Sandbox ID: ${data.sandboxId}`);
         log(`URL: ${data.url}`);
 
         // Persist session to DB so it can be resumed on any device
-        debouncedSave(data, chatMessages, activeSiteId);
+        debouncedSave(data, chatMessages, effectiveSiteId);
         
         // Update URL with sandbox ID
         const newParams = new URLSearchParams(searchParams.toString());
@@ -1126,12 +1419,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
   };
 
-  const applyGeneratedCode = async (code: string, isEdit: boolean = false, overrideSandboxData?: SandboxData, images?: { base64: string; type: string; name: string }[]) => {
+  const applyGeneratedCode = async (code: string, isEdit: boolean = false, overrideSandboxData?: SandboxData, images?: UploadedImagePayload[]) => {
     console.log('[applyGeneratedCode] STARTED:', {
       codeLength: code?.length || 0,
       isEdit,
       hasOverrideSandboxData: !!overrideSandboxData,
-      currentSandboxDataId: sandboxData?.sandboxId
+      currentSandboxDataId: sandboxData?.sandboxId,
+      uploadedImageCount: images?.length || 0,
+      uploadedImageNames: images?.map(image => image.label || image.name).slice(0, 8) || []
     });
     setLoading(true);
     codeApplicationInProgress.current = true; // Prevent health check from recreating sandbox
@@ -1149,6 +1444,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         (window as any).pendingPackages = [];
       }
       
+      // Move image bytes to Blob storage first so the apply request body stays
+      // under the serverless size limit (base64 images otherwise 413).
+      const preparedImages = await ensureImagesUploaded(images);
+
       // Use streaming endpoint for real-time feedback
       const effectiveSandboxData = overrideSandboxData || sandboxData;
       console.log('[applyGeneratedCode] Fetching /api/apply-ai-code-stream:', {
@@ -1156,7 +1455,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         codeLength: code?.length,
         isEdit,
         sandboxId: effectiveSandboxData?.sandboxId,
-        hasPendingPackages: pendingPackages.length > 0
+        hasPendingPackages: pendingPackages.length > 0,
+        uploadedImageCount: preparedImages?.length || 0,
+        uploadedImageNames: preparedImages?.map(image => image.label || image.name).slice(0, 8) || []
       });
       const response = await fetch('/api/apply-ai-code-stream', {
         method: 'POST',
@@ -1166,7 +1467,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           isEdit: isEdit,
           packages: pendingPackages,
           sandboxId: effectiveSandboxData?.sandboxId, // Pass the sandbox ID to ensure proper connection
-          uploadedImages: images && images.length > 0 ? images : undefined
+          uploadedImages: preparedImages && preparedImages.length > 0 ? preparedImages : undefined
         })
       });
       console.log('[applyGeneratedCode] Fetch response status:', response.status, response.ok);
@@ -1188,10 +1489,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         const lines = chunk.split('\n');
         
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          const data = parseSseDataLine(line);
+          if (data) {
             try {
-              const data = JSON.parse(line.slice(6));
-              
               switch (data.type) {
                 case 'start':
                   // Don't add as chat message, just update state
@@ -1277,7 +1577,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   break;
                   
                 case 'error':
-                  addChatMessage(`Error: ${data.message || data.error || 'Unknown error'}`, 'system');
+                  addChatMessage(`Error: ${getErrorMessage(data.message || data.error)}`, 'system');
                   // Reset loading state on error
                   setLoading(false);
                   break;
@@ -1293,8 +1593,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   }
                   break;
               }
-            } catch {
-              // Ignore parse errors
+            } catch (error) {
+              console.error('Failed to process SSE data:', getErrorMessage(error));
             }
           }
         }
@@ -1303,7 +1603,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       // Process final data
       if (finalData && finalData.type === 'complete') {
         const data: any = {
-          success: true,
+          success: finalData.success !== false,
           results: finalData.results,
           explanation: finalData.explanation,
           structure: finalData.structure,
@@ -1317,7 +1617,17 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         
         if (data.success) {
           const { results } = data;
-        
+
+          // Update sandbox data if backend sent new sandbox info (e.g., when new sandbox was created)
+          if (finalData.sandbox?.sandboxId && finalData.sandbox?.url) {
+            console.log('[applyGeneratedCode] Updating sandbox data from response:', finalData.sandbox);
+            setSandboxData(prev => ({
+              ...prev,
+              sandboxId: finalData.sandbox.sandboxId,
+              url: finalData.sandbox.url
+            }));
+          }
+
         // Log package installation results without duplicate messages
         if (results.packagesInstalled?.length > 0) {
           log(`Packages installed: ${results.packagesInstalled.join(', ')}`);
@@ -1420,7 +1730,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               files: changedFiles,
               timestamp: new Date()
             }],
-            uploadedImages: undefined
+            uploadedImages: undefined,
+            lastGeneratedImages: images && images.length > 0 ? images : prev.lastGeneratedImages
           }));
           
           // Update the chat message to show success
@@ -1488,7 +1799,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         }
         
         } else {
-          throw new Error(finalData?.error || 'Failed to apply code');
+          const firstError = finalData?.results?.errors?.[0];
+          throw new Error(firstError || finalData?.message || finalData?.error || 'Failed to apply code');
         }
       } else {
         // If no final data was received, still close loading
@@ -1511,7 +1823,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     if (!sandboxData) return null;
     
     try {
-      const response = await fetch('/api/get-sandbox-files', {
+      const response = await fetch(`/api/get-sandbox-files?sandboxId=${encodeURIComponent(sandboxData.sandboxId)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -1548,6 +1860,37 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
   };
 
+  const ensureSiteForGeneration = async (input: { prompt?: string; sourceUrl?: string } = {}) => {
+    const currentSiteId = activeSiteIdRef.current || activeSiteId;
+    if (currentSiteId) {
+      return currentSiteId;
+    }
+
+    const prompt = input.prompt?.trim() || '';
+    const sourceUrl = input.sourceUrl?.trim() || '';
+    if (!prompt && !sourceUrl) {
+      return '';
+    }
+
+    const response = await fetch('/api/sites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, sourceUrl }),
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.warn('[site auto-create] Failed to create site from prompt:', data.error);
+      return '';
+    }
+
+    setSites((prev) => [data.site, ...prev]);
+    setActiveSiteId(data.site.id);
+    activeSiteIdRef.current = data.site.id;
+    setSiteStatusMessage(`Created ${data.site.name} at ${data.site.liveUrl}`);
+    return data.site.id;
+  };
+
   const createSite = async () => {
     setSiteError(null);
     setSiteStatusMessage(null);
@@ -1557,7 +1900,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       const response = await fetch('/api/sites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newSiteName, slug: newSiteSlug }),
+        body: JSON.stringify({
+          name: newSiteName,
+          slug: newSiteSlug.trim() || undefined,
+        }),
       });
       const data = await response.json();
 
@@ -1567,6 +1913,30 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
       setSites((prev) => [data.site, ...prev]);
       setActiveSiteId(data.site.id);
+      setShowNewSiteForm(false);
+      setNewSiteName('');
+      setNewSiteSlug('');
+
+      if (sandboxData?.sandboxId) {
+        const attachResponse = await fetch('/api/generation-session', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ siteId: data.site.id, sandboxId: sandboxData.sandboxId }),
+        });
+        const attachData = await attachResponse.json();
+
+        if (!attachResponse.ok) {
+          throw new Error(attachData.error || 'Created site, but failed to attach the active sandbox');
+        }
+
+        const customPreviewUrl = buildClientTenantUrl(data.site.subdomain);
+        setSandboxData((prev) => prev ? {
+          ...prev,
+          previewUrl: customPreviewUrl,
+          rawSandboxUrl: prev.rawSandboxUrl || prev.url,
+        } : prev);
+      }
+
       setSiteStatusMessage(`Created ${data.site.name}. Publish your current build when you are ready.`);
     } catch (error: any) {
       setSiteError(error.message);
@@ -1578,6 +1948,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   const publishActiveSite = async () => {
     if (!activeSiteId || !sandboxData?.sandboxId) {
       setSiteError('Create a site and generate a build before publishing.');
+      return;
+    }
+
+    // Guard against publishing a session with no generated code: a
+    // mis-restored blank sandbox would build the empty scaffold and
+    // overwrite the live site's assets.
+    if (Object.keys(sandboxFiles).length === 0) {
+      setSiteError('This session has no generated code to publish. Generate or restore your site first, then publish.');
       return;
     }
 
@@ -2335,7 +2713,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   };
 
   const sendChatMessage = async () => {
-    const message = aiChatInput.trim();
+    const message = aiChatInput.trim() || (
+      chatUploadedImages.length > 0
+        ? 'Use these uploaded image assets to build or update the website.'
+        : ''
+    );
     if (!message) return;
     
     if (!aiEnabled) {
@@ -2346,14 +2728,19 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     addChatMessage(message, 'user');
     setAiChatInput('');
 
-    // Clear uploaded images after sending
+    // Clear uploaded images after sending. Upload bytes to Blob first so the
+    // generate/apply request bodies stay under the serverless size limit.
     const imagesToSend = chatUploadedImages;
+    const imagesForGeneration = await ensureImagesUploaded(
+      imagesToSend.length > 0 ? imagesToSend : undefined
+    );
     setChatUploadedImages([]);
 
     // Store images in context for apply phase
     setConversationContext(prev => ({
       ...prev,
-      uploadedImages: imagesToSend.length > 0 ? imagesToSend : undefined
+      uploadedImages: imagesForGeneration,
+      lastGeneratedImages: imagesForGeneration ?? prev.lastGeneratedImages
     }));
 
     // Check for special commands
@@ -2369,16 +2756,26 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
     
     // Start sandbox creation in parallel if needed
-    let sandboxPromise: Promise<void> | null = null;
+    let sandboxPromise: Promise<any> | null = null;
     let sandboxCreating = false;
-    
+
     if (!sandboxData) {
+      if (!activeSiteIdRef.current) {
+        await ensureSiteForGeneration({ prompt: message });
+      }
       sandboxCreating = true;
       addChatMessage('Creating sandbox while I plan your app...', 'system');
-      sandboxPromise = createSandbox(true).catch((error: any) => {
+      console.log('[startGeneration] Starting sandbox creation...');
+      sandboxPromise = createSandbox(true).then((data) => {
+        console.log('[startGeneration] Sandbox created:', data?.sandboxId);
+        return data;
+      }).catch((error: any) => {
+        console.error('[startGeneration] Sandbox creation failed:', error);
         addChatMessage(`Failed to create sandbox: ${error.message}`, 'system');
         throw error;
       });
+    } else {
+      console.log('[startGeneration] Sandbox already exists:', sandboxData.sandboxId);
     }
     
     // Determine if this is an edit
@@ -2412,9 +2809,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         sandboxId: sandboxData?.sandboxId || (sandboxCreating ? 'pending' : null),
         structure: structureContent,
         recentMessages: chatMessages.slice(-20),
-        conversationContext: conversationContext,
+        conversationContext: {
+          ...conversationContext,
+          uploadedImages: undefined,
+          lastGeneratedImages: undefined
+        },
         currentCode: promptInput,
-        sandboxUrl: sandboxData?.url,
+        sandboxUrl: sandboxData?.rawSandboxUrl || sandboxData?.url,
         sandboxCreating: sandboxCreating
       };
       
@@ -2431,7 +2832,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           model: aiModel,
           context: fullContext,
           isEdit: conversationContext.appliedCode.length > 0,
-          uploadedImages: imagesToSend.length > 0 ? imagesToSend : undefined,
+          uploadedImages: imagesForGeneration,
           aiImagesEnabled
         })
       });
@@ -2464,10 +2865,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           buffer = lines.pop() || '';
           
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
+            const data = parseSseDataLine(line);
+            if (data) {
               try {
-                const data = JSON.parse(line.slice(6));
-                
                 if (data.type === 'status') {
                   setGenerationProgress(prev => ({ ...prev, status: data.message }));
                 } else if (data.type === 'thinking') {
@@ -2620,7 +3020,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   // Save the last generated code
                   setConversationContext(prev => ({
                     ...prev,
-                    lastGeneratedCode: generatedCode
+                    lastGeneratedCode: generatedCode,
+                    lastGeneratedImages: imagesForGeneration ?? prev.lastGeneratedImages
                   }));
                   
                   // Clear thinking state when generation completes
@@ -2675,16 +3076,68 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   if (data.limitReached) {
                     router.push(data.upgradeUrl || '/pricing');
                   }
-                  throw new Error(data.error);
+                  const message = getErrorMessage(data.error || data.message, 'Generation failed');
+                  setGenerationProgress(prev => ({
+                    ...prev,
+                    isGenerating: false,
+                    isStreaming: false,
+                    isThinking: false,
+                    status: message,
+                  }));
+                  addChatMessage(message, 'error');
                 }
               } catch (e) {
-                console.error('Failed to parse SSE data:', e);
+                console.error('Failed to process SSE data:', getErrorMessage(e));
               }
             }
           }
         }
       }
-      
+
+      // Process any remaining data in the buffer after stream ends
+      if (buffer.trim()) {
+        console.log('[chat] Processing remaining buffer:', buffer.length, 'bytes');
+        const lines = buffer.split('\n');
+        for (const line of lines) {
+          const data = parseSseDataLine(line);
+          if (data) {
+            try {
+              if (data.type === 'complete') {
+                console.log('[chat] Processing late complete event from buffer');
+                generatedCode = data.generatedCode;
+                explanation = data.explanation;
+
+                // Save the last generated code
+                setConversationContext(prev => ({
+                  ...prev,
+                  lastGeneratedCode: generatedCode,
+                  lastGeneratedImages: imagesForGeneration ?? prev.lastGeneratedImages
+                }));
+
+                // Clear thinking state when generation completes
+                setGenerationProgress(prev => ({
+                  ...prev,
+                  isThinking: false,
+                  thinkingText: undefined,
+                  thinkingDuration: undefined
+                }));
+
+                // Store packages to install from tool calls
+                if (data.packagesToInstall && data.packagesToInstall.length > 0) {
+                  console.log('[generate-code] Packages to install from tools:', data.packagesToInstall);
+                  (window as any).pendingPackages = data.packagesToInstall;
+                }
+              } else if (data.type === 'error') {
+                console.error('[chat] Late error event from buffer:', data.error);
+                // Don't throw here, just log it - the main processing already handled errors
+              }
+            } catch (e) {
+              console.error('Failed to process remaining SSE data:', getErrorMessage(e));
+            }
+          }
+        }
+      }
+
       if (generatedCode) {
         // Parse files from generated code for metadata
         const fileRegex = /<file path="([^"]+)">([^]*?)<\/file>/g;
@@ -2717,22 +3170,49 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         // setLeftPanelVisible(true);
         
         // Wait for sandbox creation if it's still in progress
-        let activeSandboxData = sandboxData;
+        let activeSandboxData = sandboxDataRef.current ?? sandboxData;
+        console.log('[startGeneration] Initial sandboxData:', { sandboxData: !!sandboxData, sandboxPromise: !!sandboxPromise });
+
         if (sandboxPromise) {
           addChatMessage('Waiting for sandbox to be ready...', 'system');
           try {
+            console.log('[startGeneration] Awaiting sandboxPromise...');
             const newSandboxData = await sandboxPromise;
-            if (newSandboxData != null) {
+            console.log('[startGeneration] sandboxPromise resolved:', { newSandboxData: !!newSandboxData, hasSandboxId: !!newSandboxData?.sandboxId });
+            if (newSandboxData != null && newSandboxData.sandboxId) {
               activeSandboxData = newSandboxData;
               // Also update the state for future use
+              sandboxDataRef.current = newSandboxData;
               setSandboxData(newSandboxData);
+              console.log('[startGeneration] Using new sandbox data:', newSandboxData.sandboxId);
+            } else {
+              console.warn('[startGeneration] sandboxPromise resolved but no valid data, waiting for sandboxData state...');
+              // If promise returned null but sandboxData might be set via state update soon, wait for it
+              // Poll sandboxData for up to 10 seconds
+              const startTime = Date.now();
+              while (!activeSandboxData && Date.now() - startTime < 10000) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                activeSandboxData = sandboxDataRef.current;
+                if (activeSandboxData) {
+                  console.log('[startGeneration] sandboxData became available after waiting:', activeSandboxData.sandboxId);
+                  break;
+                }
+              }
+              if (!activeSandboxData) {
+                console.error('[startGeneration] sandboxData did not become available after 10s');
+              }
             }
             // Remove the waiting message
             setChatMessages(prev => prev.filter(msg => msg.content !== 'Waiting for sandbox to be ready...'));
-          } catch {
+          } catch (error) {
+            console.error('[startGeneration] Sandbox creation failed:', error);
             addChatMessage('Sandbox creation failed. Cannot apply code.', 'system');
             return;
           }
+        } else if (!activeSandboxData) {
+          console.error('[startGeneration] No sandboxPromise and no sandboxData - sandbox was never created!');
+          addChatMessage('Sandbox not available. Please refresh and try again.', 'system');
+          return;
         }
         
         console.log('[startGeneration] Checking conditions for applyGeneratedCode:', {
@@ -2755,7 +3235,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           console.log('[startGeneration] Calling applyGeneratedCode with:', {
             generatedCodeLength: generatedCode.length,
             isEdit,
-            sandboxId: activeSandboxData.sandboxId
+            sandboxId: activeSandboxData.sandboxId,
+            uploadedImageCount: imagesForGeneration?.length || 0
           });
           let codeToApply = generatedCode;
           if (aiImagesEnabled) {
@@ -2764,7 +3245,12 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               addChatMessage(`Generating image ${done} of ${total}...`, 'system');
             });
           }
-          await applyGeneratedCode(codeToApply, isEdit, activeSandboxData !== sandboxData ? activeSandboxData : undefined, conversationContext.uploadedImages);
+          const imagesForApply = imagesForGeneration ?? getImagesForGeneratedCode(
+            codeToApply,
+            undefined,
+            conversationContext.lastGeneratedImages
+          );
+          await applyGeneratedCode(codeToApply, isEdit, activeSandboxData, imagesForApply);
         } else {
           console.error('[startGeneration] NOT calling applyGeneratedCode - missing:', {
             activeSandboxData: !!activeSandboxData,
@@ -2789,6 +3275,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       setTimeout(() => {
         // Switch to preview but keep files for display
         setActiveTab('preview');
+        setMobileView('preview'); // Surface the result on mobile's single pane
       }, 1000); // Reduced from 3000ms to 1000ms
     } catch (error: any) {
       setChatMessages(prev => prev.filter(msg => msg.content !== 'Thinking...'));
@@ -2868,7 +3355,12 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     
     addChatMessage('Re-applying last generation...', 'system');
     const isEdit = conversationContext.appliedCode.length > 0;
-    await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit, undefined, conversationContext.uploadedImages);
+    const imagesForReapply = getImagesForGeneratedCode(
+      conversationContext.lastGeneratedCode,
+      conversationContext.uploadedImages,
+      conversationContext.lastGeneratedImages
+    );
+    await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit, undefined, imagesForReapply);
   };
 
   // Auto-scroll code display to bottom when streaming
@@ -3338,6 +3830,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       'system'
     );
     
+    if (!sandboxData && !activeSiteIdRef.current) {
+      await ensureSiteForGeneration({
+        prompt: submittedContext,
+        sourceUrl: submittedUrl,
+      });
+    }
+
     // Start creating sandbox and capturing screenshot immediately in parallel
     const sandboxPromise = !sandboxData ? createSandbox(true) : Promise.resolve(null);
     
@@ -3671,6 +4170,12 @@ ${filteredContext ? '- Apply the user\'s context/theme requirements throughout t
 Focus on the key sections and content, making it clean and modern.`;
         }
 
+        // Upload image bytes to Blob first so request bodies stay under the
+        // serverless size limit (base64 images otherwise 413 on apply/generate).
+        const preparedUploadedImages = await ensureImagesUploaded(
+          uploadedImages.length > 0 ? uploadedImages : undefined
+        );
+
         setGenerationProgress(prev => ({
           isGenerating: true,
           status: 'Initializing AI...',
@@ -3698,7 +4203,7 @@ Focus on the key sections and content, making it clean and modern.`;
               structure: structureContent,
               conversationContext: conversationContext
             },
-            uploadedImages: uploadedImages.length > 0 ? uploadedImages : undefined,
+            uploadedImages: preparedUploadedImages,
             aiImagesEnabled
           })
         });
@@ -3724,10 +4229,9 @@ Focus on the key sections and content, making it clean and modern.`;
           const lines = chunk.split('\n');
           
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
+            const data = parseSseDataLine(line);
+            if (data) {
               try {
-                const data = JSON.parse(line.slice(6));
-                
                 if (data.type === 'status') {
                   setGenerationProgress(prev => ({ ...prev, status: data.message }));
                 } else if (data.type === 'thinking') {
@@ -3858,11 +4362,25 @@ Focus on the key sections and content, making it clean and modern.`;
                   // Save the last generated code
                   setConversationContext(prev => ({
                     ...prev,
-                    lastGeneratedCode: generatedCode
+                    lastGeneratedCode: generatedCode,
+                    lastGeneratedImages: preparedUploadedImages ?? prev.lastGeneratedImages
                   }));
+                } else if (data.type === 'error') {
+                  if (data.limitReached) {
+                    router.push(data.upgradeUrl || '/pricing');
+                  }
+                  const message = getErrorMessage(data.error || data.message, 'Generation failed');
+                  setGenerationProgress(prev => ({
+                    ...prev,
+                    isGenerating: false,
+                    isStreaming: false,
+                    isThinking: false,
+                    status: message,
+                  }));
+                  addChatMessage(message, 'error');
                 }
               } catch (e) {
-                console.error('Failed to parse SSE data:', e);
+                console.error('Failed to process SSE data:', getErrorMessage(e));
               }
             }
           }
@@ -3902,7 +4420,7 @@ Focus on the key sections and content, making it clean and modern.`;
           setPromptInput(generatedCode);
 
           // Apply the code (first time is not edit mode)
-          await applyGeneratedCode(generatedCode, false, undefined, uploadedImages);
+          await applyGeneratedCode(generatedCode, false, undefined, preparedUploadedImages);
 
           addChatMessage(
             brandExtensionMode
@@ -3960,6 +4478,7 @@ Focus on the key sections and content, making it clean and modern.`;
         setTimeout(() => {
           // Switch back to preview tab but keep files
           setActiveTab('preview');
+          setMobileView('preview'); // Surface the result on mobile's single pane
         }, 1000); // Show completion briefly then switch
       } catch (error: any) {
         addChatMessage(`Failed to clone website: ${error.message}`, 'system');
@@ -4068,8 +4587,59 @@ Focus on the key sections and content, making it clean and modern.`;
             label="Sign out"
             onClick={() => signOut({ callbackUrl: '/' })}
           />
+          {/* Mobile-only: reveal the model/status/AI-images controls that are hidden below sm. */}
+          <button
+            type="button"
+            onClick={() => setShowMobileMenu((v) => !v)}
+            aria-expanded={showMobileMenu}
+            aria-label="More controls"
+            className="sm:hidden inline-flex items-center justify-center rounded-lg border border-border-muted bg-background-lighter p-2 text-foreground transition-colors hover:bg-warm-800/5"
+          >
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
         </div>
       </div>
+
+      {/* Mobile settings panel: surfaces controls that are desktop-only in the header. */}
+      {showMobileMenu && (
+        <div className="sm:hidden border-b border-border-muted bg-background-lighter/95 backdrop-blur-xl px-4 py-3 flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-warm-500">Model</label>
+            <BrandSelect
+              value={aiModel}
+              onChange={(newModel) => {
+                setAiModel(newModel);
+                const params = new URLSearchParams(searchParams);
+                params.set('model', newModel);
+                if (sandboxData?.sandboxId) {
+                  params.set('sandbox', sandboxData.sandboxId);
+                }
+                router.push(`/generation?${params.toString()}`);
+              }}
+              options={appConfig.ai.availableModels.map(model => ({
+                value: model,
+                label: appConfig.ai.modelDisplayNames?.[model] || model,
+              }))}
+              className="w-full"
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-warm-500">Status</span>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${status.active ? 'bg-warm-100 text-warm-800' : 'bg-warm-200 text-warm-600'}`}>
+              {status.text}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-warm-500">AI images</span>
+            <AiImagesToggle
+              enabled={aiImagesEnabled}
+              onChange={setAiImagesEnabled}
+              canUse={canUseAiImages}
+              disabled={loading || generationProgress.isGenerating}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="border-b border-border-muted bg-warm-025 px-4 py-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -4085,7 +4655,7 @@ Focus on the key sections and content, making it clean and modern.`;
                 ...(sites.length > 0 ? [{ value: '', label: 'Select a site' }] : []),
                 ...sites.map((site) => ({ value: site.id, label: `${site.name} (${site.slug})` })),
               ]}
-              className="min-w-[240px]"
+              className="w-full sm:min-w-[240px]"
               disabled={sitesLoading || sites.length === 0}
             />
 
@@ -4116,8 +4686,21 @@ Focus on the key sections and content, making it clean and modern.`;
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {activeSite ? (
+            {!isShowingCreateSiteForm ? (
               <>
+                <button
+                  onClick={() => {
+                    setNewSiteName('');
+                    setNewSiteSlug('');
+                    setShowNewSiteForm(true);
+                    setSiteError(null);
+                    setSiteStatusMessage(null);
+                  }}
+                  disabled={siteActionLoading !== null}
+                  className="rounded-full border border-warm-750/12 px-4 py-2 text-sm text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  New site
+                </button>
                 <button
                   onClick={publishActiveSite}
                   disabled={siteActionLoading !== null || !sandboxData}
@@ -4149,11 +4732,25 @@ Focus on the key sections and content, making it clean and modern.`;
                 />
                 <button
                   onClick={createSite}
-                  disabled={siteActionLoading !== null || !newSiteName.trim() || !newSiteSlug.trim()}
+                  disabled={siteActionLoading !== null || !newSiteName.trim()}
                   className="ol-primary-button px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {siteActionLoading === 'create' ? 'Creating...' : 'Create site'}
                 </button>
+                {activeSite && (
+                  <button
+                    onClick={() => {
+                      setShowNewSiteForm(false);
+                      setNewSiteName('');
+                      setNewSiteSlug('');
+                      setSiteError(null);
+                    }}
+                    disabled={siteActionLoading !== null}
+                    className="rounded-full border border-warm-750/12 px-4 py-2 text-sm text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -4165,20 +4762,20 @@ Focus on the key sections and content, making it clean and modern.`;
             {activeSite.customDomain ? ` • Custom domain: ${activeSite.customDomain}` : ''}
           </p>
         )}
-        {!activeSite && newSiteSlug && (
+        {isShowingCreateSiteForm && (newSiteSlug || newSiteName) && (
           <p className="mt-2 text-xs text-warm-500">
-            Default URL: https://{newSiteSlug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'mydomain.com'}
+            Default URL: https://{slugifySiteName(newSiteSlug || newSiteName)}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net'}
           </p>
         )}
         {siteStatusMessage && <p className="mt-2 text-sm text-brand-orange-dark">{siteStatusMessage}</p>}
         {siteError && <p className="mt-2 text-sm text-red-600">{siteError}</p>}
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Center Panel - AI Chat (1/3 of remaining width) */}
-        <div className="flex-1 max-w-[400px] flex flex-col border-r border-[var(--border-default)] bg-[var(--bg-primary)] overflow-hidden h-full">
-          {/* Scrollable Header Section - constrained height */}
-          <div className="flex-shrink-0 overflow-y-auto max-h-[35%] border-b border-[var(--border-default)] scrollbar-thin">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        {/* Center Panel - AI Chat. Full width on mobile (toggled), fixed 400px on desktop. */}
+        <div className={`${mobileView === 'chat' ? 'flex' : 'hidden'} md:flex w-full md:w-[400px] md:max-w-[400px] flex-1 md:flex-none flex-col border-r border-[var(--border-default)] bg-[var(--bg-primary)] overflow-hidden h-full`}>
+          {/* Scrollable Header Section - constrained height on desktop, natural on mobile */}
+          <div className="flex-shrink-0 overflow-y-auto md:max-h-[35%] border-b border-[var(--border-default)] scrollbar-thin">
             {/* Sidebar Input Component */}
             {!hasInitialSubmission ? (
               <div className="p-4 border-b border-[var(--border-default)]">
@@ -4683,7 +5280,7 @@ Focus on the key sections and content, making it clean and modern.`;
           </div>
 
           {/* Input Area - fixed at bottom */}
-          <div className="flex-shrink-0 p-4 border-t border-[var(--border-default)] bg-[var(--bg-primary)] max-h-[40%] overflow-y-auto">
+          <div className="flex-shrink-0 p-4 border-t border-[var(--border-default)] bg-[var(--bg-primary)] md:max-h-[40%] overflow-y-auto">
             <HeroInput
               value={aiChatInput}
               onChange={setAiChatInput}
@@ -4691,12 +5288,13 @@ Focus on the key sections and content, making it clean and modern.`;
               placeholder="Describe what you want to build..."
               showSearchFeatures={false}
               onImageUpload={(images) => setChatUploadedImages(images || [])}
+              maxImages={MAX_CHAT_UPLOAD_IMAGES}
             />
           </div>
         </div>
 
-        {/* Right Panel - Preview or Generation (2/3 of remaining width) */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Right Panel - Preview or Generation. Full width on mobile (toggled), fills remaining space on desktop. */}
+        <div className={`${mobileView === 'preview' ? 'flex' : 'hidden'} md:flex flex-1 flex-col overflow-hidden`}>
           <div className="px-3 pt-4 pb-4 bg-[var(--bg-primary)] border-b border-[var(--border-default)] flex justify-between items-center">
             <div className="flex items-center gap-2">
               {/* Toggle-style Code/View switcher */}
@@ -4761,9 +5359,9 @@ Focus on the key sections and content, making it clean and modern.`;
               
               {/* Open in new tab button */}
               {sandboxData && (
-                <a 
-                  href={sandboxData.url} 
-                  target="_blank" 
+                <a
+                  href={buildDraftPreviewUrl(sandboxData.previewUrl, sandboxData.url)}
+                  target="_blank"
                   rel="noopener noreferrer"
                   title="Open in new tab"
                   className="p-1.5 rounded-md transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
@@ -4777,6 +5375,35 @@ Focus on the key sections and content, making it clean and modern.`;
           </div>
           <div className="flex-1 relative overflow-hidden">
             {renderMainContent()}
+          </div>
+        </div>
+
+        {/* Mobile-only pane switcher: chat and preview can't share the narrow
+            viewport, so one shows at a time and this toggles between them. */}
+        <div className="md:hidden flex-shrink-0 border-t border-[var(--border-default)] bg-background-lighter/95 backdrop-blur-xl px-3 py-2">
+          <div className="inline-flex w-full bg-warm-100 border border-warm-750/12 rounded-xl p-1" role="tablist" aria-label="Switch panel">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileView === 'chat'}
+              onClick={() => setMobileView('chat')}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                mobileView === 'chat' ? 'bg-white text-warm-800 shadow-sm' : 'text-warm-500'
+              }`}
+            >
+              Chat
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileView === 'preview'}
+              onClick={() => setMobileView('preview')}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                mobileView === 'preview' ? 'bg-white text-warm-800 shadow-sm' : 'text-warm-500'
+              }`}
+            >
+              Preview
+            </button>
           </div>
         </div>
       </div>
