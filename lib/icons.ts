@@ -8,14 +8,17 @@ export {
   FiGithub 
 } from 'react-icons/fi';
 
-export { 
-  BsFolderFill, 
-  BsFolder2Open 
+export {
+  BsFolderFill,
+  BsFolder2Open,
+  // Bootstrap's CSS filetype icon: the Simple Icons equivalent was renamed
+  // between react-icons 5.5 (SiCss3) and 5.6 (SiCss), so it breaks whenever
+  // node_modules and the code disagree on the version.
+  BsFiletypeCss
 } from 'react-icons/bs';
 
 export {
   SiJavascript,
   SiReact,
-  SiCss as SiCss3,
   SiJson
 } from 'react-icons/si';
