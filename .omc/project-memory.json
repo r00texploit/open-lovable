@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1782994917381,
-  "projectRoot": "/Users/halim/open-lovable",
+  "lastScanned": 1783337646202,
+  "projectRoot": "/home/halim/open-lovable-review",
   "techStack": {
     "languages": [
       {
@@ -52,6 +52,7 @@
     "lintCommand": "pnpm lint",
     "devCommand": "pnpm dev",
     "scripts": {
+      "postinstall": "prisma generate",
       "dev": "next dev --turbopack",
       "build": "next build",
       "start": "next start",
@@ -79,7 +80,10 @@
       "scripts",
       "tests"
     ],
-    "gitBranches": null
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
   },
   "customNotes": [
     {
@@ -111,8 +115,8 @@
     "app": {
       "path": "app",
       "purpose": "Application code",
-      "fileCount": 6,
-      "lastAccessed": 1782994917284,
+      "fileCount": 5,
+      "lastAccessed": 1783337646198,
       "keyFiles": [
         "favicon.ico",
         "globals.css",
@@ -125,7 +129,7 @@
       "path": "atoms",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1782994917284,
+      "lastAccessed": 1783337646198,
       "keyFiles": [
         "sheets.ts"
       ]
@@ -133,8 +137,8 @@
     "components": {
       "path": "components",
       "purpose": "UI components",
-      "fileCount": 11,
-      "lastAccessed": 1782994917326,
+      "fileCount": 10,
+      "lastAccessed": 1783337646200,
       "keyFiles": [
         "CodeApplicationProgress.tsx",
         "FirecrawlIcon.tsx",
@@ -147,7 +151,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 1,
-      "lastAccessed": 1782994917328,
+      "lastAccessed": 1783337646200,
       "keyFiles": [
         "app.config.ts"
       ]
@@ -155,15 +159,15 @@
     "design-system": {
       "path": "design-system",
       "purpose": null,
-      "fileCount": 1,
-      "lastAccessed": 1782994917330,
+      "fileCount": 0,
+      "lastAccessed": 1783337646201,
       "keyFiles": []
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 7,
-      "lastAccessed": 1782994917331,
+      "lastAccessed": 1783337646201,
       "keyFiles": [
         "FLUID-COMPUTE-SECURITY.md",
         "IMPLEMENTATION-SUMMARY.md",
@@ -176,7 +180,7 @@
       "path": "hooks",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1782994917332,
+      "lastAccessed": 1783337646201,
       "keyFiles": [
         "useSwitchingCode.ts"
       ]
@@ -184,8 +188,8 @@
     "lib": {
       "path": "lib",
       "purpose": "Library code",
-      "fileCount": 16,
-      "lastAccessed": 1782994917333,
+      "fileCount": 15,
+      "lastAccessed": 1783337646201,
       "keyFiles": [
         "build-validator.ts",
         "context-selector.ts",
@@ -194,25 +198,18 @@
         "errors.ts"
       ]
     },
-    "open-lovable": {
-      "path": "open-lovable",
-      "purpose": null,
-      "fileCount": 1,
-      "lastAccessed": 1782994917334,
-      "keyFiles": []
-    },
     "packages": {
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1782994917334,
+      "lastAccessed": 1783337646201,
       "keyFiles": []
     },
     "prisma": {
       "path": "prisma",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1782994917334,
+      "lastAccessed": 1783337646201,
       "keyFiles": [
         "schema.prisma"
       ]
@@ -221,7 +218,7 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 7,
-      "lastAccessed": 1782994917335,
+      "lastAccessed": 1783337646201,
       "keyFiles": [
         "compressor.json",
         "file.svg",
@@ -234,7 +231,7 @@
       "path": "screenshots",
       "purpose": null,
       "fileCount": 16,
-      "lastAccessed": 1782994917336,
+      "lastAccessed": 1783337646201,
       "keyFiles": [
         "cta.png",
         "faq.png",
@@ -247,7 +244,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 6,
-      "lastAccessed": 1782994917336,
+      "lastAccessed": 1783337646202,
       "keyFiles": [
         "generate-jwt.cjs",
         "init-db.ts",
@@ -259,8 +256,8 @@
     "styles": {
       "path": "styles",
       "purpose": null,
-      "fileCount": 6,
-      "lastAccessed": 1782994917352,
+      "fileCount": 5,
+      "lastAccessed": 1783337646202,
       "keyFiles": [
         "chrome-bug.css",
         "colors.json",
@@ -273,7 +270,7 @@
       "path": "tests",
       "purpose": "Test files",
       "fileCount": 3,
-      "lastAccessed": 1782994917377,
+      "lastAccessed": 1783337646202,
       "keyFiles": [
         "api-endpoints.test.js",
         "auth-api.test.cjs",
@@ -284,7 +281,7 @@
       "path": "types",
       "purpose": "Type definitions",
       "fileCount": 3,
-      "lastAccessed": 1782994917377,
+      "lastAccessed": 1783337646202,
       "keyFiles": [
         "conversation.ts",
         "file-manifest.ts",
@@ -295,7 +292,7 @@
       "path": "utils",
       "purpose": "Utility functions",
       "fileCount": 3,
-      "lastAccessed": 1782994917378,
+      "lastAccessed": 1783337646202,
       "keyFiles": [
         "init-canvas.ts",
         "set-timeout-on-visible.ts",
@@ -306,28 +303,21 @@
       "path": "app/api",
       "purpose": "API routes",
       "fileCount": 0,
-      "lastAccessed": 1782994917379,
+      "lastAccessed": 1783337646202,
       "keyFiles": []
     },
     "components/app": {
       "path": "components/app",
       "purpose": "Application code",
-      "fileCount": 1,
-      "lastAccessed": 1782994917379,
-      "keyFiles": []
-    },
-    "open-lovable/node_modules": {
-      "path": "open-lovable/node_modules",
-      "purpose": "Dependencies",
       "fileCount": 0,
-      "lastAccessed": 1782994917380,
+      "lastAccessed": 1783337646202,
       "keyFiles": []
     },
     "prisma/migrations": {
       "path": "prisma/migrations",
       "purpose": "Database migrations",
       "fileCount": 2,
-      "lastAccessed": 1782994917380,
+      "lastAccessed": 1783337646202,
       "keyFiles": [
         "add_rls_policies.sql",
         "migration_lock.toml"
@@ -337,7 +327,7 @@
       "path": "styles/components",
       "purpose": "UI components",
       "fileCount": 3,
-      "lastAccessed": 1782994917381,
+      "lastAccessed": 1783337646202,
       "keyFiles": [
         "button.css",
         "code.css",
@@ -348,14 +338,14 @@
   "hotPaths": [
     {
       "path": "lib/sandbox/providers/vercel-provider.ts",
-      "accessCount": 42,
-      "lastAccessed": 1782778822186,
+      "accessCount": 43,
+      "lastAccessed": 1783338672115,
       "type": "file"
     },
     {
       "path": "lib/sandbox/providers/base-provider.ts",
-      "accessCount": 26,
-      "lastAccessed": 1782778832996,
+      "accessCount": 27,
+      "lastAccessed": 1783338681243,
       "type": "file"
     },
     {
@@ -371,21 +361,27 @@
       "type": "file"
     },
     {
+      "path": "lib/sandbox/templates/vite-templates.ts",
+      "accessCount": 19,
+      "lastAccessed": 1783338681080,
+      "type": "file"
+    },
+    {
       "path": "app/api/create-ai-sandbox/route.ts",
       "accessCount": 18,
       "lastAccessed": 1782311229504,
       "type": "file"
     },
     {
-      "path": "lib/sandbox/templates/vite-templates.ts",
-      "accessCount": 18,
-      "lastAccessed": 1782778837887,
+      "path": "config/app.config.ts",
+      "accessCount": 14,
+      "lastAccessed": 1783337807799,
       "type": "file"
     },
     {
-      "path": "config/app.config.ts",
-      "accessCount": 13,
-      "lastAccessed": 1782827607956,
+      "path": "prisma/schema.prisma",
+      "accessCount": 12,
+      "lastAccessed": 1783337796643,
       "type": "file"
     },
     {
@@ -395,15 +391,9 @@
       "type": "file"
     },
     {
-      "path": "prisma/schema.prisma",
-      "accessCount": 11,
-      "lastAccessed": 1782735379736,
-      "type": "file"
-    },
-    {
       "path": "package.json",
-      "accessCount": 10,
-      "lastAccessed": 1782651698876,
+      "accessCount": 11,
+      "lastAccessed": 1783337779360,
       "type": "file"
     },
     {
@@ -413,15 +403,15 @@
       "type": "file"
     },
     {
-      "path": "components/shared/header/BrandKit/BrandKit.tsx",
-      "accessCount": 6,
-      "lastAccessed": 1782484657299,
+      "path": "lib/sandbox/types.ts",
+      "accessCount": 7,
+      "lastAccessed": 1783337807751,
       "type": "file"
     },
     {
-      "path": "lib/sandbox/types.ts",
+      "path": "components/shared/header/BrandKit/BrandKit.tsx",
       "accessCount": 6,
-      "lastAccessed": 1782751766001,
+      "lastAccessed": 1782484657299,
       "type": "file"
     },
     {
@@ -432,8 +422,8 @@
     },
     {
       "path": "lib/sandbox/factory.ts",
-      "accessCount": 5,
-      "lastAccessed": 1782748470088,
+      "accessCount": 6,
+      "lastAccessed": 1783337815532,
       "type": "file"
     },
     {
@@ -521,15 +511,15 @@
       "type": "file"
     },
     {
-      "path": "utils/cn.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782228663943,
+      "path": "lib/db/prisma.ts",
+      "accessCount": 2,
+      "lastAccessed": 1783337796591,
       "type": "file"
     },
     {
-      "path": "lib/db/prisma.ts",
+      "path": "utils/cn.ts",
       "accessCount": 1,
-      "lastAccessed": 1782228672198,
+      "lastAccessed": 1782228663943,
       "type": "file"
     },
     {

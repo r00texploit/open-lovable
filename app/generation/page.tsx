@@ -195,6 +195,47 @@ function stripLargeSessionContext(context: any) {
   };
 }
 
+// Build a size-capped, text-only file cache for DB persistence.
+// localStorage keeps the full cache per-device; the DB gets a capped subset so
+// cross-device / post-clear restore works without unbounded Json row growth.
+// Binary image placeholders (kept inline by older pipelines) and oversized
+// files are skipped, and accumulation stops once the total cap is reached.
+const DB_FILECACHE_TOTAL_CAP = 1_500_000; // ~1.5MB across all files
+const DB_FILECACHE_PER_FILE_CAP = 256_000; // ~256KB per file
+
+function buildDbFileCache(files: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  let total = 0;
+  for (const [path, content] of Object.entries(files)) {
+    if (typeof content !== 'string') continue;
+    if (content.startsWith('[Binary image')) continue;
+    if (content.length > DB_FILECACHE_PER_FILE_CAP) continue;
+    if (total + content.length > DB_FILECACHE_TOTAL_CAP) break;
+    out[path] = content;
+    total += content.length;
+  }
+  return out;
+}
+
+// Reconstruct a file cache from a streamed code block by extracting every
+// <file path="...">...</file> segment. Fallback used when neither the DB
+// fileCache nor the per-browser localStorage cache is available — e.g. the
+// session was restored from localStorage's full conversationCtx but the
+// noeron_files_* key was evicted, or an old session predates DB fileCache
+// persistence. Returns {} when the code has no file blocks.
+function filesFromGeneratedCode(code: string | null | undefined): Record<string, string> {
+  if (!code || typeof code !== 'string') return {};
+  const out: Record<string, string> = {};
+  const fileRegex = /<file path="([^"]+)">([^]*?)<\/file>/g;
+  let match: RegExpExecArray | null;
+  while ((match = fileRegex.exec(code)) !== null) {
+    const path = match[1];
+    const content = match[2].trim();
+    if (path) out[path] = content;
+  }
+  return out;
+}
+
 interface SiteSummary {
   id: string;
   name: string;
@@ -403,7 +444,10 @@ function AISandboxPage() {
       ...payload,
       chatMessages: payload.chatMessages.slice(-appConfig.ui.maxRecentMessagesContext),
       conversationCtx: stripLargeSessionContext(conversationContext),
-      fileCache: {},
+      // Persist a size-capped, text-only subset so cross-device restore can
+      // rebuild the sandbox without relying on per-browser localStorage. The
+      // full cache still lives in localStorage as the primary per-device source.
+      fileCache: buildDbFileCache(fileCache),
     };
 
     // Always persist to localStorage so session survives a refresh on the same device
@@ -623,6 +667,11 @@ function AISandboxPage() {
         if (effectiveSandboxId) {
           console.log('[home] Restoring session for sandbox:', effectiveSandboxId);
 
+          // Hoisted so the expired-sandbox restore branch below can reuse the
+          // files recovered here (DB fileCache → lastGeneratedCode fallback)
+          // without re-reading the same sources.
+          let restoredFiles: Record<string, string> = {};
+
           // Load saved session — DB first, localStorage fallback
           if (!savedSession) {
             try {
@@ -665,20 +714,27 @@ function AISandboxPage() {
 
             const dbFileCache = savedSession.fileCache?.files ?? savedSession.fileCache;
             if (dbFileCache && typeof dbFileCache === 'object' && Object.keys(dbFileCache).length > 0) {
-              const restoredFiles = Object.fromEntries(
+              restoredFiles = Object.fromEntries(
                 Object.entries(dbFileCache).map(([path, value]: [string, any]) => [
                   path,
                   typeof value === 'string' ? value : value?.content ?? '',
                 ]).filter(([, content]) => typeof content === 'string')
               ) as Record<string, string>;
+            }
+            // Fallback: reconstruct from the last streamed code block when the
+            // fileCache wasn't persisted (pre-fix session) or was evicted. The
+            // localStorage session payload keeps the full conversationCtx, so
+            // lastGeneratedCode is available there even when noeron_files_* is not.
+            if (Object.keys(restoredFiles).length === 0) {
+              restoredFiles = filesFromGeneratedCode(savedSession.conversationCtx?.lastGeneratedCode);
+            }
 
-              if (Object.keys(restoredFiles).length > 0) {
-                setSandboxFiles(restoredFiles);
-                setGenerationProgress(prev => ({
-                  ...prev,
-                  files: filesCacheToProgressFiles(restoredFiles),
-                }));
-              }
+            if (Object.keys(restoredFiles).length > 0) {
+              setSandboxFiles(restoredFiles);
+              setGenerationProgress(prev => ({
+                ...prev,
+                files: filesCacheToProgressFiles(restoredFiles),
+              }));
             }
           }
 
@@ -735,6 +791,13 @@ function AISandboxPage() {
                     typeof value === 'string' ? value : value?.content ?? '',
                   ]).filter(([, content]) => typeof content === 'string')
                 ) as Record<string, string>;
+              }
+              // Final fallback: the files recovered above from the last
+              // streamed code block (lastGeneratedCode) when no persisted
+              // fileCache survived. Better to restore a partial set into the
+              // fresh sandbox than to leave the default scaffold.
+              if ((!savedFiles || Object.keys(savedFiles).length === 0) && Object.keys(restoredFiles).length > 0) {
+                savedFiles = restoredFiles;
               }
 
               if (savedFiles && Object.keys(savedFiles).length > 0) {
