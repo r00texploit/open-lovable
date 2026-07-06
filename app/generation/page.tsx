@@ -472,6 +472,7 @@ function AISandboxPage() {
   const [shouldAutoGenerate, setShouldAutoGenerate] = useState(false);
   const activeSite = sites.find((site) => site.id === activeSiteId) || null;
   const isShowingCreateSiteForm = !activeSite || showNewSiteForm;
+  const initStartedRef = useRef(false);
 
   // Clear old conversation data on component mount and create/restore sandbox
   useEffect(() => {
@@ -479,8 +480,10 @@ function AISandboxPage() {
     let sandboxCreated = false; // Track if sandbox was created in this effect
 
     const initializePage = async () => {
-      // Prevent double execution in React StrictMode
-      if (sandboxCreated) return;
+      // Prevent double execution: StrictMode/dev re-runs this effect with a
+      // fresh closure, so a local flag alone still creates two sandboxes.
+      if (initStartedRef.current || sandboxCreated) return;
+      initStartedRef.current = true;
       
       // First check URL parameters (from home page navigation)
       const urlParam = searchParams.get('url');
