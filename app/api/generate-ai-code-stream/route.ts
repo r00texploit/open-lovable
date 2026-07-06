@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { streamText } from 'ai';
 import { getProviderForModel } from '@/lib/ai/provider-manager';
-import { createEmptyConversationState, resolveConversationSession } from '@/lib/session-helpers';
+import { coerceConversationState, createEmptyConversationState, resolveConversationSession } from '@/lib/session-helpers';
 import { updateConversationContext } from '@/lib/session-store';
 import type { SandboxState } from '@/types/sandbox';
 import { selectFilesForEdit, getFileContents, formatFilesForAI } from '@/lib/context-selector';
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
     // process-wide global — that leaked context between users).
     const conversationSession = await resolveConversationSession(context?.sandboxId, userId);
     const conversationState: ConversationState =
-      (conversationSession?.conversationCtx as ConversationState | null | undefined) ??
+      coerceConversationState(conversationSession?.conversationCtx) ??
       createEmptyConversationState();
 
     const persistConversationState = async () => {

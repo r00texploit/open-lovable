@@ -11,6 +11,23 @@ import type { ConversationState, ConversationMessage, ConversationEdit } from '@
 import type { FileManifest } from '@/types/file-manifest';
 import type { SandboxState } from '@/types/sandbox';
 
+/**
+ * The conversationCtx column is written by two producers with different
+ * shapes: the client's UI context (appliedCode, homeUrlInput, ...) and the
+ * server's ConversationState ({ context: { messages, edits } }). Only treat
+ * the value as ConversationState when it actually has that shape — anything
+ * else would crash readers with "cannot read messages of undefined".
+ */
+export function coerceConversationState(raw: unknown): ConversationState | null {
+  if (raw && typeof raw === 'object' && 'context' in raw) {
+    const ctx = (raw as { context?: { messages?: unknown; edits?: unknown } }).context;
+    if (ctx && Array.isArray(ctx.messages) && Array.isArray(ctx.edits)) {
+      return raw as ConversationState;
+    }
+  }
+  return null;
+}
+
 export function createEmptyConversationState(): ConversationState {
   return {
     conversationId: `conv-${Date.now()}`,
@@ -74,8 +91,9 @@ export async function getOrInitConversationState(
     if (latest) session = latest as unknown as SandboxSession;
   }
 
-  if (session?.conversationCtx) {
-    return session.conversationCtx as ConversationState;
+  const existing = coerceConversationState(session?.conversationCtx);
+  if (existing) {
+    return existing;
   }
 
   // Initialize new conversation state (no DB update needed if no session)

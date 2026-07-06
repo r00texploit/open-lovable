@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ConversationState } from '@/types/conversation';
 import { requireUser } from '@/lib/auth/server';
-import { createEmptyConversationState, resolveConversationSession } from '@/lib/session-helpers';
+import { coerceConversationState, createEmptyConversationState, resolveConversationSession } from '@/lib/session-helpers';
 import { updateConversationContext } from '@/lib/session-store';
 
 // Conversation state lives on the caller's GenerationSession row, never in
@@ -9,7 +9,7 @@ import { updateConversationContext } from '@/lib/session-store';
 
 async function loadUserConversation(userId: string, sandboxId?: string | null) {
   const session = await resolveConversationSession(sandboxId, userId);
-  const state = (session?.conversationCtx as ConversationState | null | undefined) ?? null;
+  const state = coerceConversationState(session?.conversationCtx);
   return { session, state };
 }
 

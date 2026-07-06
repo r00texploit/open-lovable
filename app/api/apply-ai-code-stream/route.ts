@@ -3,7 +3,7 @@ import { parseMorphEdits, applyMorphEditToFile } from '@/lib/morph-fast-apply';
 import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
 import { sanitizeLucideImports } from '@/lib/ai/sanitize-lucide-imports';
-import { createEmptyConversationState, resolveConversationSession } from '@/lib/session-helpers';
+import { coerceConversationState, createEmptyConversationState, resolveConversationSession } from '@/lib/session-helpers';
 import { updateConversationContext } from '@/lib/session-store';
 import { getUploadedImageSandboxPath, resolveUploadedImageBytes } from '@/lib/ai/uploaded-image-paths';
 import {
@@ -979,7 +979,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           const conversationSession = await resolveConversationSession(effectiveSandboxId);
           if (conversationSession) {
             const conversationState =
-              (conversationSession.conversationCtx as ConversationState | null) ?? createEmptyConversationState();
+              coerceConversationState(conversationSession.conversationCtx) ?? createEmptyConversationState();
 
             const messages = conversationState.context.messages;
             if (messages.length > 0) {
