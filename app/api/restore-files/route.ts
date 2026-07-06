@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     let written = 0;
     let skipped = 0;
     const errors: string[] = [];
+    const writtenPaths = new Set<string>();
 
     for (const [rawPath, content] of Object.entries(files)) {
       if (typeof content !== 'string' || isBinaryPlaceholder(content)) {
@@ -68,9 +69,53 @@ export async function POST(request: NextRequest) {
       const path = normalizeRestorePath(rawPath);
       try {
         await provider.writeFile(path, content);
+        writtenPaths.add(path);
         written++;
       } catch (err: any) {
         errors.push(`${path}: ${err.message}`);
+      }
+    }
+
+    // Generated sites are .jsx-based, but the fresh sandbox scaffold boots
+    // index.html -> src/main.tsx -> src/App.tsx. index.html is never captured
+    // into fileCache (the file sync only lists js/jsx/ts/tsx/css/json), so
+    // without this fixup the scaffold entry keeps rendering "Sandbox Ready"
+    // while the restored .jsx app sits unreferenced next to it — the same
+    // entry-point switch apply-ai-code-stream performs after generation.
+    const hasJsxApp = writtenPaths.has('src/App.jsx');
+    let hasJsxMain = writtenPaths.has('src/main.jsx');
+
+    if (hasJsxApp || hasJsxMain) {
+      try {
+        await provider.runCommand('rm -f src/App.tsx src/main.tsx');
+
+        if (!hasJsxMain) {
+          const mainJsxContent = `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)`;
+          await provider.writeFile('src/main.jsx', mainJsxContent);
+          hasJsxMain = true;
+        }
+
+        const currentIndexHtml = await provider.readFile('index.html');
+        const updatedIndexHtml = currentIndexHtml.replace(
+          /src\/(main|index)\.(jsx|tsx)/,
+          'src/main.jsx'
+        );
+        if (updatedIndexHtml !== currentIndexHtml) {
+          await provider.writeFile('index.html', updatedIndexHtml);
+          console.log('[restore-files] Updated index.html entry point to src/main.jsx');
+        }
+      } catch (err: any) {
+        console.warn('[restore-files] Entry point fixup failed:', err);
+        errors.push(`entry-point fixup: ${err.message}`);
       }
     }
 
