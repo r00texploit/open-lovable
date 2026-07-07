@@ -355,14 +355,17 @@ export function SiteSettingsPanel() {
                 Open Live URL
                 <ExternalLink className="h-4 w-4" />
               </Link>
-              <Link
-                href={`/site-preview/${selectedSite.slug}`}
-                target="_blank"
-                className="inline-flex items-center gap-2 rounded-lg border border-warm-750/12 px-4 py-2 text-sm text-warm-800 hover:bg-warm-800/5"
-              >
-                Preview Snapshot
-                <Globe className="h-4 w-4" />
-              </Link>
+              {selectedSite.published && (
+                <Link
+                  href={`/site-preview/${selectedSite.slug}`}
+                  target="_blank"
+                  prefetch={false}
+                  className="inline-flex items-center gap-2 rounded-lg border border-warm-750/12 px-4 py-2 text-sm text-warm-800 hover:bg-warm-800/5"
+                >
+                  Preview Snapshot
+                  <Globe className="h-4 w-4" />
+                </Link>
+              )}
             </>
           )}
         </div>

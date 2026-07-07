@@ -4565,13 +4565,16 @@ Focus on the key sections and content, making it clean and modern.`;
                 >
                   Copy URL
                 </button>
-                <Link
-                  href={`/site-preview/${activeSite.slug}`}
-                  target="_blank"
-                  className="rounded-full border border-warm-750/12 px-3 py-1.5 text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800"
-                >
-                  Preview Snapshot
-                </Link>
+                {activeSite.published && (
+                  <Link
+                    href={`/site-preview/${activeSite.slug}`}
+                    target="_blank"
+                    prefetch={false}
+                    className="rounded-full border border-warm-750/12 px-3 py-1.5 text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800"
+                  >
+                    Preview Snapshot
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="text-sm text-warm-500">
