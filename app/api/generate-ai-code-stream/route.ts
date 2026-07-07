@@ -35,6 +35,11 @@ import {
 // Force dynamic route to enable streaming
 export const dynamic = 'force-dynamic';
 
+// Pro plan allows up to 800s. Large multi-file generations (e.g. a full menu
+// page with 10+ components) can take >300s (the default) to stream, which
+// otherwise aborts the fetch with "terminated" and writes no files.
+export const maxDuration = 800;
+
 // Check if we're using Vercel AI Gateway
 const isUsingAIGateway = !!process.env.AI_GATEWAY_API_KEY;
 const aiGatewayBaseURL = 'https://ai-gateway.vercel.sh/v1';
