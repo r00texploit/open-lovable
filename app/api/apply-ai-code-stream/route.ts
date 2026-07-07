@@ -560,7 +560,19 @@ export async function POST(request: NextRequest) {
           }
           return normalized;
         };
-        filteredFiles = filteredFiles.map(file => ({ ...file, path: normalizeFilePath(file.path) }));
+        filteredFiles = filteredFiles.map(file => {
+          let path = normalizeFilePath(file.path);
+          // Rename .jsx → .tsx BEFORE dedupe/twin-cleanup/self-heal so every
+          // later step sees the real on-disk path: twin cleanup deletes the
+          // stale .jsx (which would otherwise shadow .tsx in Vite's extension
+          // resolution) and index.html gets pointed at a file that exists.
+          // Vite then uses esbuild (native TS) instead of react-babel for
+          // these files, eliminating TS-in-JSX parse errors.
+          if (path.endsWith('.jsx')) {
+            path = path.replace(/\.jsx$/, '.tsx');
+          }
+          return { ...file, path };
+        });
 
         // If the model emitted the same module with two extensions in one response
         // (e.g. App.jsx and App.tsx), keep only the last occurrence.
@@ -662,16 +674,8 @@ export async function POST(request: NextRequest) {
               action: 'creating'
             });
 
-            // Paths were normalized before conflict handling
+            // Paths were normalized (and .jsx renamed to .tsx) before conflict handling
             const normalizedPath = file.path;
-
-            // Rename .jsx → .tsx so Vite uses esbuild (native TS) instead of
-            // the react-babel plugin (which can't parse TypeScript syntax).
-            // The sandbox template already uses .tsx; this keeps generated
-            // files consistent and eliminates TS-in-JSX parse errors.
-            if (normalizedPath.endsWith('.jsx')) {
-              normalizedPath = normalizedPath.replace(/\.jsx$/, '.tsx');
-            }
 
             const isUpdate = global.existingFiles.has(normalizedPath);
 
@@ -689,12 +693,6 @@ export async function POST(request: NextRequest) {
 
             // Sanitize lucide-react imports so invalid icon names don't crash Vite
             fileContent = sanitizeLucideImports(fileContent);
-            // After rename, files are .tsx (esbuild handles TS natively), so
-            // sanitizeJsxTypeScriptSyntax is no longer needed. But keep it as a
-            // safety net for any .jsx files that slip through (e.g. from template).
-            if (file.path.endsWith('.jsx') || normalizedPath.endsWith('.jsx')) {
-              fileContent = sanitizeJsxTypeScriptSyntax(fileContent);
-            }
             // Strip extensions from relative imports so extension changes in
             // later generations cannot break existing import statements
             if (splitJsExtension(normalizedPath)) {
