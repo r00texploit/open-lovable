@@ -12,6 +12,10 @@ import {
 } from '@/lib/sandbox/sandbox-state';
 import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
+// Pro plan allows up to 800s. Applying a large multi-file generation can take
+// longer than the 300s default; without this, the apply fetch can abort mid-write.
+export const maxDuration = 800;
+
 declare global {
   var conversationState: ConversationState | null;
   var existingFiles: Set<string>;
