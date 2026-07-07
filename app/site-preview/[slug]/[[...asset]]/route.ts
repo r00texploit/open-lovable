@@ -24,7 +24,7 @@ export async function GET(_: NextRequest, context: { params: Promise<unknown> })
 
   // For HTML files, rewrite asset paths to include the slug prefix
   // This ensures assets load correctly when served from /site-preview/[slug]/
-  if (publishedAsset.contentType?.includes('text/html')) {
+  if (publishedAsset.contentType?.includes('text/html') && content) {
     const html = Buffer.from(content).toString();
     const rewritten = html.replace(
       /(src|href)="\/(assets\/[^"]+)"/g,
@@ -33,7 +33,7 @@ export async function GET(_: NextRequest, context: { params: Promise<unknown> })
     content = Buffer.from(rewritten);
   }
 
-  return new NextResponse(Buffer.from(content), {
+  return new NextResponse(content ? Buffer.from(content) : null, {
     status: 200,
     headers: {
       'Content-Type': publishedAsset.contentType,

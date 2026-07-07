@@ -59,7 +59,7 @@ export async function GET(request: NextRequest, context: { params: Promise<unkno
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  return new NextResponse(Buffer.from(publishedAsset.content), {
+  return new NextResponse(publishedAsset.content ? Buffer.from(publishedAsset.content) : null, {
     status: 200,
     headers: {
       'Content-Type': publishedAsset.contentType,

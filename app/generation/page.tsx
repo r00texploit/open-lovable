@@ -31,6 +31,7 @@ import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
 import { extractSiteNameFromPrompt, slugifySiteName } from '@/lib/tenancy/site-naming';
 import { UsageBar } from '@/components/subscription/usage-bar';
+import { getTierDisplayName, getTierColor } from '@/lib/stripe/subscription-display';
 
 type UploadedImagePayload = {
   id?: string;
@@ -4559,6 +4560,9 @@ Focus on the key sections and content, making it clean and modern.`;
         <div className="flex items-center gap-3">
           {usage && (
             <div className="hidden md:flex items-center gap-3">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${getTierColor(usage.tier as any).bg} ${getTierColor(usage.tier as any).text} ${getTierColor(usage.tier as any).border} border`}>
+                {getTierDisplayName(usage.tier as any)} Plan
+              </span>
               <UsageBar
                 used={usage.used}
                 limit={usage.limit}
