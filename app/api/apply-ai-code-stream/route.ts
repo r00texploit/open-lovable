@@ -49,6 +49,34 @@ function sanitizeJsxTypeScriptSyntax(content: string): string {
     .replace(/\s+as\s+const\b/g, '');
 }
 
+const JS_FAMILY_EXTENSIONS = ['js', 'jsx', 'ts', 'tsx'] as const;
+
+function splitJsExtension(path: string): RegExpMatchArray | null {
+  return path.match(/^(.+)\.(jsx|tsx|js|ts)$/);
+}
+
+// Vite resolves extensionless relative imports against .js/.jsx/.ts/.tsx
+// automatically, so stripping the extension keeps imports working when a
+// module's extension changes between generations (e.g. the model emitting
+// App.tsx after a previous run created App.jsx).
+function stripRelativeImportExtensions(content: string): string {
+  return content.replace(
+    /((?:from|import)\s*\(?\s*['"])(\.\.?\/[^'"]+)\.(?:jsx|tsx|js|ts)(['"])/g,
+    '$1$2$3'
+  );
+}
+
+const ENTRY_BOILERPLATE = `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)`;
+
 function parseAIResponse(response: string): ParsedResponse {
   const sections = {
     files: [] as Array<{ path: string; content: string }>,
@@ -505,152 +533,63 @@ export async function POST(request: NextRequest) {
           return !configFiles.includes(fileName);
         });
 
-        // Handle file extension conflicts: delete .jsx files when .tsx files are being written
-        const tsxFiles = filteredFiles.filter(f => f.path.endsWith('.tsx'));
-        const jsxFiles = filteredFiles.filter(f => f.path.endsWith('.jsx'));
-        const jsxFilesToDelete: string[] = [];
-        const tsxFilesToDelete: string[] = [];
-        let needsIndexHtmlUpdate = false;
-        let newEntryFile: string | null = null;
-
-        for (const tsxFile of tsxFiles) {
-          const jsxPath = tsxFile.path.replace(/\.tsx$/, '.jsx');
-          const normalizedJsxPath = jsxPath.startsWith('src/') ? jsxPath : 'src/' + jsxPath;
-          const normalizedTsxPath = tsxFile.path.startsWith('src/') ? tsxFile.path : 'src/' + tsxFile.path;
-
-          // Check if the .jsx version exists in tracked files
-          if (global.existingFiles.has(normalizedJsxPath) || global.existingFiles.has(jsxPath)) {
-            jsxFilesToDelete.push(normalizedJsxPath);
-            console.log(`[apply-ai-code-stream] Will delete conflicting .jsx file: ${normalizedJsxPath} (replacing with ${normalizedTsxPath})`);
+        // Normalize paths up front so extension-conflict handling and the write
+        // loop agree on where every file lives.
+        const normalizeFilePath = (p: string): string => {
+          let normalized = p.startsWith('/') ? p.slice(1) : p;
+          const fileName = normalized.split('/').pop() || '';
+          if (!normalized.startsWith('src/') &&
+            !normalized.startsWith('public/') &&
+            normalized !== 'index.html' &&
+            !configFiles.includes(fileName)) {
+            normalized = 'src/' + normalized;
           }
+          return normalized;
+        };
+        filteredFiles = filteredFiles.map(file => ({ ...file, path: normalizeFilePath(file.path) }));
 
-          // Check if this is the main entry file (App.tsx or main.tsx)
-          const fileName = tsxFile.path.split('/').pop() || '';
-          if (fileName === 'main.tsx' || fileName === 'App.tsx') {
-            needsIndexHtmlUpdate = true;
-            newEntryFile = fileName === 'main.tsx' ? '/src/main.tsx' : null;
+        // If the model emitted the same module with two extensions in one response
+        // (e.g. App.jsx and App.tsx), keep only the last occurrence.
+        const lastIndexByBasePath = new Map<string, number>();
+        filteredFiles.forEach((file, index) => {
+          const parts = splitJsExtension(file.path);
+          if (parts) lastIndexByBasePath.set(parts[1], index);
+        });
+        filteredFiles = filteredFiles.filter((file, index) => {
+          const parts = splitJsExtension(file.path);
+          if (parts && lastIndexByBasePath.get(parts[1]) !== index) {
+            console.log(`[apply-ai-code-stream] Dropping duplicate module with different extension: ${file.path}`);
+            return false;
           }
-        }
+          return true;
+        });
 
-        // ALSO handle reverse: when .jsx files are written, delete conflicting .tsx template files
-        for (const jsxFile of jsxFiles) {
-          const tsxPath = jsxFile.path.replace(/\.jsx$/, '.tsx');
-          const normalizedTsxPath = tsxPath.startsWith('src/') ? tsxPath : 'src/' + tsxPath;
-          const normalizedJsxPath = jsxFile.path.startsWith('src/') ? jsxFile.path : 'src/' + jsxFile.path;
-
-          // Check if the .tsx version exists in tracked files OR in global.existingFiles
-          const tsxExists = global.existingFiles.has(normalizedTsxPath) ||
-                           global.existingFiles.has(tsxPath) ||
-                           jsxFilesToDelete.some(f => f.endsWith('.tsx'));
-
-          // Also always delete main.tsx and App.tsx when writing .jsx equivalents
-          // because the sandbox template uses .tsx files
-          const fileName = jsxFile.path.split('/').pop() || '';
-          const isEntryFile = fileName === 'main.jsx' || fileName === 'App.jsx';
-
-          if (tsxExists || isEntryFile) {
-            tsxFilesToDelete.push(normalizedTsxPath);
-            console.log(`[apply-ai-code-stream] Will delete conflicting .tsx template file: ${normalizedTsxPath} (replacing with ${normalizedJsxPath})`);
-          }
-
-          // Check if this is the main entry file (App.jsx or main.jsx)
-          if (isEntryFile) {
-            needsIndexHtmlUpdate = true;
-            // Only set newEntryFile for main.jsx (not App.jsx)
-            if (fileName === 'main.jsx') {
-              newEntryFile = 'src/main.jsx';
-            }
+        // Delete stale sibling extensions on disk before writing (e.g. remove
+        // src/App.jsx when writing src/App.tsx). Extensionless imports resolve
+        // .js before .jsx before .tsx, so a stale twin would otherwise shadow
+        // the newly written file. rm -f is idempotent, so this works even when
+        // server-side file tracking was lost between requests.
+        const staleTwins: string[] = [];
+        for (const file of filteredFiles) {
+          const parts = splitJsExtension(file.path);
+          if (!parts) continue;
+          for (const ext of JS_FAMILY_EXTENSIONS) {
+            const twin = `${parts[1]}.${ext}`;
+            if (twin !== file.path) staleTwins.push(twin);
           }
         }
-
-        // Delete conflicting .jsx files before writing new files
-        if (jsxFilesToDelete.length > 0) {
-          await sendProgress({
-            type: 'info',
-            message: `Cleaning up ${jsxFilesToDelete.length} conflicting JavaScript files...`
-          });
-
-          for (const jsxFile of jsxFilesToDelete) {
-            try {
-              await providerInstance.runCommand(`rm -f ${jsxFile}`);
-              global.existingFiles.delete(jsxFile);
-              console.log(`[apply-ai-code-stream] Deleted conflicting file: ${jsxFile}`);
-            } catch (err) {
-              console.warn(`[apply-ai-code-stream] Failed to delete ${jsxFile}:`, err);
-            }
-          }
-        }
-
-        // Delete conflicting .tsx template files when writing .jsx
-        if (tsxFilesToDelete.length > 0) {
-          await sendProgress({
-            type: 'info',
-            message: `Cleaning up ${tsxFilesToDelete.length} conflicting TypeScript template files...`
-          });
-
-          for (const tsxFile of tsxFilesToDelete) {
-            try {
-              await providerInstance.runCommand(`rm -f ${tsxFile}`);
-              global.existingFiles.delete(tsxFile);
-              console.log(`[apply-ai-code-stream] Deleted conflicting template file: ${tsxFile}`);
-            } catch (err) {
-              console.warn(`[apply-ai-code-stream] Failed to delete ${tsxFile}:`, err);
-            }
-          }
-        }
-
-        // Create main.jsx entry point if generated code provides App.jsx without an entry.
-        // The sandbox template starts with main.tsx -> App.tsx, so replacing only App.jsx
-        // requires a matching JSX entry even if main.tsx itself was not deleted.
-        const hasMainJsx = filteredFiles.some(f => f.path === 'src/main.jsx' || f.path === 'main.jsx');
-        const hasAppJsx = filteredFiles.some(f => f.path === 'src/App.jsx' || f.path === 'App.jsx');
-        const hasMainTsx = tsxFilesToDelete.some(f => f.includes('main.tsx'));
-
-        if ((hasMainTsx || hasAppJsx) && !hasMainJsx) {
-          console.log('[apply-ai-code-stream] Creating main.jsx entry point...');
-          const mainJsxContent = `import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-import './index.css'
-
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)`;
+        if (staleTwins.length > 0) {
           try {
-            await providerInstance.writeFile('src/main.jsx', mainJsxContent);
-            console.log('[apply-ai-code-stream] Created src/main.jsx entry point');
-            await sendProgress({
-              type: 'info',
-              message: 'Created main.jsx entry point'
-            });
-            // Add main.jsx to filtered files so it gets tracked
-            filteredFiles.push({ path: 'src/main.jsx', content: mainJsxContent });
-          } catch (err) {
-            console.warn('[apply-ai-code-stream] Failed to create main.jsx:', err);
-          }
-        }
-
-        // Update index.html to point to correct entry file if needed
-        if (needsIndexHtmlUpdate || tsxFilesToDelete.length > 0) {
-          try {
-            const currentIndexHtml = await providerInstance.readFile('index.html');
-            const updatedIndexHtml = currentIndexHtml.replace(
-              /src\/(main|index)\.(jsx|tsx)/,
-              'src/main.jsx'
-            );
-
-            if (updatedIndexHtml !== currentIndexHtml) {
-              await providerInstance.writeFile('index.html', updatedIndexHtml);
-              console.log(`[apply-ai-code-stream] Updated index.html to point to src/main.jsx`);
-              await sendProgress({
-                type: 'info',
-                message: `Updated HTML entry point to src/main.jsx`
-              });
+            await providerInstance.runCommand(`rm -f ${staleTwins.map(p => `"${p}"`).join(' ')}`);
+            for (const twin of staleTwins) {
+              global.existingFiles?.delete(twin);
+              if (sandboxState?.fileCache?.files) {
+                delete sandboxState.fileCache.files[twin];
+              }
             }
+            console.log(`[apply-ai-code-stream] Cleaned up potential stale extension twins for ${filteredFiles.length} files`);
           } catch (err) {
-            console.warn(`[apply-ai-code-stream] Failed to update index.html:`, err);
+            console.warn('[apply-ai-code-stream] Failed to clean up stale twin files:', err);
           }
         }
 
@@ -695,18 +634,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
         // Avoid overwriting Morph-updated files in the file write loop
         if (morphUpdatedPaths.size > 0) {
-          filteredFiles = filteredFiles.filter(file => {
-            if (!file?.path) return true;
-            let normalizedPath = file.path.startsWith('/') ? file.path.slice(1) : file.path;
-            const fileName = normalizedPath.split('/').pop() || '';
-            if (!normalizedPath.startsWith('src/') &&
-                !normalizedPath.startsWith('public/') &&
-                normalizedPath !== 'index.html' &&
-                !configFiles.includes(fileName)) {
-              normalizedPath = 'src/' + normalizedPath;
-            }
-            return !morphUpdatedPaths.has(normalizedPath);
-          });
+          filteredFiles = filteredFiles.filter(file => !file?.path || !morphUpdatedPaths.has(file.path));
         }
         
         for (const [index, file] of filteredFiles.entries()) {
@@ -720,17 +648,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               action: 'creating'
             });
 
-            // Normalize the file path
-            let normalizedPath = file.path;
-            if (normalizedPath.startsWith('/')) {
-              normalizedPath = normalizedPath.substring(1);
-            }
-            if (!normalizedPath.startsWith('src/') &&
-              !normalizedPath.startsWith('public/') &&
-              normalizedPath !== 'index.html' &&
-              !configFiles.includes(normalizedPath.split('/').pop() || '')) {
-              normalizedPath = 'src/' + normalizedPath;
-            }
+            // Paths were normalized before conflict handling
+            const normalizedPath = file.path;
 
             const isUpdate = global.existingFiles.has(normalizedPath);
 
@@ -741,6 +660,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             fileContent = sanitizeLucideImports(fileContent);
             if (normalizedPath.endsWith('.jsx')) {
               fileContent = sanitizeJsxTypeScriptSyntax(fileContent);
+            }
+            // Strip extensions from relative imports so extension changes in
+            // later generations cannot break existing import statements
+            if (splitJsExtension(normalizedPath)) {
+              fileContent = stripRelativeImportExtensions(fileContent);
             }
 
             // Fix common Tailwind CSS errors in CSS files
@@ -803,6 +727,81 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               error: (error as Error).message
             });
           }
+        }
+
+        // Step 2.4: Self-heal the entry chain. Files written before this batch
+        // may still import stale extensions (e.g. a main.jsx importing './App.jsx'
+        // after this batch replaced it with App.tsx), and index.html must point
+        // at an entry file that actually exists on disk.
+        try {
+          const writtenPaths = new Set(filteredFiles.map(f => f.path));
+
+          // Best-effort: normalize relative imports in previously written files
+          // so deleting a stale twin cannot break their imports.
+          if (sandboxState?.fileCache?.files) {
+            for (const [cachedPath, cached] of Object.entries(sandboxState.fileCache.files)) {
+              if (writtenPaths.has(cachedPath) || !splitJsExtension(cachedPath)) continue;
+              if (typeof cached?.content !== 'string') continue;
+              const normalizedContent = stripRelativeImportExtensions(cached.content);
+              if (normalizedContent !== cached.content) {
+                await providerInstance.writeFile(cachedPath, normalizedContent);
+                sandboxState.fileCache.files[cachedPath] = {
+                  content: normalizedContent,
+                  lastModified: Date.now()
+                };
+                console.log(`[apply-ai-code-stream] Normalized stale imports in ${cachedPath}`);
+              }
+            }
+          }
+
+          const indexHtml: string = await providerInstance.readFile('index.html');
+          const entryMatch = indexHtml.match(/src="\/?(src\/(?:main|index)\.(?:jsx|tsx|js|ts))"/);
+          let entryPath = entryMatch ? entryMatch[1] : 'src/main.tsx';
+
+          // If this batch wrote its own entry file, point index.html at it
+          const writtenEntry = filteredFiles
+            .map(f => f.path)
+            .find(p => /^src\/main\.(?:jsx|tsx|js|ts)$/.test(p));
+          if (writtenEntry && entryMatch && writtenEntry !== entryPath) {
+            const updatedIndexHtml = indexHtml.replace(entryMatch[0], `src="/${writtenEntry}"`);
+            await providerInstance.writeFile('index.html', updatedIndexHtml);
+            entryPath = writtenEntry;
+            console.log(`[apply-ai-code-stream] Updated index.html entry to ${writtenEntry}`);
+            await sendProgress({
+              type: 'info',
+              message: `Updated HTML entry point to ${writtenEntry}`
+            });
+          }
+
+          const entryCheck = await providerInstance.runCommand(`[ -f "${entryPath}" ] && echo exists || echo missing`);
+          if (!(entryCheck.stdout || '').includes('exists')) {
+            // Entry file referenced by index.html is gone - restore boilerplate
+            // that imports './App' extensionless, resolving App.jsx or App.tsx.
+            await providerInstance.writeFile(entryPath, ENTRY_BOILERPLATE);
+            if (sandboxState?.fileCache) {
+              sandboxState.fileCache.files[entryPath] = {
+                content: ENTRY_BOILERPLATE,
+                lastModified: Date.now()
+              };
+            }
+            console.log(`[apply-ai-code-stream] Restored missing entry file ${entryPath}`);
+            await sendProgress({
+              type: 'info',
+              message: `Restored missing entry file ${entryPath}`
+            });
+          } else if (!writtenPaths.has(entryPath)) {
+            // Entry exists but was not part of this batch (and may be missing
+            // from the server-side cache): strip stale import extensions so an
+            // App.jsx <-> App.tsx swap in this batch cannot break it.
+            const entryContent: string = await providerInstance.readFile(entryPath);
+            const normalizedEntry = stripRelativeImportExtensions(entryContent);
+            if (normalizedEntry !== entryContent) {
+              await providerInstance.writeFile(entryPath, normalizedEntry);
+              console.log(`[apply-ai-code-stream] Normalized stale imports in entry file ${entryPath}`);
+            }
+          }
+        } catch (err) {
+          console.warn('[apply-ai-code-stream] Entry chain self-heal failed:', err);
         }
 
         // Step 2.5: Save uploaded images to public/images directory

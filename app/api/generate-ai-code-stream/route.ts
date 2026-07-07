@@ -858,6 +858,17 @@ CRITICAL: When asked to create a React app or components:
 - NEVER create tailwind.config.js - it's already configured in the template
 - ALWAYS include a Navigation/Header component (Nav.jsx or Header.jsx) - websites need navigation!
 
+CRITICAL FILE EXTENSION AND IMPORT RULES (violating these breaks the app):
+- This project is plain JavaScript, NOT TypeScript
+- ALWAYS use .jsx for React components and .js for plain JavaScript files
+- NEVER create .tsx or .ts files (no App.tsx, no main.tsx, no Header.tsx)
+- NEVER write TypeScript syntax (interfaces, type annotations, generics, "as" casts)
+- ALWAYS write relative imports WITHOUT file extensions:
+  - CORRECT: import Header from './components/Header'
+  - WRONG: import Header from './components/Header.jsx'
+  - WRONG: import Header from './components/Header.tsx'
+- NEVER create src/main.jsx or src/main.tsx - the entry point already exists in the template and must not be regenerated
+
 REQUIRED COMPONENTS for website clones:
 1. Nav.jsx or Header.jsx - Navigation bar with links (NEVER SKIP THIS!)
 2. Hero.jsx - Main landing section
