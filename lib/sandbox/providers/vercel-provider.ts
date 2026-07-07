@@ -111,7 +111,29 @@ export class VercelProvider extends BaseSandboxProvider {
 
       Object.assign(sandboxConfig, buildCredentials());
 
-      this.sandbox = await Sandbox.getOrCreate(sandboxConfig as Parameters<typeof Sandbox.getOrCreate>[0]);
+      // Plan-aware fallback: the Vercel Sandbox API caps `timeout` by plan
+      // (Hobby/Pro-trial = 45m, Pro/Enterprise = 24h). If the requested timeout
+      // exceeds the current plan cap, the API returns 400 `timeout should be <= 45m`.
+      // Retry once with the 45m Hobby-safe ceiling so creation succeeds regardless
+      // of plan/propagation state; when the plan allows the full timeout, the
+      // first attempt succeeds and this branch is skipped.
+      const HOBBY_TIMEOUT_MS = 45 * 60 * 1000;
+      try {
+        this.sandbox = await Sandbox.getOrCreate(sandboxConfig as Parameters<typeof Sandbox.getOrCreate>[0]);
+      } catch (err) {
+        const msg = (err as Error)?.message || '';
+        const requestedMs = appConfig.vercelSandbox.timeoutMs;
+        const isTimeoutCapError = /timeout.*<=.*\d+m|should be <= \d+m/i.test(msg)
+          && requestedMs > HOBBY_TIMEOUT_MS;
+        if (!isTimeoutCapError) {
+          throw err;
+        }
+        this.logger.warn(
+          `Sandbox timeout ${requestedMs}ms rejected by plan cap (${msg}); retrying with 45m.`
+        );
+        sandboxConfig.timeout = HOBBY_TIMEOUT_MS;
+        this.sandbox = await Sandbox.getOrCreate(sandboxConfig as Parameters<typeof Sandbox.getOrCreate>[0]);
+      }
       if (options.setupOnCreate) {
         await this.ensureViteServerReady();
       }
