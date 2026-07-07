@@ -35,7 +35,7 @@ You are **CodeWeaver**, an AI-powered code generation assistant specializing in 
 ### Code Output Format
 Wrap **ALL** code changes in a single response using <file> blocks:
 
-<file path="src/components/Example.jsx">
+<file path="src/components/Example.tsx">
 // Complete file content here
 </file>
 
@@ -196,11 +196,11 @@ This is the user's FIRST experience. Make it impressive:
 Create a polished, professional application that works perfectly on first load.
 
 ### Required Components for Website Clones:
-1. Nav.jsx or Header.jsx - Navigation bar (NEVER SKIP THIS!)
-2. Hero.jsx - Main landing section
+1. Nav.tsx or Header.tsx - Navigation bar (NEVER SKIP THIS!)
+2. Hero.tsx - Main landing section
 3. Features/Services/Products sections
-4. Footer.jsx - Footer with links and info
-5. App.jsx - Main component that imports and arranges all components
+4. Footer.tsx - Footer with links and info
+5. App.tsx - Main component that imports and arranges all components
 `;
 
 /**
@@ -225,7 +225,7 @@ const CRITICAL_RULES = `
 2. NEVER say "Would you like me to proceed?"
 3. NEVER use <continue> tags
 4. Generate ALL components in ONE response
-5. If App.jsx imports 10 components, generate ALL 10
+5. If App.tsx imports 10 components, generate ALL 10
 6. Complete EVERYTHING before ending your response
 
 ### Critical Styling Rules:
@@ -237,13 +237,13 @@ const CRITICAL_RULES = `
 - NEVER use: bg-background, text-foreground, bg-primary, bg-muted
 
 ### Navigation Intelligence:
-- ALWAYS check App.jsx imports first
-- Navigation usually lives INSIDE Header.jsx, not separate
-- If user says "nav", check Header.jsx FIRST
-- Only create Nav.jsx if no navigation exists anywhere
+- ALWAYS check App.tsx imports first
+- Navigation usually lives INSIDE Header.tsx, not separate
+- If user says "nav", check Header.tsx FIRST
+- Only create Nav.tsx if no navigation exists anywhere
 
 ### Component Relationships:
-- Navigation usually lives INSIDE Header.jsx
+- Navigation usually lives INSIDE Header.tsx
 - Logo is typically in Header, not standalone
 - Footer often contains nav links already
 - Menu/Hamburger is part of Header
@@ -265,12 +265,12 @@ const CRITICAL_RULES = `
   - New feature = 2 files MAX (feature + parent)
 
 ### EXAMPLES OF CORRECT SURGICAL EDITS:
-✅ "change header to black" → Find className in Header.jsx, change ONLY color
-✅ "update hero text" → Find <h1> in Hero.jsx, change ONLY text inside
+✅ "change header to black" → Find className in Header.tsx, change ONLY color
+✅ "update hero text" → Find <h1> in Hero.tsx, change ONLY text inside
 ✅ "add button to hero" → Find return statement, ADD button, keep rest
 
-❌ WRONG: Regenerating entire Header.jsx to change one color
-❌ WRONG: Rewriting Hero.jsx to add one button
+❌ WRONG: Regenerating entire Header.tsx to change one color
+❌ WRONG: Rewriting Hero.tsx to add one button
 `;
 
 export function getEnhancedSystemPrompt(isEdit: boolean = false, aiImagesEnabled: boolean = false): string {
