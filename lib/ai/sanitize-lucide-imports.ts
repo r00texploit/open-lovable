@@ -150,13 +150,161 @@ function rewriteLucideImportLine(line: string): string {
 }
 
 /**
- * Sanitize every `lucide-react` import line in a source string.
+ * Collect all identifiers that are defined or imported in the source.
+ * This includes named/default imports, const/let/var, function, and class
+ * declarations. Used to determine which PascalCase JSX usages are undefined.
+ */
+function collectDefinedIdentifiers(source: string): Set<string> {
+  const defined = new Set<string>();
+
+  // Named imports: import { A, B as C, D } from '...'
+  const namedImportRegex =
+    /import\s+\{([^}]+)\}\s+from\s+['"][^'"]+['"]/g;
+  let m: RegExpExecArray | null;
+  while ((m = namedImportRegex.exec(source)) !== null) {
+    m[1].split(',').forEach((spec) => {
+      const trimmed = spec.trim();
+      const asMatch = trimmed.match(/^(\w+)\s+as\s+(\w+)$/);
+      if (asMatch) defined.add(asMatch[2]);
+      else if (/^\w+$/.test(trimmed)) defined.add(trimmed);
+    });
+  }
+
+  // Default / namespace imports: import X from '...' / import * as X from '...'
+  const defaultImportRegex =
+    /import\s+(\w+|\*\s+as\s+\w+)\s+from\s+['"][^'"]+['"]/g;
+  while ((m = defaultImportRegex.exec(source)) !== null) {
+    const nsMatch = m[1].match(/\*\s+as\s+(\w+)/);
+    if (nsMatch) defined.add(nsMatch[1]);
+    else if (/^\w+$/.test(m[1])) defined.add(m[1]);
+  }
+
+  // Declarations: const/let/var/export const Name = ...
+  const declRegex = /\b(?:export\s+)?(?:const|let|var)\s+(\w+)\s*[=:]/g;
+  while ((m = declRegex.exec(source)) !== null) defined.add(m[1]);
+
+  // Function declarations: function Name(
+  const funcRegex = /\b(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(/g;
+  while ((m = funcRegex.exec(source)) !== null) defined.add(m[1]);
+
+  // Class declarations: class Name
+  const classRegex = /\b(?:export\s+)?class\s+(\w+)/g;
+  while ((m = classRegex.exec(source)) !== null) defined.add(m[1]);
+
+  // Type declarations (TS): interface Name / type Name = ...
+  const typeRegex = /\b(?:export\s+)?(?:interface|type)\s+(\w+)/g;
+  while ((m = typeRegex.exec(source)) !== null) defined.add(m[1]);
+
+  return defined;
+}
+
+// React/HTML built-in PascalCase identifiers and common React component
+// names that should NOT be treated as missing lucide icons.
+const NON_ICON_PASCAL_IDENTIFIERS = new Set([
+  'Fragment', 'Suspense', 'StrictMode', 'Profiler', 'Component',
+  'PureComponent', 'React', 'ErrorBoundary',
+  // Common app/page/component names — not icons
+  'App', 'Root', 'Main', 'Index', 'Home', 'About', 'Contact', 'Blog',
+  'Shop', 'Store', 'Cart', 'Checkout', 'Login', 'Signup', 'Register',
+  'Dashboard', 'Profile', 'Settings', 'Search', 'Hero', 'Nav', 'Navbar',
+  'Sidebar', 'Layout', 'Wrapper', 'Container', 'Provider', 'Context',
+  'Router', 'Outlet', 'Link', 'NavLink', 'Route', 'Redirect',
+]);
+
+// Suffixes that strongly indicate a React component rather than a lucide
+// icon. If a PascalCase identifier ends with one of these, skip it.
+const COMPONENT_SUFFIXES = [
+  'Card', 'Section', 'Header', 'Footer', 'Navbar', 'Sidebar', 'Banner',
+  'Modal', 'Dialog', 'Drawer', 'Popover', 'Tooltip', 'Accordion',
+  'Carousel', 'Slider', 'Gallery', 'Grid', 'Table', 'List', 'Item',
+  'Form', 'Input', 'Button', 'Select', 'Checkbox', 'Radio', 'Toggle',
+  'Tabs', 'Tab', 'Menu', 'Dropdown', 'Breadcrumb', 'Pagination',
+  'Widget', 'Panel', 'Bar', 'Loader', 'Spinner', 'Skeleton', 'Badge',
+  'Avatar', 'Chip', 'Tag', 'Alert', 'Toast', 'Notification',
+  'Page', 'View', 'Screen', 'Route', 'Layout', 'Wrapper', 'Container',
+  'Provider', 'Context', 'Hook', 'Controller', 'Manager', 'Handler',
+  'Product', 'Category', 'CartItem', 'OrderItem', 'MenuItem',
+  'Component', 'Element', 'Block', 'Section', 'Wrapper',
+];
+
+/**
+ * Heuristic: does this PascalCase identifier look like a lucide icon name
+ * rather than a custom React component? Lucide icons are typically short
+ * common nouns/objects (Star, Heart, Coffee, CupSoda, ShoppingCart) and
+ * don't have component-like suffixes (Card, Section, Header, etc.).
+ *
+ * Valid lucide icon names always pass (even if they match a suffix like
+ * "Menu" or "Tag"), because they are definitely icons.
+ */
+function looksLikeLucideIcon(name: string): boolean {
+  // Valid lucide icons are always icons, even if the name matches a
+  // component suffix (e.g. Menu, Tag, Bar, Grid).
+  if (VALID_LUCIDE_ICONS.has(name)) return true;
+  // React builtins and common component names are never icons.
+  if (NON_ICON_PASCAL_IDENTIFIERS.has(name)) return false;
+  // For unknown names, check component suffixes — if the name ends with
+  // one, it's likely a custom component, not an icon.
+  for (const suffix of COMPONENT_SUFFIXES) {
+    if (name.endsWith(suffix) && name.length >= suffix.length) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Find PascalCase JSX component usages (`<Foo`, `</Foo>`) that are not
+ * defined or imported anywhere in the file AND look like lucide icon names
+ * (not custom components). These are almost certainly lucide-react icons
+ * the AI forgot to import.
+ */
+function findUndefinedJsxIdentifiers(
+  source: string,
+  defined: Set<string>
+): string[] {
+  const jsxRegex = /<\/?([A-Z][a-zA-Z0-9]*)/g;
+  const undefinedNames = new Set<string>();
+  let m: RegExpExecArray | null;
+  while ((m = jsxRegex.exec(source)) !== null) {
+    const name = m[1];
+    if (!defined.has(name) && looksLikeLucideIcon(name)) {
+      undefinedNames.add(name);
+    }
+  }
+  return Array.from(undefinedNames);
+}
+
+/**
+ * Sanitize every `lucide-react` import line in a source string, AND add
+ * fallback imports for any PascalCase JSX usages that are not defined or
+ * imported anywhere in the file (e.g. the AI used `<CupSoda />` without
+ * importing it).
  */
 export function sanitizeLucideImports(source: string): string {
-  return source.replace(
+  // 1. Fix existing lucide-react import lines (dedupe, validate, alias).
+  let result = source.replace(
     /import\s+\{[^}]+\}\s+from\s+['"]lucide-react['"]\s*;?/g,
     rewriteLucideImportLine
   );
+
+  // 2. Detect PascalCase JSX usages that are not defined/imported anywhere.
+  //    The AI frequently uses lucide icons in JSX without importing them,
+  //    causing `ReferenceError: CupSoda is not defined` at runtime.
+  const defined = collectDefinedIdentifiers(result);
+  const undefinedIcons = findUndefinedJsxIdentifiers(result, defined);
+
+  if (undefinedIcons.length === 0) return result;
+
+  // 3. Add a fallback import using a unique local alias to avoid conflicts
+  //    with any existing `Circle` import. Each undefined icon gets a `const`
+  //    alias so JSX usages resolve.
+  const fallbackAlias = '__lucideIconFallback';
+  const aliasDecls = undefinedIcons
+    .map((name) => `const ${name} = ${fallbackAlias};`)
+    .join(' ');
+  const fallbackBlock = `import { Circle as ${fallbackAlias} } from 'lucide-react';\n${aliasDecls}\n`;
+
+  return fallbackBlock + result;
 }
 
 /**
