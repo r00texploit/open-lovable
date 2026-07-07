@@ -24,12 +24,13 @@ import {
   BsFolder2Open,
   SiJavascript,
   SiReact,
-  SiCss3,
+  SiCss,
   SiJson
 } from '@/lib/icons';
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
 import { extractSiteNameFromPrompt, slugifySiteName } from '@/lib/tenancy/site-naming';
+import { UsageBar } from '@/components/subscription/usage-bar';
 
 type UploadedImagePayload = {
   id?: string;
@@ -293,7 +294,8 @@ function AISandboxPage() {
   const [siteActionLoading, setSiteActionLoading] = useState<'create' | 'publish' | 'unpublish' | null>(null);
   const [siteStatusMessage, setSiteStatusMessage] = useState<string | null>(null);
   const [showNewSiteForm, setShowNewSiteForm] = useState(false);
-  
+  const [usage, setUsage] = useState<{ used: number; limit: number; tier: string } | null>(null);
+
   const [conversationContext, setConversationContext] = useState<{
     scrapedWebsites: Array<{ url: string; content: any; timestamp: Date }>;
     generatedComponents: Array<{ name: string; path: string; content: string }>;
@@ -762,6 +764,24 @@ function AISandboxPage() {
     }
 
     fetchSites();
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const fetchUsage = async () => {
+      try {
+        const res = await fetch('/api/usage');
+        if (res.ok) {
+          const data = await res.json();
+          setUsage(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch usage:', error);
+      }
+    };
+
+    fetchUsage();
   }, [session?.user?.id]);
 
   useEffect(() => {
@@ -2443,34 +2463,43 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             
             {/* Loading overlay - only show when actively processing initial generation */}
             {shouldShowLoadingOverlay && (
-              <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-sm">
-                {/* Loading animation with skeleton */}
-                <div className="text-center max-w-md">
-                  {/* Animated skeleton lines */}
-                  <div className="mb-6 space-y-3">
-                    <div className="h-2 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded animate-pulse" 
-                         style={{ animationDuration: '1.5s', animationDelay: '0s' }} />
-                    <div className="h-2 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded animate-pulse w-4/5 mx-auto" 
-                         style={{ animationDuration: '1.5s', animationDelay: '0.2s' }} />
-                    <div className="h-2 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded animate-pulse w-3/5 mx-auto" 
-                         style={{ animationDuration: '1.5s', animationDelay: '0.4s' }} />
+              <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-sm z-10">
+                <div className="text-center max-w-md px-6">
+                  {/* Circular spinner */}
+                  <div className="mb-6 flex items-center justify-center">
+                    <div className="relative w-16 h-16">
+                      <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+                      <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-brand-orange animate-spin"></div>
+                    </div>
                   </div>
-                  
+
                   {/* Status text */}
                   <p className="text-white text-lg font-medium">
                     {isCapturingScreenshot ? 'Analyzing website...' :
                      isPreparingDesign ? 'Preparing design...' :
                      generationProgress.isGenerating ? 'Generating code...' :
+                     isStartingNewGeneration ? 'Creating sandbox...' :
                      'Loading...'}
                   </p>
-                  
+
                   {/* Subtle progress hint */}
                   <p className="text-white/60 text-sm mt-2">
                     {isCapturingScreenshot ? 'Taking a screenshot of the site' :
                      isPreparingDesign ? 'Understanding the layout and structure' :
                      generationProgress.isGenerating ? 'Writing React components' :
+                     isStartingNewGeneration ? 'Warming up the sandbox environment' :
                      'Please wait...'}
                   </p>
+
+                  {/* Animated skeleton lines as ambient feedback */}
+                  <div className="mt-6 space-y-2">
+                    <div className="h-1.5 bg-gradient-to-r from-transparent via-white/15 to-transparent rounded animate-pulse"
+                         style={{ animationDuration: '1.5s', animationDelay: '0s' }} />
+                    <div className="h-1.5 bg-gradient-to-r from-transparent via-white/15 to-transparent rounded animate-pulse w-4/5 mx-auto"
+                         style={{ animationDuration: '1.5s', animationDelay: '0.2s' }} />
+                    <div className="h-1.5 bg-gradient-to-r from-transparent via-white/15 to-transparent rounded animate-pulse w-3/5 mx-auto"
+                         style={{ animationDuration: '1.5s', animationDelay: '0.4s' }} />
+                  </div>
                 </div>
               </div>
             )}
@@ -2718,7 +2747,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         await ensureSiteForGeneration({ prompt: message });
       }
       sandboxCreating = true;
-      addChatMessage('Creating sandbox while I plan your app...', 'system');
       console.log('[startGeneration] Starting sandbox creation...');
       sandboxPromise = createSandbox(true).then((data) => {
         console.log('[startGeneration] Sandbox created:', data?.sandboxId);
@@ -3128,7 +3156,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         console.log('[startGeneration] Initial sandboxData:', { sandboxData: !!sandboxData, sandboxPromise: !!sandboxPromise });
 
         if (sandboxPromise) {
-          addChatMessage('Waiting for sandbox to be ready...', 'system');
           try {
             console.log('[startGeneration] Awaiting sandboxPromise...');
             const newSandboxData = await sandboxPromise;
@@ -3156,8 +3183,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 console.error('[startGeneration] sandboxData did not become available after 10s');
               }
             }
-            // Remove the waiting message
-            setChatMessages(prev => prev.filter(msg => msg.content !== 'Waiting for sandbox to be ready...'));
           } catch (error) {
             console.error('[startGeneration] Sandbox creation failed:', error);
             addChatMessage('Sandbox creation failed. Cannot apply code.', 'system');
@@ -3346,7 +3371,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     } else if (ext === 'tsx' || ext === 'ts') {
       return <SiReact style={{ width: '16px', height: '16px' }} className="text-blue-500" />;
     } else if (ext === 'css') {
-      return <SiCss3 style={{ width: '16px', height: '16px' }} className="text-blue-500" />;
+      return <SiCss style={{ width: '16px', height: '16px' }} className="text-blue-500" />;
     } else if (ext === 'json') {
       return <SiJson style={{ width: '16px', height: '16px' }} className="text-[var(--text-secondary)]" />;
     } else {
@@ -4499,10 +4524,31 @@ Focus on the key sections and content, making it clean and modern.`;
             />
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <ToolbarButton
-            icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
-            label="New sandbox"
+        <div className="flex items-center gap-3">
+          {usage && (
+            <div className="hidden md:flex items-center gap-3">
+              <UsageBar
+                used={usage.used}
+                limit={usage.limit}
+                showLabel={false}
+                showTimer={false}
+                size="sm"
+                variant="compact"
+              />
+              {usage.tier === 'free' && (
+                <Link
+                  href="/pricing"
+                  className="text-xs font-medium text-brand-orange hover:text-brand-orange-dark transition-colors"
+                >
+                  Upgrade
+                </Link>
+              )}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <ToolbarButton
+              icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
+              label="New sandbox"
             onClick={() => createSandbox()}
             disabled={loading}
           />
@@ -4535,6 +4581,7 @@ Focus on the key sections and content, making it clean and modern.`;
           />
         </div>
       </div>
+    </div>
 
       <div className="border-b border-border-muted bg-warm-025 px-4 py-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -4800,7 +4847,7 @@ Focus on the key sections and content, making it clean and modern.`;
                       <div className={`block rounded-xl px-4 py-3 ${
                         msg.type === 'user' ? 'bg-warm-800 text-warm-100 ml-auto max-w-[80%]' :
                         msg.type === 'ai' ? 'bg-white border border-border-muted text-foreground mr-auto max-w-[80%]' :
-                        msg.type === 'system' ? 'bg-white border border-border-muted text-foreground text-sm' :
+                        msg.type === 'system' ? 'bg-warm-100/50 text-warm-600 text-xs px-3 py-1.5 rounded-lg' :
                         msg.type === 'command' ? 'bg-white border border-border-muted text-foreground font-mono text-sm' :
                         msg.type === 'error' ? 'bg-red-50 text-red-800 text-sm border border-red-200' :
                         'bg-white border border-border-muted text-foreground text-sm'
@@ -4835,7 +4882,7 @@ Focus on the key sections and content, making it clean and modern.`;
                         </div>
                       </div>
                     ) : (
-                      <span className="text-sm">{msg.content}</span>
+                      <span className={msg.type === 'system' ? 'text-xs' : 'text-sm'}>{msg.content}</span>
                     )}
                       </div>
                   
