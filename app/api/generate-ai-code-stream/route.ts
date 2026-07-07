@@ -156,6 +156,20 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
 
+    // Base URL for internal API calls. Derive it from the incoming request so
+    // it works on any deployment; NEXT_PUBLIC_APP_URL/localhost is only a
+    // fallback. Internal fetches must also forward the caller's cookies since
+    // those routes require the auth session.
+    const requestHost = request.headers.get('host');
+    const requestProtocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const internalBaseUrl = requestHost
+      ? `${requestProtocol}://${requestHost}`
+      : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+    const internalHeaders = {
+      'Content-Type': 'application/json',
+      Cookie: request.headers.get('cookie') || '',
+    };
+
     const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false, uploadedImage, uploadedImages, aiImagesEnabled = false } = await request.json();
 
     // Support both single uploadedImage and array uploadedImages for backwards compatibility
@@ -299,18 +313,18 @@ export async function POST(request: NextRequest) {
             
             // STEP 1: Get search plan from AI
             try {
-              const intentResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/analyze-edit-intent`, {
+              const intentResponse = await fetch(`${internalBaseUrl}/api/analyze-edit-intent`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: internalHeaders,
                 body: JSON.stringify({ prompt, manifest, model })
               });
-              
+
               if (intentResponse.ok) {
                 const { searchPlan } = await intentResponse.json();
                 console.log('[generate-ai-code-stream] Search plan received:', searchPlan);
-                
-                await sendProgress({ 
-                  type: 'status', 
+
+                await sendProgress({
+                  type: 'status',
                   message: `🔎 Searching for: "${searchPlan.searchTerms.join('", "')}"`
                 });
                 
@@ -430,14 +444,11 @@ User request: "${prompt}"`;
               
               try {
                 // Fetch files directly from sandbox
-                const filesUrl = new URL('/api/get-sandbox-files', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+                const filesUrl = new URL('/api/get-sandbox-files', internalBaseUrl);
                 filesUrl.searchParams.set('sandboxId', context.sandboxId);
                 const filesResponse = await fetch(filesUrl, {
                   method: 'GET',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Cookie: request.headers.get('cookie') || '',
-                  }
+                  headers: internalHeaders
                 });
                 
                 if (filesResponse.ok) {
@@ -449,12 +460,12 @@ User request: "${prompt}"`;
                     
                     // Now try to analyze edit intent with the fetched manifest
                     try {
-                      const intentResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/analyze-edit-intent`, {
+                      const intentResponse = await fetch(`${internalBaseUrl}/api/analyze-edit-intent`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: internalHeaders,
                         body: JSON.stringify({ prompt, manifest, model })
                       });
-                      
+
                       if (intentResponse.ok) {
                         const { searchPlan } = await intentResponse.json();
                         console.log('[generate-ai-code-stream] Search plan received (after fetch):', searchPlan);
@@ -1017,14 +1028,11 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
             console.log('[generate-ai-code-stream] No backend files, attempting to fetch from sandbox...');
             
             try {
-              const filesUrl = new URL('/api/get-sandbox-files', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+              const filesUrl = new URL('/api/get-sandbox-files', internalBaseUrl);
               filesUrl.searchParams.set('sandboxId', context.sandboxId);
               const filesResponse = await fetch(filesUrl, {
                 method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Cookie: request.headers.get('cookie') || '',
-                }
+                headers: internalHeaders
               });
               
               if (filesResponse.ok) {
@@ -1069,9 +1077,9 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
                     if (!editContext) {
                       console.log('[generate-ai-code-stream] Analyzing edit intent with fetched manifest');
                       try {
-                        const intentResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/analyze-edit-intent`, {
+                        const intentResponse = await fetch(`${internalBaseUrl}/api/analyze-edit-intent`, {
                           method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
+                          headers: internalHeaders,
                           body: JSON.stringify({ prompt, manifest: filesData.manifest, model })
                         });
                         
