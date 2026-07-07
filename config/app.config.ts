@@ -6,9 +6,15 @@ export const appConfig = {
   vercelSandbox: {
     // Sandbox timeout in minutes. Override with SANDBOX_TIMEOUT_MINUTES.
     // Plan caps: Hobby up to 45 minutes, Pro/Enterprise up to 24 hours.
-    // Defaults to 24 hours (1440 min) so Pro/Enterprise users get the maximum
-    // runtime without manual configuration. Hobby users should set this to 45.
-    timeoutMinutes: Number(process.env.SANDBOX_TIMEOUT_MINUTES) || 1440,
+    // Default is 45 (Hobby-safe) so the Sandbox API never rejects the request
+    // with `timeout should be <= 45m`. Pro/Enterprise users who want 24h
+    // runtimes only need to set SANDBOX_TIMEOUT_MINUTES=1440; the hard ceiling
+    // is 1440 (24h). Lower the ceiling with SANDBOX_TIMEOUT_MAX_MINUTES if you
+    // ever need to clamp it below the plan cap.
+    timeoutMinutes: Math.min(
+      Number(process.env.SANDBOX_TIMEOUT_MINUTES) || 45,
+      Number(process.env.SANDBOX_TIMEOUT_MAX_MINUTES) || 1440
+    ),
 
     // Convert to milliseconds for Vercel Sandbox API
     get timeoutMs() {
