@@ -121,15 +121,27 @@ export class VercelProvider extends BaseSandboxProvider {
       try {
         this.sandbox = await Sandbox.getOrCreate(sandboxConfig as Parameters<typeof Sandbox.getOrCreate>[0]);
       } catch (err) {
-        const msg = (err as Error)?.message || '';
+        const errAny = err as any;
+        // The SDK throws Error("Status code 400 is not ok"); the real API
+        // message lives in err.json.error.message / err.text, not err.message.
+        let detail = '';
+        try {
+          let json = errAny?.json;
+          if (typeof json === 'function') json = await json();
+          detail = String(json?.error?.message || errAny?.text || errAny?.message || '');
+        } catch {
+          detail = String((err as Error)?.message || '');
+        }
         const requestedMs = appConfig.vercelSandbox.timeoutMs;
-        const isTimeoutCapError = /timeout.*<=.*\d+m|should be <= \d+m/i.test(msg)
+        const status = errAny?.response?.status ?? errAny?.status ?? 0;
+        const isTimeoutCapError = status === 400
+          && /timeout.*<=.*\d+m|should be <= \d+m/i.test(detail)
           && requestedMs > HOBBY_TIMEOUT_MS;
         if (!isTimeoutCapError) {
           throw err;
         }
         this.logger.warn(
-          `Sandbox timeout ${requestedMs}ms rejected by plan cap (${msg}); retrying with 45m.`
+          `Sandbox timeout ${requestedMs}ms rejected by plan cap (${detail}); retrying with 45m.`
         );
         sandboxConfig.timeout = HOBBY_TIMEOUT_MS;
         this.sandbox = await Sandbox.getOrCreate(sandboxConfig as Parameters<typeof Sandbox.getOrCreate>[0]);
