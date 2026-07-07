@@ -103,7 +103,26 @@ function rewriteLucideImportLine(line: string): string {
     .map((n) => n.trim())
     .filter(Boolean);
 
-  const validNames: string[] = [];
+  // ES modules forbid importing the same exported name twice (even with
+  // different aliases). The AI often aliases the same fallback icon several
+  // times (e.g. several invalid icon names all mapping to `Circle`), which
+  // produced `import { Circle as A, Circle as B, ... }` and a Babel
+  // "Identifier 'Circle' has already been declared" SyntaxError. Import each
+  // exported icon once and bind extra aliases via `const` after the import.
+  const localBindings = new Map<string, string>(); // exportedName -> local name
+  const importSpecifiers: string[] = [];
+  const localAliases: string[] = [];
+
+  const ensureImported = (exportedName: string, localName: string): string => {
+    if (!localBindings.has(exportedName)) {
+      localBindings.set(exportedName, localName);
+      importSpecifiers.push(
+        localName === exportedName ? exportedName : `${exportedName} as ${localName}`
+      );
+      return localName;
+    }
+    return localBindings.get(exportedName)!;
+  };
 
   for (const name of rawNames) {
     // Handle `Icon as Alias` syntax.
@@ -116,20 +135,18 @@ function rewriteLucideImportLine(line: string): string {
       finalName = 'Circle';
     }
 
-    // If the alias matches the final name, no alias needed.
-    if (alias === finalName) {
-      if (!validNames.includes(finalName)) validNames.push(finalName);
-    } else {
-      const aliased = `${finalName} as ${alias}`;
-      if (!validNames.includes(aliased)) validNames.push(aliased);
+    const binding = ensureImported(finalName, alias);
+    if (alias !== binding) {
+      localAliases.push(`const ${alias} = ${binding};`);
     }
   }
 
-  if (validNames.length === 0) {
+  if (importSpecifiers.length === 0) {
     return "import { Circle } from 'lucide-react';";
   }
 
-  return `import { ${validNames.join(', ')} } from 'lucide-react';`;
+  const importLine = `import { ${importSpecifiers.join(', ')} } from 'lucide-react';`;
+  return localAliases.length > 0 ? `${importLine}\n${localAliases.join(' ')}` : importLine;
 }
 
 /**

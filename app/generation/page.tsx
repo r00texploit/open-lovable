@@ -24,7 +24,7 @@ import {
   BsFolder2Open,
   SiJavascript,
   SiReact,
-  SiCss,
+  SiCss3,
   SiJson
 } from '@/lib/icons';
 import { motion } from 'framer-motion';
@@ -2619,11 +2619,43 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               </div>
             )}
             
-            {/* Show a subtle indicator when code is being edited/generated */}
-            {generationProgress.isGenerating && generationProgress.isEdit && !codeApplicationState.stage && (
-              <div className="absolute top-4 right-4 inline-flex items-center gap-2 px-3 py-1.5 bg-black/80 backdrop-blur-sm rounded-lg">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-white text-xs font-medium">Generating code...</span>
+            {/* Full loading overlay while code is being generated */}
+            {generationProgress.isGenerating && !codeApplicationState.stage && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[15]">
+                <div className="text-center max-w-md px-6">
+                  <div className="mb-4 flex items-center justify-center">
+                    <div className="relative w-14 h-14">
+                      <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+                      <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-brand-orange animate-spin"></div>
+                    </div>
+                  </div>
+
+                  <p className="text-white text-lg font-medium">{generationProgress.isEdit ? 'Updating your site...' : 'Generating code...'}</p>
+
+                  <p className="text-white/60 text-sm mt-1">{generationProgress.status || 'Writing React components'}</p>
+
+                  {generationProgress.files.length > 0 && (
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                      {generationProgress.files.map((file, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1.5 px-2 py-1 bg-white/10 text-white/80 rounded-md text-xs"
+                        >
+                          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          {file.path.split('/').pop()}
+                        </span>
+                      ))}
+                      {generationProgress.currentFile && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-brand-orange/20 text-brand-orange rounded-md text-xs animate-pulse">
+                          <div className="w-2 h-2 border border-brand-orange border-t-transparent rounded-full animate-spin" />
+                          {generationProgress.currentFile.path.split('/').pop()}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             
@@ -3371,7 +3403,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     } else if (ext === 'tsx' || ext === 'ts') {
       return <SiReact style={{ width: '16px', height: '16px' }} className="text-blue-500" />;
     } else if (ext === 'css') {
-      return <SiCss style={{ width: '16px', height: '16px' }} className="text-blue-500" />;
+      return <SiCss3 style={{ width: '16px', height: '16px' }} className="text-blue-500" />;
     } else if (ext === 'json') {
       return <SiJson style={{ width: '16px', height: '16px' }} className="text-[var(--text-secondary)]" />;
     } else {
