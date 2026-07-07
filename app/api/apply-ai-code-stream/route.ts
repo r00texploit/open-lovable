@@ -50,6 +50,16 @@ function sanitizeJsxTypeScriptSyntax(content: string): string {
     // Convert: const Card = ({ a }: { a: string }) => ...
     // To:      const Card = ({ a }) => ...
     .replace(/(\(\s*\{[\s\S]*?\n\s*\})\s*:\s*\{[\s\S]*?\n\s*\}\s*\)\s*=>/g, '$1) =>')
+    // Generic calls on non-hook identifiers: createContext<CartContextType | null>( -> createContext(
+    .replace(/\b([A-Za-z_$][\w$]*)<[^()<]*?>\(/g, '$1(')
+    // Single-line/multi-line destructured param type: ({ children }: { children: React.ReactNode }) -> ({ children })
+    .replace(/(\{\s*[^{}]+?\s*\})\s*:\s*\{[^{}]*\}/g, '$1')
+    // Function return type annotations: ): React.ReactNode { -> ) {
+    .replace(/\)\s*:\s*[A-Za-z_$][^{=)]*?\{/g, ') {')
+    // `as` casts (skip `as const`, handled next): value as Type -> value
+    .replace(/\bas\s+(?!const\b)[A-Za-z_$][\w$.<>\[\]|]*/g, '')
+    // `import type { ... } from "..."` lines
+    .replace(/^[ \t]*import\s+type\s+\{[^}]*\}\s+from\s+['"][^'"]+['"];?[ \t]*$/gm, '')
     .replace(/\s+as\s+const\b/g, '');
 }
 
