@@ -759,16 +759,21 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             // Keep CSS imports - they are needed for custom styles alongside Tailwind
             let fileContent = file.content;
 
-            // Rewrite .jsx import paths to .tsx so cross-file imports resolve
-            // correctly after the rename above.
+            // Rewrite ALL .jsx file references to .tsx so they match the renamed
+            // files. This covers: `from "....jsx"`, `import("....jsx")`,
+            // `import "....jsx"` (side-effect), `<script src="....jsx">` in HTML,
+            // and any other quoted .jsx path — in one pass.
             fileContent = fileContent.replace(
-              /from\s+(['"])([^'"]+)\.jsx\1/g,
-              (_match, quote, path) => `from ${quote}${path}.tsx${quote}`
+              /(['"])([^'"]+)\.jsx\1/g,
+              (_match, quote, path) => `${quote}${path}.tsx${quote}`
             );
 
             // Sanitize lucide-react imports so invalid icon names don't crash Vite
             fileContent = sanitizeLucideImports(fileContent);
-            if (normalizedPath.endsWith('.jsx')) {
+            // After rename, files are .tsx (esbuild handles TS natively), so
+            // sanitizeJsxTypeScriptSyntax is no longer needed. But keep it as a
+            // safety net for any .jsx files that slip through (e.g. from template).
+            if (file.path.endsWith('.jsx') || normalizedPath.endsWith('.jsx')) {
               fileContent = sanitizeJsxTypeScriptSyntax(fileContent);
             }
 
