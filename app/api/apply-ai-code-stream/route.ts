@@ -746,10 +746,25 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               normalizedPath = 'src/' + normalizedPath;
             }
 
+            // Rename .jsx → .tsx so Vite uses esbuild (native TS) instead of
+            // the react-babel plugin (which can't parse TypeScript syntax).
+            // The sandbox template already uses .tsx; this keeps generated
+            // files consistent and eliminates TS-in-JSX parse errors.
+            if (normalizedPath.endsWith('.jsx')) {
+              normalizedPath = normalizedPath.replace(/\.jsx$/, '.tsx');
+            }
+
             const isUpdate = global.existingFiles.has(normalizedPath);
 
             // Keep CSS imports - they are needed for custom styles alongside Tailwind
             let fileContent = file.content;
+
+            // Rewrite .jsx import paths to .tsx so cross-file imports resolve
+            // correctly after the rename above.
+            fileContent = fileContent.replace(
+              /from\s+(['"])([^'"]+)\.jsx\1/g,
+              (_match, quote, path) => `from ${quote}${path}.tsx${quote}`
+            );
 
             // Sanitize lucide-react imports so invalid icon names don't crash Vite
             fileContent = sanitizeLucideImports(fileContent);
