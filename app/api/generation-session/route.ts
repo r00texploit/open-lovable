@@ -96,6 +96,12 @@ export async function POST(request: NextRequest) {
     validSiteId = ownedSite?.id ?? null;
   }
 
+  // Only overwrite the stored file cache when the client actually sends files.
+  // The authoritative copy is written server-side by apply-ai-code-stream;
+  // autosaves post an empty/missing fileCache and must not wipe it.
+  const hasFileCache =
+    fileCache && typeof fileCache === 'object' && Object.keys(fileCache).length > 0;
+
   const data = {
     userId: session.user.id,
     sandboxProvider: sandboxProvider ?? 'vercel',
@@ -110,7 +116,7 @@ export async function POST(request: NextRequest) {
       homeUrlInput: homeUrlInput ?? (conversationCtx as any)?.homeUrlInput,
       homeContextInput: homeContextInput ?? (conversationCtx as any)?.homeContextInput,
     },
-    fileCache: fileCache ?? {},
+    ...(hasFileCache ? { fileCache } : {}),
     aiModel: aiModel ?? null,
     siteId: validSiteId,
     lastActiveAt: new Date(),

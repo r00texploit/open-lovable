@@ -1116,7 +1116,38 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
               console.error('[generate-ai-code-stream] Failed to fetch sandbox files:', error);
             }
           }
-          
+
+          // Last resort for edit mode: the sandbox is unreachable (expired or
+          // recreating), so load the persisted file cache from the session
+          // record. apply-ai-code-stream saves it there on every apply.
+          if (!hasBackendFiles && isEdit && context?.sandboxId) {
+            try {
+              const { getSandboxWithUser } = await import('@/lib/session-store');
+              const dbSession = await getSandboxWithUser(context.sandboxId, userId);
+              const rawDbCache = dbSession?.fileCache;
+              const dbFiles: Record<string, any> =
+                (rawDbCache && typeof rawDbCache === 'object')
+                  ? ((rawDbCache as any).files ?? rawDbCache)
+                  : {};
+              const dbEntries = Object.entries(dbFiles).filter(([, value]) =>
+                typeof value === 'string' || typeof (value as any)?.content === 'string'
+              );
+              if (dbEntries.length > 0 && sandboxState?.fileCache) {
+                for (const [path, value] of dbEntries) {
+                  sandboxState.fileCache.files[path] = {
+                    content: typeof value === 'string' ? value : (value as any).content,
+                    lastModified: (value as any)?.lastModified || Date.now()
+                  };
+                }
+                backendFiles = sandboxState.fileCache.files;
+                hasBackendFiles = true;
+                console.log(`[generate-ai-code-stream] Loaded ${dbEntries.length} files from persisted session record`);
+              }
+            } catch (error) {
+              console.error('[generate-ai-code-stream] Failed to load file cache from session record:', error);
+            }
+          }
+
           // Include current file contents from backend cache
           if (hasBackendFiles) {
             // If we have edit context, use intelligent file selection
