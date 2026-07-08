@@ -3277,7 +3277,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           let codeToApply = generatedCode;
           if (aiImagesEnabled) {
             addChatMessage('Generating AI images for the website...', 'system');
-            codeToApply = await processGeneratedCodeForImages(generatedCode, (done, total) => {
+            codeToApply = await processGeneratedCodeForImages(generatedCode, activeSandboxData.sandboxId, (done, total) => {
               addChatMessage(`Generating image ${done} of ${total}...`, 'system');
             });
           }
