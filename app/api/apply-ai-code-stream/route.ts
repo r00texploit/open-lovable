@@ -11,6 +11,7 @@ import {
   updateSandboxFile,
 } from '@/lib/sandbox/sandbox-state';
 import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
+import { updateSession } from '@/lib/session-store';
 
 // Pro plan allows up to 800s. Applying a large multi-file generation can take
 // longer than the 300s default; without this, the apply fetch can abort mid-write.
@@ -973,6 +974,40 @@ export async function POST(request: NextRequest) {
           results.commandsExecuted.length > 0 ||
           results.packagesInstalled.length > 0 ||
           Boolean(uploadedImages?.length);
+
+        // Persist the updated source files to the session record. The sandbox
+        // and the in-memory cache are ephemeral; the DB copy is what session
+        // restore and cross-device resume read from, so save it on every apply.
+        if (applySucceeded) {
+          try {
+            const sessionRecord = resolved.value.session;
+            if (sessionRecord?.id) {
+              const existingDbCache = (sessionRecord.fileCache && typeof sessionRecord.fileCache === 'object')
+                ? sessionRecord.fileCache as Record<string, any>
+                : {};
+              const mergedCache: Record<string, any> = { ...(existingDbCache.files ?? existingDbCache) };
+              // Drop files deleted as stale extension twins during this apply
+              for (const twin of staleTwins) {
+                delete mergedCache[twin];
+              }
+              const memoryFiles = sandboxState?.fileCache?.files || {};
+              for (const [path, fileData] of Object.entries(memoryFiles)) {
+                // Skip binary placeholders - restoring them would corrupt real images
+                if (typeof fileData?.content === 'string' && !fileData.content.startsWith('[Binary image')) {
+                  mergedCache[path] = fileData;
+                }
+              }
+              if (Object.keys(mergedCache).length > 0) {
+                await updateSession(sessionRecord.id, { fileCache: mergedCache });
+                console.log(`[apply-ai-code-stream] Persisted ${Object.keys(mergedCache).length} files to session record ${sessionRecord.id}`);
+              }
+            } else {
+              console.warn('[apply-ai-code-stream] No session record available - file cache not persisted to DB');
+            }
+          } catch (persistError) {
+            console.warn('[apply-ai-code-stream] Failed to persist file cache to DB:', persistError);
+          }
+        }
 
         console.log('[apply-ai-code-stream] DEBUG: Final results:', {
           filesCreated: results.filesCreated,
