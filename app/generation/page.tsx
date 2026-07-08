@@ -597,6 +597,7 @@ function AISandboxPage() {
 
           // Load saved session — DB first, localStorage fallback
           let savedSession: any = null;
+          let hadRestoredFiles = false;
           try {
             const sessionRes = await fetch(`/api/generation-session/${sandboxIdParam}`);
             if (sessionRes.ok) {
@@ -643,6 +644,7 @@ function AISandboxPage() {
               ) as Record<string, string>;
 
               if (Object.keys(restoredFiles).length > 0) {
+                hadRestoredFiles = true;
                 setSandboxFiles(restoredFiles);
                 setGenerationProgress(prev => ({
                   ...prev,
@@ -685,6 +687,26 @@ function AISandboxPage() {
             setShowHomeScreen(false);
             sandboxCreated = true;
             console.log('[home] Session restored (sandbox alive):', sandboxIdParam);
+
+            // Backfill: sites created before server-side persistence have an
+            // empty DB cache but a live sandbox. Read the sandbox once — the
+            // server persists it to the DB — so the code is durable even if
+            // the sandbox later expires without an edit.
+            if (!hadRestoredFiles) {
+              try {
+                const res = await fetch(`/api/get-sandbox-files?sandboxId=${encodeURIComponent(savedSession.sandboxId)}`);
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data.success && data.files && Object.keys(data.files).length > 0) {
+                    setSandboxFiles(data.files);
+                    setFileStructure(data.structure || '');
+                    console.log('[home] Backfilled', Object.keys(data.files).length, 'files from live sandbox');
+                  }
+                }
+              } catch (backfillErr) {
+                console.warn('[home] Live-sandbox backfill failed:', backfillErr);
+              }
+            }
           } else {
             if (savedUrl) console.log('[home] Saved sandbox expired — creating fresh sandbox, chat history preserved');
             sandboxCreated = true;

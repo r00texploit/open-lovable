@@ -3,6 +3,7 @@ import { parseJavaScriptFile, buildComponentTree } from '@/lib/file-parser';
 import { FileManifest, FileInfo, RouteInfo } from '@/types/file-manifest';
 import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 import { getSandboxState } from '@/lib/sandbox/sandbox-state';
+import { updateSession } from '@/lib/session-store';
 
 function shellQuote(value: string) {
   return `'${value.replace(/'/g, `'\\''`)}'`;
@@ -106,16 +107,42 @@ export async function GET(request: Request) {
 
     const fileManifest = buildManifest(filesContent);
 
+    // Code files read from the live sandbox, excluding the binary-image
+    // placeholders (persisting those would corrupt real images on restore).
+    const codeFileCache = Object.fromEntries(
+      Object.entries(filesContent)
+        .filter(([, content]) => typeof content === 'string' && !content.startsWith('[Binary image'))
+        .map(([path, content]) => [path, { content, lastModified: Date.now() }])
+    );
+
     const sandboxState = getSandboxState(resolved.value.sandboxId);
     if (sandboxState?.fileCache) {
       sandboxState.fileCache.manifest = fileManifest;
-      sandboxState.fileCache.files = Object.fromEntries(
-        Object.entries(filesContent).map(([path, content]) => [
-          path,
-          { content, lastModified: Date.now() },
-        ])
-      );
+      sandboxState.fileCache.files = codeFileCache;
       sandboxState.fileCache.lastSync = Date.now();
+    }
+
+    // Backfill/refresh the durable DB copy from this live-sandbox read. This is
+    // what captures sites created before server-side persistence existed: the
+    // first time such a session is opened (or edited) while its sandbox is
+    // alive, its real code lands in the DB. Merge over the existing DB cache so
+    // large files (>10KB, skipped by this endpoint) that apply-ai-code-stream
+    // persisted are not dropped.
+    try {
+      const sessionRecord = resolved.value.session;
+      if (sessionRecord?.id && Object.keys(codeFileCache).length > 0) {
+        const existingDbCache = (sessionRecord.fileCache && typeof sessionRecord.fileCache === 'object')
+          ? sessionRecord.fileCache as Record<string, any>
+          : {};
+        const mergedCache: Record<string, any> = {
+          ...(existingDbCache.files ?? existingDbCache),
+          ...codeFileCache,
+        };
+        await updateSession(sessionRecord.id, { fileCache: mergedCache });
+        console.log(`[get-sandbox-files] Persisted ${Object.keys(codeFileCache).length} live files to session record ${sessionRecord.id}`);
+      }
+    } catch (persistError) {
+      console.warn('[get-sandbox-files] Failed to persist file cache to DB:', persistError);
     }
 
     return NextResponse.json({
