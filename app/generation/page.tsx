@@ -399,7 +399,9 @@ function AISandboxPage() {
       ...payload,
       chatMessages: payload.chatMessages.slice(-appConfig.ui.maxRecentMessagesContext),
       conversationCtx: stripLargeSessionContext(conversationContext),
-      fileCache: {},
+      // Omit fileCache from autosaves: apply-ai-code-stream persists the
+      // authoritative copy server-side, and JSON.stringify drops undefined.
+      fileCache: undefined,
     };
 
     // Always persist to localStorage so session survives a refresh on the same device
