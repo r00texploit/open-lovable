@@ -987,8 +987,17 @@ CRITICAL: When files are provided in the context:
 4. Do NOT ask to see files - they are already provided in the context above
 5. Make the requested change immediately`;
 
-        // If Morph Fast Apply is enabled (edit mode + MORPH_API_KEY), force <edit> block output
-        const morphFastApplyEnabled = Boolean(isEdit && process.env.MORPH_API_KEY);
+        // Prefer reliable full-file edits for small (single-file) changes; only
+        // use Morph fuzzy-merge once an edit spans several files, where
+        // regenerating every file would be slow. Threshold is configurable.
+        const morphKeyAvailable = Boolean(isEdit && process.env.MORPH_API_KEY);
+        const editTargetCount = editContext?.primaryFiles?.length ?? 0;
+        const morphFastApplyEnabled = morphKeyAvailable
+          && appConfig.ai.morphFastApply.enabled
+          && editTargetCount >= appConfig.ai.morphFastApply.minFilesForFastApply;
+        if (morphKeyAvailable && !morphFastApplyEnabled) {
+          console.log(`[generate-ai-code-stream] Using reliable full-file edit instead of Morph (target files: ${editTargetCount}, threshold: ${appConfig.ai.morphFastApply.minFilesForFastApply}, morphEnabled: ${appConfig.ai.morphFastApply.enabled})`);
+        }
         if (morphFastApplyEnabled) {
           systemPrompt += `
 
