@@ -104,6 +104,19 @@ export const appConfig = {
 
     // Max tokens for truncation recovery
     truncationRecoveryMaxTokens: 8000,
+
+    // Morph Fast Apply: fuzzy-merge edits, faster but less reliable than a full
+    // file rewrite. Small (single-file) changes use reliable full-file edits;
+    // Morph only kicks in once an edit spans several files, where regenerating
+    // every file would be slow.
+    morphFastApply: {
+      // Master switch. false = never use Morph (always full-file edits).
+      enabled: true,
+      // Minimum number of target files before Morph is used instead of a
+      // full-file edit. 1 = always use Morph when available; a large value
+      // effectively forces full-file edits everywhere.
+      minFilesForFastApply: 2,
+    },
   },
   
   // Code Application Configuration
