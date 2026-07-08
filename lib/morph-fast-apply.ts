@@ -75,13 +75,44 @@ export function parseMorphEdits(text: string): MorphEditBlock[] {
   return edits;
 }
 
-// Read a file from sandbox: prefers cache, then sandbox.files, then commands.run("cat ...")
-async function readFileFromSandbox(sandbox: any, normalizedPath: string, fullPath: string): Promise<string> {
-  // Try backend cache first
-  if ((global as any).sandboxState?.fileCache?.files?.[normalizedPath]?.content) {
-    return (global as any).sandboxState.fileCache.files[normalizedPath].content as string;
+async function fileExistsInSandbox(sandbox: any, path: string): Promise<boolean> {
+  if (typeof sandbox?.runCommand === 'function') {
+    try {
+      const res = await sandbox.runCommand(`[ -f "${path}" ] && echo __EXISTS__ || echo __MISSING__`);
+      const out = typeof res?.stdout === 'string' ? res.stdout : '';
+      return out.includes('__EXISTS__');
+    } catch {
+      return false;
+    }
   }
+  return false;
+}
 
+// Resolve a JS-family target to the file that actually exists on disk. The
+// model is prompted with .jsx example paths, but the toolchain writes .tsx
+// (sandbox template + apply-time .jsx→.tsx rename). Without this, Morph reads a
+// nonexistent .jsx (empty string) and writes an orphan sibling the app never
+// imports, so edits silently have no effect on the rendered site.
+export async function resolveExistingTarget(sandbox: any, normalizedPath: string): Promise<string> {
+  const parts = normalizedPath.match(/^(.+)\.(jsx|tsx|js|ts)$/);
+  if (!parts) return normalizedPath;
+  if (await fileExistsInSandbox(sandbox, normalizedPath)) return normalizedPath;
+  const base = parts[1];
+  // Preference order matches the toolchain: .tsx is the template/rename target.
+  for (const ext of ['tsx', 'jsx', 'ts', 'js']) {
+    const candidate = `${base}.${ext}`;
+    if (candidate !== normalizedPath && await fileExistsInSandbox(sandbox, candidate)) {
+      return candidate;
+    }
+  }
+  // Nothing exists yet — default to .tsx so it matches how the sandbox builds.
+  return `${base}.tsx`;
+}
+
+// Read a file from the sandbox disk (source of truth). Intentionally does NOT
+// consult global.sandboxState: in multi-sandbox serverless it may hold another
+// sandbox's cache and return the wrong site's file.
+async function readFileFromSandbox(sandbox: any, normalizedPath: string, fullPath: string): Promise<string> {
   // Try E2B files API
   if (sandbox?.files?.read) {
     return await sandbox.files.read(fullPath);
@@ -193,7 +224,10 @@ export async function applyMorphEditToFile(params: {
       return { success: false, error: 'MORPH_API_KEY not set' };
     }
 
-    const { normalizedPath, fullPath } = normalizeProjectPath(params.targetPath);
+    const requested = normalizeProjectPath(params.targetPath);
+    // Tolerate .jsx/.tsx mismatch: edit the file that actually exists on disk.
+    const normalizedPath = await resolveExistingTarget(params.sandbox, requested.normalizedPath);
+    const fullPath = `/home/user/app/${normalizedPath}`;
 
     // Read original code (existence validation happens here)
     const initialCode = await readFileFromSandbox(params.sandbox, normalizedPath, fullPath);
