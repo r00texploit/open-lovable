@@ -642,6 +642,15 @@ export async function POST(request: NextRequest) {
                   console.log('[apply-ai-code-stream] Morph updated', result.normalizedPath);
                   morphUpdatedPaths.add(result.normalizedPath);
                   if (results.filesUpdated) results.filesUpdated.push(result.normalizedPath);
+                  // Mirror the merged content into the sandbox-scoped cache so
+                  // the DB-persist step below saves the Morph edit too (the lib
+                  // only updates the legacy global cache).
+                  if (sandboxState?.fileCache && typeof result.mergedCode === 'string') {
+                    sandboxState.fileCache.files[result.normalizedPath] = {
+                      content: result.mergedCode,
+                      lastModified: Date.now(),
+                    };
+                  }
                   await sendProgress({ type: 'file-complete', fileName: result.normalizedPath, action: 'morph-updated' });
                 } else {
                   const msg = result.error || 'Unknown Morph error';
