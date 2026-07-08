@@ -426,13 +426,13 @@ export async function POST(request: NextRequest) {
           totalSteps: 3,
           debug: { hasProvider: !!providerInstance, sandboxInfo: providerInstance?.getSandboxInfo() }
         });
-        if (morphEnabled) {
-          await sendProgress({ type: 'info', message: 'Morph Fast Apply enabled' });
-          await sendProgress({ type: 'info', message: `Parsed ${morphEdits.length} Morph edits` });
-          if (morphEdits.length === 0) {
-            console.warn('[apply-ai-code-stream] Morph enabled but no <edit> blocks found; falling back to full-file flow');
-            await sendProgress({ type: 'warning', message: 'Morph enabled but no <edit> blocks found; falling back to full-file flow' });
-          }
+        // Only surface Morph in the UI when it actually has edits to apply.
+        // Single-file changes are generated as full <file> blocks (no <edit>
+        // blocks), so announcing Morph there would just be noise.
+        if (morphEnabled && morphEdits.length > 0) {
+          await sendProgress({ type: 'info', message: `Morph Fast Apply: ${morphEdits.length} edit${morphEdits.length === 1 ? '' : 's'}` });
+        } else if (morphEnabled) {
+          console.log('[apply-ai-code-stream] Morph enabled but no <edit> blocks found; using full-file flow');
         }
         
         // Step 1: Install packages
