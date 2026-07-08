@@ -994,8 +994,11 @@ CRITICAL: When files are provided in the context:
 
 MORPH FAST APPLY MODE (EDIT-ONLY):
 - Output edits as <edit> blocks, not full <file> blocks, for files that already exist.
+- CRITICAL: target_file MUST be the EXACT path shown in the file list above,
+  including its extension. Do NOT change the extension — if the file is listed
+  as Header.tsx, target "src/components/Header.tsx", never Header.jsx.
 - Format for each edit:
-  <edit target_file="src/components/Header.jsx">
+  <edit target_file="src/components/Header.tsx">
     <instructions>Describe the minimal change, single sentence.</instructions>
     <update>Provide the SMALLEST code snippet necessary to perform the change.</update>
   </edit>
@@ -1287,10 +1290,11 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
           if (contextParts.length > 0) {
             if (morphFastApplyEnabled) {
               contextParts.push('\nOUTPUT FORMAT (REQUIRED IN MORPH MODE):');
-              contextParts.push('<edit target_file="src/components/Component.jsx">');
+              contextParts.push('<edit target_file="src/components/Component.tsx">');
               contextParts.push('<instructions>Minimal, precise instruction.</instructions>');
               contextParts.push('<update>// Smallest necessary snippet</update>');
               contextParts.push('</edit>');
+              contextParts.push('target_file MUST match a path from the file list EXACTLY, including extension (.tsx/.jsx as listed).');
               contextParts.push('\nIf you need to create a NEW file, then and only then output a full file:');
               contextParts.push('<file path="src/components/NewComponent.jsx">');
               contextParts.push('// Full file content when creating new files');
