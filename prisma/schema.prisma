@@ -40,6 +40,7 @@ model User {
   image         String?
   emailVerified DateTime?
   password      String?        // Hashed password for credential provider
+  role          String         @default("user") // "user" | "admin"
   accounts      Account[]
   sessions      Session[]
   subscription  Subscription?

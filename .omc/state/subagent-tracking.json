@@ -1,26 +1,53 @@
 {
   "agents": [
     {
-      "agent_id": "a0b85165c910a5a41",
+      "agent_id": "a1b2bcc29fcef2eec",
       "agent_type": "Explore",
-      "started_at": "2026-07-07T13:32:47.184Z",
+      "started_at": "2026-07-08T04:50:23.900Z",
       "parent_mode": "none",
       "status": "completed",
-      "completed_at": "2026-07-07T13:37:57.742Z",
-      "duration_ms": 310558
+      "completed_at": "2026-07-08T04:51:38.360Z",
+      "duration_ms": 74460
     },
     {
-      "agent_id": "a8a23797aedadc659",
+      "agent_id": "a551f6ee5161090b8",
       "agent_type": "Explore",
-      "started_at": "2026-07-07T13:32:49.803Z",
+      "started_at": "2026-07-08T04:50:26.425Z",
       "parent_mode": "none",
       "status": "completed",
-      "completed_at": "2026-07-07T13:37:57.559Z",
-      "duration_ms": 307756
+      "completed_at": "2026-07-08T04:52:14.359Z",
+      "duration_ms": 107934
+    },
+    {
+      "agent_id": "a58479ff30d2b0455",
+      "agent_type": "Explore",
+      "started_at": "2026-07-08T04:50:30.346Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-07-08T04:52:06.060Z",
+      "duration_ms": 95714
+    },
+    {
+      "agent_id": "aced68ed239bf7296",
+      "agent_type": "a11y-quality-auditor",
+      "started_at": "2026-07-08T05:14:26.407Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-07-08T05:18:57.257Z",
+      "duration_ms": 270850
+    },
+    {
+      "agent_id": "a16b6b55dcc08f79b",
+      "agent_type": "frontend-architecture-reviewer",
+      "started_at": "2026-07-08T05:14:30.587Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-07-08T05:17:27.465Z",
+      "duration_ms": 176878
     }
   ],
-  "total_spawned": 2,
-  "total_completed": 13,
+  "total_spawned": 5,
+  "total_completed": 45,
   "total_failed": 0,
-  "last_updated": "2026-07-07T13:37:57.844Z"
+  "last_updated": "2026-07-08T05:42:40.917Z"
 }

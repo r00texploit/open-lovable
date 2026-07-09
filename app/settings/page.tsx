@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Calendar,
   Shield,
+  ShieldCheck,
   Sparkles,
   ArrowRight,
   Globe,
@@ -127,6 +128,12 @@ export default function SettingsPage() {
               <NoeronLogo iconClassName="h-7 w-7" textClassName="text-foreground font-semibold" />
             </Link>
             <div className="flex items-center gap-3">
+              {session?.user?.role === 'admin' && (
+                <Link href="/admin" className="btn btn-ghost">
+                  <ShieldCheck className="w-4 h-4" />
+                  Admin
+                </Link>
+              )}
               <Link href="/generation" className="btn btn-ghost">
                 Back to App
               </Link>

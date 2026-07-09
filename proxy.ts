@@ -46,6 +46,15 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
+  // Admin surface guard: only admins (role on the JWT) may reach /admin/*.
+  // API routes under /api/admin/* are guarded server-side by requireAdmin()
+  // and are skipped by the early-return above.
+  if (pathname.startsWith('/admin') && token?.role !== 'admin') {
+    const signInUrl = new URL('/auth/signin', request.url);
+    signInUrl.searchParams.set('callbackUrl', '/admin');
+    return NextResponse.redirect(signInUrl);
+  }
+
   if (isPlatformAppHost(hostname) && pathname === '/') {
     const url = request.nextUrl.clone();
     url.pathname = '/generation';

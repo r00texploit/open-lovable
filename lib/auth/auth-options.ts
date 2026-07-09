@@ -109,6 +109,13 @@ export const authOptions: NextAuthOptions = {
             generationsLimit: usage.generationsLimit,
             resetDate: usage.resetDate.toISOString(),
           };
+          // Keep role fresh on each JWT refresh so admin grants/revocations
+          // take effect without forcing a re-login.
+          const userRow = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { role: true },
+          });
+          token.role = userRow?.role === 'admin' ? 'admin' : 'user';
         } catch (error) {
           console.error('[Auth JWT] Failed to load subscription state:', error);
           token.subscription = token.subscription || {
@@ -120,6 +127,7 @@ export const authOptions: NextAuthOptions = {
             generationsLimit: 50000,
             resetDate: fallbackUsageResetDate(),
           };
+          token.role = token.role || 'user';
         }
       }
 
@@ -128,6 +136,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user && token.id) {
         session.user.id = token.id as string;
+        session.user.role = (token.role as 'user' | 'admin') || 'user';
         session.user.subscription = token.subscription || null;
         session.user.usage = token.usage
           ? {
@@ -202,6 +211,7 @@ declare module 'next-auth' {
       email?: string | null;
       name?: string | null;
       image?: string | null;
+      role: 'user' | 'admin';
       subscription?: {
         tier: string;
         status: string;
@@ -218,6 +228,7 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
   interface JWT {
     id?: string;
+    role?: 'user' | 'admin';
     subscription?: {
       tier: string;
       status: string;

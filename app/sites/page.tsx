@@ -19,6 +19,7 @@ import {
   ChevronRight,
   LayoutGrid,
   Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 
 interface GenerationSession {
@@ -134,6 +135,12 @@ export default function SitesPage() {
             </Link>
 
             <div className="flex items-center gap-3">
+              {session?.user?.role === "admin" && (
+                <Link href="/admin" className="btn btn-ghost">
+                  <ShieldCheck className="w-4 h-4" />
+                  Admin
+                </Link>
+              )}
               <Link
                 href="/generation"
                 className="btn btn-ghost"
