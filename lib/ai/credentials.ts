@@ -1,8 +1,10 @@
 import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/db/prisma';
 import { encryptSecret, decryptSecret } from '@/lib/crypto/secret-box';
+import { detectProviderFromKey, last4, type AiProvider } from '@/lib/ai/api-key-detection';
 
-export type AiProvider = 'openai' | 'anthropic';
+export type { AiProvider } from '@/lib/ai/api-key-detection';
+export { detectProviderFromKey, findApiKeysInText } from '@/lib/ai/api-key-detection';
 
 export interface MaskedCredential {
   id: string;
@@ -14,32 +16,8 @@ export interface MaskedCredential {
   createdAt: Date;
 }
 
-// Detect the provider from a key's well-known prefix. Returns null when the
-// string doesn't look like a supported provider key.
-export function detectProviderFromKey(key: string): AiProvider | null {
-  const trimmed = key.trim();
-  if (/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(trimmed)) return 'anthropic';
-  // OpenAI: classic `sk-...` and project `sk-proj-...` keys.
-  if (/^sk-(proj-)?[A-Za-z0-9_-]{20,}$/.test(trimmed)) return 'openai';
-  return null;
-}
-
-// Find provider API keys embedded anywhere in a free-text string (e.g. a chat
-// message). Returns unique matches with their detected provider.
-export function findApiKeysInText(text: string): Array<{ key: string; provider: AiProvider }> {
-  const found = new Map<string, AiProvider>();
-  const re = /\bsk-(?:ant-)?(?:proj-)?[A-Za-z0-9_-]{20,}\b/g;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(text)) !== null) {
-    const provider = detectProviderFromKey(match[0]);
-    if (provider) found.set(match[0], provider);
-  }
-  return Array.from(found, ([key, provider]) => ({ key, provider }));
-}
-
 export function maskKey(key: string): string {
-  const trimmed = key.trim();
-  return trimmed.slice(-4);
+  return last4(key);
 }
 
 function toMasked(row: {
