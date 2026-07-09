@@ -47,6 +47,7 @@ model User {
   generations          Generation[]
   generationSessions   GenerationSession[]
   sites                Site[]
+  aiCredentials        AiCredential[]
   createdAt     DateTime       @default(now())
 }
 
@@ -147,8 +148,35 @@ model Site {
   user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   assets               SiteAsset[]
   generationSessions   GenerationSession[]
+  aiCredentials        AiCredential[]
 
   @@index([userId, createdAt])
+}
+
+// Encrypted, server-side vault for user-supplied AI provider API keys.
+// The raw key never leaves the server: generated sites call the platform proxy
+// with `proxyToken`, and the proxy decrypts the matching key to call the
+// provider. siteId is optional — null means an account-wide default key.
+model AiCredential {
+  id          String    @id @default(cuid())
+  userId      String
+  siteId      String?
+  provider    String    @default("openai") // openai, anthropic, ...
+  last4       String    // for display, e.g. show "sk-…abcd" without the secret
+  ciphertext  String    // base64 AES-256-GCM ciphertext of the API key
+  iv          String    // base64 nonce
+  authTag     String    // base64 GCM auth tag
+  proxyToken  String    @unique // opaque token embedded in the generated site
+  revoked     Boolean   @default(false)
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site        Site?     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider, siteId])
+  @@index([userId])
+  @@index([siteId])
 }
 
 model SiteAsset {
