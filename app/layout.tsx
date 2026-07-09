@@ -3,6 +3,7 @@ import { Space_Grotesk, Source_Sans_3 } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { Analytics } from "@vercel/analytics/next";
 
 // Distinctive font pairing - NOT Inter/Roboto
 // Space Grotesk for headings (geometric, modern)
@@ -115,6 +116,7 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );

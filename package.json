@@ -55,6 +55,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/bcryptjs": "^2.4.6",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@vercel/analytics": "^2.0.1",
     "@vercel/sandbox": "^2.3.0",
     "ai": "^5.0.0",
     "autoprefixer": "^10.4.21",
