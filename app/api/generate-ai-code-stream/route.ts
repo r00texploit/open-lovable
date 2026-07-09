@@ -24,6 +24,10 @@ import {
 } from '@/lib/usage/token-usage';
 import { getEnhancedSystemPrompt, enhanceUserPrompt } from '@/lib/ai/prompts';
 import { getUploadedImagePublicPath } from '@/lib/ai/uploaded-image-paths';
+import { findApiKeysInText, redactApiKeys } from '@/lib/ai/api-key-detection';
+import { storeCredential, getProxyTokenForSite } from '@/lib/ai/credentials';
+import { isSecretVaultConfigured } from '@/lib/crypto/secret-box';
+import { getSandboxWithUser } from '@/lib/session-store';
 import {
   getSandboxState,
   setSandboxState,
@@ -175,7 +179,8 @@ export async function POST(request: NextRequest) {
       Cookie: request.headers.get('cookie') || '',
     };
 
-    const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false, uploadedImage, uploadedImages, aiImagesEnabled = false } = await request.json();
+    const { prompt: rawPrompt, model = appConfig.ai.defaultModel, context, isEdit = false, uploadedImage, uploadedImages, aiImagesEnabled = false } = await request.json();
+    let prompt: string = rawPrompt;
 
     // Support both single uploadedImage and array uploadedImages for backwards compatibility
     const userImages = uploadedImages || (uploadedImage ? [uploadedImage] : []);
@@ -184,6 +189,33 @@ export async function POST(request: NextRequest) {
     // Get sandbox-scoped state for multi-sandbox support
     const sandboxId = context?.sandboxId || 'default';
     const sandboxState = initSandboxState(sandboxId);
+
+    // Resolve the DB session once (for siteId used by both key capture and the
+    // AI proxy wiring below).
+    const dbSession = typeof context?.sandboxId === 'string'
+      ? await getSandboxWithUser(context.sandboxId, userId)
+      : null;
+    const siteId: string | null = dbSession?.siteId ?? null;
+
+    // SLICE 1 — defense-in-depth: if an API key reaches the server in the prompt
+    // (e.g. the client-side capture was bypassed), vault it and REDACT it before
+    // it can reach the model, the conversation store, or any logs below.
+    const detectedKeys = findApiKeysInText(prompt);
+    if (detectedKeys.length > 0) {
+      if (isSecretVaultConfigured()) {
+        for (const { key, provider } of detectedKeys) {
+          try {
+            await storeCredential({ userId, apiKey: key, provider, siteId });
+            console.log(`[generate-ai-code-stream] Vaulted a ${provider} key from prompt (server-side capture)`);
+          } catch (e) {
+            console.warn('[generate-ai-code-stream] Failed to vault detected key:', (e as Error).message);
+          }
+        }
+      } else {
+        console.warn('[generate-ai-code-stream] API key detected in prompt but SECRETS_ENCRYPTION_KEY not set; redacting without storing');
+      }
+      prompt = redactApiKeys(prompt);
+    }
 
     console.log('[generate-ai-code-stream] Received request:');
     console.log('[generate-ai-code-stream] - prompt:', prompt);
@@ -986,6 +1018,46 @@ CRITICAL: When files are provided in the context:
 3. Generate ONLY the files that need changes
 4. Do NOT ask to see files - they are already provided in the context above
 5. Make the requested change immediately`;
+
+        // SLICE 2 — if the user has a stored AI key for this site, teach the
+        // model to call the platform proxy instead of importing `openai` or
+        // embedding a secret. The generated static site never sees the raw key.
+        let aiProxyToken: string | null = null;
+        try {
+          aiProxyToken = isSecretVaultConfigured()
+            ? await getProxyTokenForSite(userId, siteId, 'openai')
+            : null;
+        } catch (e) {
+          console.warn('[generate-ai-code-stream] Failed to resolve AI proxy token:', (e as Error).message);
+        }
+        if (aiProxyToken) {
+          const rootDomain = process.env.ROOT_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net';
+          const proxyUrl = `${process.env.NEXT_PUBLIC_APP_URL || `https://${rootDomain}`}/api/ai/proxy`;
+          systemPrompt += `
+
+AI PROXY AVAILABLE (USE THIS FOR ALL AI / LLM FEATURES):
+This is a static frontend with NO backend, so it MUST NOT hold API keys.
+A secure server-side proxy is provided. For any AI/LLM feature the user asks for:
+- DO NOT install or import the "openai" (or "anthropic") package.
+- DO NOT put any API key in the code. There is no key to embed.
+- Call the proxy with fetch. It injects the user's key server-side and returns the completion.
+
+Exact usage (copy this pattern):
+  const res = await fetch("${proxyUrl}", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-proxy-token": "${aiProxyToken}" },
+    body: JSON.stringify({
+      messages: [{ role: "user", content: userText }],
+      model: "gpt-4o-mini"
+    })
+  });
+  const data = await res.json(); // { success: boolean, content: string }
+  const reply = data.content;
+
+- Allowed models: gpt-4o-mini (default), gpt-4o, gpt-4.1-mini, gpt-4.1.
+- Handle errors: if res.ok is false or data.success is false, show data.error to the user.
+- The x-proxy-token above is a publishable, revocable token scoped to this site — it is safe to include in client code (it is NOT the API key).`;
+        }
 
         // Prefer reliable full-file edits for small (single-file) changes; only
         // use Morph fuzzy-merge once an edit spans several files, where
