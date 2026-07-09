@@ -10,6 +10,7 @@ import HeroInput from '@/components/HeroInput';
 import SidebarInput from '@/components/app/generation/SidebarInput';
 import AiImagesToggle from '@/components/app/generation/AiImagesToggle';
 import { processGeneratedCodeForImages } from '@/lib/ai/image-generator';
+import { findApiKeysInText, redactApiKeys } from '@/lib/ai/api-key-detection';
 import BrandSelect from '@/components/app/generation/BrandSelect';
 import { NoeronLogo } from '@/components/brand/noeron-logo';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -2756,18 +2757,48 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   };
 
   const sendChatMessage = async () => {
-    const message = aiChatInput.trim() || (
+    let message = aiChatInput.trim() || (
       chatUploadedImages.length > 0
         ? 'Use these uploaded image assets to build or update the website.'
         : ''
     );
     if (!message) return;
-    
+
     if (!aiEnabled) {
       addChatMessage('AI is disabled. Please enable it first.', 'system');
       return;
     }
-    
+
+    // Capture any API key pasted into chat BEFORE it enters chat history,
+    // localStorage, the DB, or the model prompt: store it in the encrypted
+    // vault and redact it from the message. (The server also redacts as a
+    // defense-in-depth backstop.)
+    const detectedKeys = findApiKeysInText(message);
+    if (detectedKeys.length > 0) {
+      let storedCount = 0;
+      for (const { key } of detectedKeys) {
+        try {
+          const res = await fetch('/api/ai/keys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              apiKey: key,
+              siteId: activeSiteIdRef.current ?? activeSiteId ?? undefined,
+            }),
+          });
+          if (res.ok) storedCount++;
+        } catch { /* network error — fall through to warning below */ }
+      }
+      message = redactApiKeys(message);
+      setAiChatInput('');
+      const summary = detectedKeys.map(k => `${k.provider} …${k.key.slice(-4)}`).join(', ');
+      if (storedCount === detectedKeys.length) {
+        addChatMessage(`🔒 Detected your API key (${summary}) and stored it securely. It's been hidden from the chat and will power AI features in your generated site. Rotate the key if it was ever shared elsewhere.`, 'system');
+      } else {
+        addChatMessage(`⚠️ Detected an API key (${summary}) and removed it from the chat, but couldn't store it securely (the vault may not be configured). AI features may not work until that's set up.`, 'system');
+      }
+    }
+
     addChatMessage(message, 'user');
     setAiChatInput('');
 
@@ -3277,7 +3308,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           let codeToApply = generatedCode;
           if (aiImagesEnabled) {
             addChatMessage('Generating AI images for the website...', 'system');
-            codeToApply = await processGeneratedCodeForImages(generatedCode, (done, total) => {
+            codeToApply = await processGeneratedCodeForImages(generatedCode, activeSandboxData.sandboxId, (done, total) => {
               addChatMessage(`Generating image ${done} of ${total}...`, 'system');
             });
           }
