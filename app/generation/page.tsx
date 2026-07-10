@@ -689,24 +689,76 @@ function AISandboxPage() {
             sandboxCreated = true;
             console.log('[home] Session restored (sandbox alive):', sandboxIdParam);
 
-            // Backfill: sites created before server-side persistence have an
-            // empty DB cache but a live sandbox. Read the sandbox once — the
-            // server persists it to the DB — so the code is durable even if
-            // the sandbox later expires without an edit.
-            if (!hadRestoredFiles) {
-              try {
-                const res = await fetch(`/api/get-sandbox-files?sandboxId=${encodeURIComponent(savedSession.sandboxId)}`);
-                if (res.ok) {
-                  const data = await res.json();
-                  if (data.success && data.files && Object.keys(data.files).length > 0) {
-                    setSandboxFiles(data.files);
-                    setFileStructure(data.structure || '');
-                    console.log('[home] Backfilled', Object.keys(data.files).length, 'files from live sandbox');
-                  }
-                }
-              } catch (backfillErr) {
-                console.warn('[home] Live-sandbox backfill failed:', backfillErr);
+            // A "live" Vercel sandbox may have had its ephemeral filesystem
+            // reset to the bare Vite template across pause/resume, silently
+            // losing the applied code. Read what the sandbox actually has and,
+            // if it's just the template while we hold durable saved source,
+            // re-apply that source so the editor shows the real site instead of
+            // "Sandbox Ready".
+            const TEMPLATE_ONLY_PATHS = new Set([
+              'src/App.tsx', 'src/App.jsx', 'src/main.tsx', 'src/main.jsx', 'src/index.css',
+              'index.html', 'package.json', 'vite.config.js', 'tailwind.config.js', 'postcss.config.js',
+            ]);
+            const hasRealSource = (files: Record<string, unknown>) =>
+              Object.keys(files).some(p => p.startsWith('src/') && !TEMPLATE_ONLY_PATHS.has(p));
+
+            // Resolve durable saved source: localStorage first, then DB fileCache.
+            let savedSource: Record<string, string> | null = null;
+            try {
+              const raw = localStorage.getItem(`noeron_files_${sandboxIdParam}`);
+              if (raw) savedSource = JSON.parse(raw);
+            } catch { /* parse error */ }
+            if (!savedSource) {
+              const cache = savedSession.fileCache?.files ?? savedSession.fileCache;
+              if (cache && typeof cache === 'object') {
+                savedSource = Object.fromEntries(
+                  Object.entries(cache).map(([p, v]: [string, any]) => [p, typeof v === 'string' ? v : v?.content ?? ''])
+                    .filter(([, c]) => typeof c === 'string')
+                ) as Record<string, string>;
               }
+            }
+            const savedHasSource = !!savedSource && hasRealSource(savedSource);
+
+            // Inspect the live sandbox (this also backfills the DB server-side).
+            let liveFiles: Record<string, string> = {};
+            let liveStructure = '';
+            try {
+              const res = await fetch(`/api/get-sandbox-files?sandboxId=${encodeURIComponent(savedSession.sandboxId)}`);
+              if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.files) { liveFiles = data.files; liveStructure = data.structure || ''; }
+              }
+            } catch (readErr) {
+              console.warn('[home] Live-sandbox read failed:', readErr);
+            }
+
+            if (savedHasSource && !hasRealSource(liveFiles)) {
+              // Sandbox was reset to the template — restore the real source into it.
+              addChatMessage('♻️ Your sandbox was reset — restoring your site files...', 'system');
+              try {
+                const res = await fetch('/api/restore-files', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sandboxId: savedSession.sandboxId, files: savedSource }),
+                });
+                const result = await res.json();
+                if (result.success) {
+                  addChatMessage(`✅ Restored ${result.written} file${result.written === 1 ? '' : 's'}.`, 'system');
+                  setSandboxFiles(savedSource!);
+                  setGenerationProgress(prev => ({ ...prev, files: filesCacheToProgressFiles(savedSource!) }));
+                  setTimeout(() => {
+                    if (iframeRef.current && savedUrl) iframeRef.current.src = `${savedUrl}?t=${Date.now()}`;
+                  }, 2000);
+                } else {
+                  console.warn('[home] restore-files reported failure:', result.error);
+                }
+              } catch (restoreErr) {
+                console.warn('[home] Failed to re-apply files to alive sandbox:', restoreErr);
+              }
+            } else if (Object.keys(liveFiles).length > 0) {
+              // Sandbox has the real code (or we have nothing better) — show it.
+              setSandboxFiles(liveFiles);
+              setFileStructure(liveStructure);
             }
           } else {
             if (savedUrl) console.log('[home] Saved sandbox expired — creating fresh sandbox, chat history preserved');
