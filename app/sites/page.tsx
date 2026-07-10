@@ -105,7 +105,15 @@ export default function SitesPage() {
   }, [status]);
 
   const handleEdit = (siteId: string) => {
-    router.push(`/generation?site=${siteId}`);
+    // Open the site's most recent session so the editor restores its code. The
+    // server backfills a template-only sandbox from the site's best session, so
+    // any of the site's sessions recovers the real source.
+    const latest = sessions.find((s) => s.site?.id === siteId);
+    if (latest) {
+      router.push(`/generation?sandbox=${latest.sandboxId}`);
+    } else {
+      router.push(`/generation?site=${siteId}`);
+    }
   };
 
   const handleCreate = () => {
