@@ -11,6 +11,7 @@ import SidebarInput from '@/components/app/generation/SidebarInput';
 import AiImagesToggle from '@/components/app/generation/AiImagesToggle';
 import { processGeneratedCodeForImages } from '@/lib/ai/image-generator';
 import { findApiKeysInText, redactApiKeys } from '@/lib/ai/api-key-detection';
+import { fileCacheToFiles, hasRealSource } from '@/lib/sandbox/source-heuristics';
 import BrandSelect from '@/components/app/generation/BrandSelect';
 import { NoeronLogo } from '@/components/brand/noeron-logo';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -695,27 +696,17 @@ function AISandboxPage() {
             // if it's just the template while we hold durable saved source,
             // re-apply that source so the editor shows the real site instead of
             // "Sandbox Ready".
-            const TEMPLATE_ONLY_PATHS = new Set([
-              'src/App.tsx', 'src/App.jsx', 'src/main.tsx', 'src/main.jsx', 'src/index.css',
-              'index.html', 'package.json', 'vite.config.js', 'tailwind.config.js', 'postcss.config.js',
-            ]);
-            const hasRealSource = (files: Record<string, unknown>) =>
-              Object.keys(files).some(p => p.startsWith('src/') && !TEMPLATE_ONLY_PATHS.has(p));
-
-            // Resolve durable saved source: localStorage first, then DB fileCache.
+            // Resolve durable saved source: localStorage first, then DB
+            // fileCache (which the server already backfills from the site's
+            // best sibling session when this sandbox's own cache is template-only).
             let savedSource: Record<string, string> | null = null;
             try {
               const raw = localStorage.getItem(`noeron_files_${sandboxIdParam}`);
               if (raw) savedSource = JSON.parse(raw);
             } catch { /* parse error */ }
-            if (!savedSource) {
-              const cache = savedSession.fileCache?.files ?? savedSession.fileCache;
-              if (cache && typeof cache === 'object') {
-                savedSource = Object.fromEntries(
-                  Object.entries(cache).map(([p, v]: [string, any]) => [p, typeof v === 'string' ? v : v?.content ?? ''])
-                    .filter(([, c]) => typeof c === 'string')
-                ) as Record<string, string>;
-              }
+            if (!savedSource || !hasRealSource(savedSource)) {
+              const fromCache = fileCacheToFiles(savedSession.fileCache);
+              if (hasRealSource(fromCache) || !savedSource) savedSource = fromCache;
             }
             const savedHasSource = !!savedSource && hasRealSource(savedSource);
 
