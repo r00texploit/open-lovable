@@ -2918,15 +2918,23 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       // Backend now manages file state - no need to fetch from frontend
       console.log('[chat] Using backend file cache for context');
       
+      // Keep the request body small: the server reads the authoritative source
+      // from the DB/sandbox by sandboxId, so we must NOT upload the full code
+      // here (it blows past Vercel's ~4.5MB body cap → 413). We strip scraped
+      // page content, generated-component bodies, lastGeneratedCode, and trim
+      // chat history to short text. See stripLargeSessionContext.
       const fullContext = {
         sandboxId: sandboxData?.sandboxId || (sandboxCreating ? 'pending' : null),
         structure: structureContent,
-        recentMessages: chatMessages.slice(-20),
-        conversationContext: {
+        recentMessages: chatMessages.slice(-10).map(m => ({
+          type: m.type,
+          content: typeof m.content === 'string' ? m.content.slice(0, 1000) : '',
+        })),
+        conversationContext: stripLargeSessionContext({
           ...conversationContext,
           uploadedImages: undefined,
-          lastGeneratedImages: undefined
-        },
+          lastGeneratedImages: undefined,
+        }),
         currentCode: promptInput,
         sandboxUrl: sandboxData?.rawSandboxUrl || sandboxData?.url,
         sandboxCreating: sandboxCreating

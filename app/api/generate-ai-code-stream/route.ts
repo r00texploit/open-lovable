@@ -28,6 +28,7 @@ import { findApiKeysInText, redactApiKeys } from '@/lib/ai/api-key-detection';
 import { storeCredential, getProxyTokenForSite } from '@/lib/ai/credentials';
 import { isSecretVaultConfigured } from '@/lib/crypto/secret-box';
 import { getSandboxWithUser } from '@/lib/session-store';
+import { fileCacheToFiles } from '@/lib/sandbox/source-heuristics';
 import {
   getSandboxState,
   setSandboxState,
@@ -196,6 +197,20 @@ export async function POST(request: NextRequest) {
       ? await getSandboxWithUser(context.sandboxId, userId)
       : null;
     const siteId: string | null = dbSession?.siteId ?? null;
+
+    // The client no longer uploads the full source (it would blow past the
+    // request body cap). Hydrate the in-memory file cache from the DB by
+    // sandboxId when this instance hasn't seen the sandbox yet, so edit context
+    // and manifests are available without the client re-sending code.
+    if (dbSession && Object.keys(sandboxState.fileCache?.files ?? {}).length === 0) {
+      const dbFiles = fileCacheToFiles((dbSession as { fileCache?: unknown }).fileCache);
+      if (Object.keys(dbFiles).length > 0) {
+        for (const [path, content] of Object.entries(dbFiles)) {
+          sandboxState.fileCache!.files[path] = { content, lastModified: Date.now() };
+        }
+        console.log(`[generate-ai-code-stream] Hydrated ${Object.keys(dbFiles).length} files from DB for ${sandboxId}`);
+      }
+    }
 
     // SLICE 1 — defense-in-depth: if an API key reaches the server in the prompt
     // (e.g. the client-side capture was bypassed), vault it and REDACT it before
