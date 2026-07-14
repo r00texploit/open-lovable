@@ -47,6 +47,41 @@ export const appConfig = {
     runtime: 'node22' // Available: node22, python3.13, v0-next-shadcn, cua-ubuntu-xfce
   },
 
+  // VPS Sandbox / Deployment Configuration
+  vps: {
+    // Agent API endpoint (must be reachable from the Next.js app)
+    agentUrl: process.env.VPS_AGENT_URL || '',
+
+    // Shared secret for app->agent authentication
+    agentToken: process.env.VPS_AGENT_TOKEN || '',
+
+    // Base domain for preview subdomains (e.g. noeron.net)
+    baseDomain: process.env.VPS_BASE_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net',
+
+    // Dev server port inside the sandbox container
+    devPort: Number(process.env.VPS_SANDBOX_DEV_PORT) || 3000,
+
+    // Sandbox timeout in minutes
+    timeoutMinutes: Number(process.env.SANDBOX_TIMEOUT_MINUTES) || 45,
+
+    get timeoutMs() {
+      return this.timeoutMinutes * 60 * 1000;
+    },
+
+    // Keep-alive interval used by the frontend ping loop
+    keepAliveIntervalMinutes: Number(process.env.SANDBOX_KEEPALIVE_INTERVAL_MINUTES) || 30,
+
+    get keepAliveIntervalMs() {
+      return this.keepAliveIntervalMinutes * 60 * 1000;
+    },
+
+    // Time to wait for dev server to be ready (in milliseconds)
+    devServerStartupDelay: 7000,
+
+    // Working directory inside the container (matches Vercel Sandbox layout)
+    workingDirectory: '/vercel/sandbox',
+  },
+
   // E2B Sandbox Configuration
   e2b: {
     // Sandbox timeout in minutes

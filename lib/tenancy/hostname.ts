@@ -55,8 +55,10 @@ export function isTenantSubdomainHost(hostname: string) {
   return !!subdomain;
 }
 
-// Hostnames that belong to the platform itself, not tenant custom domains
-const PLATFORM_HOSTNAME_SUFFIXES = ['.vercel.app', '.vercel-dns.com'];
+// Hostnames that belong to the platform itself, not tenant custom domains.
+// Empty by default: the platform app runs under the root domain and the
+// wildcard subdomain is handled by the VPS reverse proxy.
+const PLATFORM_HOSTNAME_SUFFIXES: string[] = [];
 
 export function isCustomDomainHost(hostname: string) {
   if (isRootDomainHost(hostname) || isPlatformAppHost(hostname) || isLocalDevelopmentHost(hostname)) {

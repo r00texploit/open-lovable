@@ -7,11 +7,16 @@ export interface SandboxFile {
 export interface SandboxInfo {
   sandboxId: string;
   url: string;
-  provider: 'e2b' | 'vercel';
+  provider: 'e2b' | 'vercel' | 'vps';
   createdAt: Date;
   sandboxName?: string;
   runtimeStatus?: string;
   currentSnapshotId?: string;
+  /** VPS-specific container identifier, when provider is 'vps'. */
+  containerId?: string;
+  /** VPS host:port the container listens on, when provider is 'vps'. */
+  host?: string;
+  port?: number;
 }
 
 export interface CommandResult {
@@ -33,12 +38,24 @@ export interface SandboxProviderConfig {
     token?: string;
     authMethod?: 'oidc' | 'pat';
   };
+  vps?: {
+    agentUrl: string;
+    agentToken: string;
+    baseDomain: string;
+    timeoutMinutes?: number;
+    /** Port inside the container that the dev server listens on. */
+    devPort?: number;
+  };
 }
 
 export interface SandboxCreateOptions {
   appSandboxId?: string;
   sandboxName?: string;
   setupOnCreate?: boolean;
+  /** Optional site subdomain to assign to the sandbox. */
+  subdomain?: string;
+  /** Optional custom domain to route to the sandbox. */
+  customDomain?: string;
 }
 
 export abstract class SandboxProvider {
@@ -64,7 +81,7 @@ export abstract class SandboxProvider {
   // Write multiple files with binary support (Buffer required for binary files)
   // Use this for images and other binary assets
   abstract writeFiles(files: Array<{ path: string; content: Buffer }>): Promise<void>;
-  
+
   // Optional methods that providers can override
 
   // Extend the sandbox lifetime by durationMs. Returns false when the
@@ -79,7 +96,7 @@ export abstract class SandboxProvider {
     // Default implementation for setting up a Vite React app
     throw new Error('setupViteApp not implemented for this provider');
   }
-  
+
   async restartViteServer(): Promise<void> {
     // Default implementation for restarting Vite
     throw new Error('restartViteServer not implemented for this provider');

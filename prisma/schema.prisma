@@ -116,6 +116,10 @@ model GenerationSession {
   sandboxName          String?  @unique
   sandboxRuntimeStatus String?
   currentSnapshotId    String?
+  /** VPS container identifier when using the vps provider. */
+  sandboxContainerId   String?
+  /** VPS host:port for direct container access when using the vps provider. */
+  sandboxHost          String?
   status               String   @default("creating")
   chatMessages         Json     @default("[]")
   conversationCtx      Json?

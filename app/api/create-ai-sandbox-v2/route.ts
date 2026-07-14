@@ -93,21 +93,10 @@ export async function POST(request: Request) {
       deleteSandboxState(session.sandboxId);
     }
 
-    // Create new sandbox using factory
-    const provider = await SandboxFactory.create();
-    const sandboxName = buildPersistentSandboxName(session.id, session.siteId);
-    const sandboxInfo = await provider.createSandbox({
-      appSandboxId: session.sandboxId,
-      sandboxName,
-      setupOnCreate: true,
-    });
-    
-    // Register with sandbox manager keyed by session and user
-    sandboxManager.registerSandboxForUser(user.id, session.sandboxId, provider);
-
-    // Get site info for custom preview URL
-    let previewUrl = sandboxInfo.url;
+    // Get site info before creating the sandbox so we can assign a subdomain
     let siteSlug: string | null = null;
+    let siteSubdomain: string | undefined;
+    let siteUserId: string | null = null;
 
     console.log(`[create-ai-sandbox-v2] Checking for site association. session.siteId:`, session.siteId);
 
@@ -121,23 +110,42 @@ export async function POST(request: Request) {
 
       if (site) {
         siteSlug = site.slug;
-        // Register preview mapping for the site subdomain
-        registerPreviewMapping(
-          site.subdomain,
-          sandboxInfo.url,
-          session.sandboxId,
-          site.id,
-          site.userId
-        );
-        // Use custom preview URL
-        previewUrl = buildPreviewUrl(site.subdomain);
-        console.log(`[create-ai-sandbox-v2] Preview URL registered: ${site.subdomain} -> ${sandboxInfo.url}`);
-        console.log(`[create-ai-sandbox-v2] Custom preview URL: ${previewUrl}`);
+        siteSubdomain = site.subdomain;
+        siteUserId = site.userId;
       } else {
         console.log(`[create-ai-sandbox-v2] Site not found for siteId:`, session.siteId);
       }
     } else {
       console.log(`[create-ai-sandbox-v2] No siteId associated with session`);
+    }
+
+    // Create new sandbox using factory
+    const provider = await SandboxFactory.create();
+    const sandboxName = buildPersistentSandboxName(session.id, session.siteId);
+    const sandboxInfo = await provider.createSandbox({
+      appSandboxId: session.sandboxId,
+      sandboxName,
+      setupOnCreate: true,
+      subdomain: siteSubdomain,
+    });
+
+    // Register with sandbox manager keyed by session and user
+    sandboxManager.registerSandboxForUser(user.id, session.sandboxId, provider);
+
+    // Get site info for custom preview URL
+    let previewUrl = sandboxInfo.url;
+
+    if (siteSubdomain && siteUserId) {
+      registerPreviewMapping(
+        siteSubdomain,
+        sandboxInfo.url,
+        session.sandboxId,
+        session.siteId!,
+        siteUserId
+      );
+      previewUrl = buildPreviewUrl(siteSubdomain);
+      console.log(`[create-ai-sandbox-v2] Preview URL registered: ${siteSubdomain} -> ${sandboxInfo.url}`);
+      console.log(`[create-ai-sandbox-v2] Custom preview URL: ${previewUrl}`);
     }
 
     // Update session with sandbox URL
@@ -148,6 +156,8 @@ export async function POST(request: Request) {
       sandboxName: sandboxInfo.sandboxName || sandboxName,
       sandboxRuntimeStatus: sandboxInfo.runtimeStatus || 'running',
       currentSnapshotId: sandboxInfo.currentSnapshotId || null,
+      sandboxContainerId: sandboxInfo.containerId || null,
+      sandboxHost: sandboxInfo.host ? `${sandboxInfo.host}:${sandboxInfo.port ?? ''}` : null,
       status: 'running',
     });
 

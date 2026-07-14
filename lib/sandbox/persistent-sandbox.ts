@@ -21,6 +21,8 @@ export async function persistSandboxRuntime(
       sandboxName: info.sandboxName || null,
       sandboxRuntimeStatus: info.runtimeStatus || 'running',
       currentSnapshotId: info.currentSnapshotId || null,
+      sandboxContainerId: info.containerId || null,
+      sandboxHost: info.host ? `${info.host}:${info.port ?? ''}` : null,
       status: 'running',
       lastActiveAt: new Date(),
     },

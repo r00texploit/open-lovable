@@ -46,10 +46,10 @@ export function createLogger(context: string, enableDebug: boolean = false): Log
 export abstract class BaseSandboxProvider extends SandboxProvider {
   protected existingFiles: Set<string> = new Set();
   protected logger: Logger;
-  protected abstract providerName: 'vercel' | 'e2b';
+  protected abstract providerName: 'vercel' | 'e2b' | 'vps';
   protected abstract workingDirectory: string;
 
-  constructor(config: SandboxProviderConfig, logger?: Logger, providerName?: 'vercel' | 'e2b') {
+  constructor(config: SandboxProviderConfig, logger?: Logger, providerName?: 'vercel' | 'e2b' | 'vps') {
     super(config);
     // Use provided logger or create default one with provider name
     this.logger = logger || createLogger((providerName || 'sandbox').toUpperCase());

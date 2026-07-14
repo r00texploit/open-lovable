@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireUser } from '@/lib/auth/server';
 import { customDomainSchema } from '@/lib/validations/site';
-import { addDomainToProject } from '@/lib/vercel';
+import { addDomainToVps } from '@/lib/vps-hosting';
 import { toSiteDto } from '@/lib/tenancy/site-dto';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'That custom domain is already in use' }, { status: 409 });
   }
 
-  const result = await addDomainToProject(domain);
+  const result = await addDomainToVps(domain, site.id);
   const updated = await prisma.site.update({
     where: { id: site.id },
     data: {

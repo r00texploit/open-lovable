@@ -20,6 +20,8 @@ export interface SandboxSession {
   sandboxName: string | null;
   sandboxRuntimeStatus: string | null;
   currentSnapshotId: string | null;
+  sandboxContainerId: string | null;
+  sandboxHost: string | null;
   status: SessionStatus;
   chatMessages: any[];
   conversationCtx: any | null;

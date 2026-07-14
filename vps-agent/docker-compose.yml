@@ -1,0 +1,21 @@
+services:
+  vps-agent:
+    build: .
+    container_name: vps-agent
+    restart: unless-stopped
+    ports:
+      - "${VPS_AGENT_PORT:-3001}:${VPS_AGENT_PORT:-3001}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${VPS_DATA_DIR:-/data/vps-agent}:/data
+    environment:
+      - VPS_AGENT_TOKEN=${VPS_AGENT_TOKEN}
+      - VPS_AGENT_PORT=${VPS_AGENT_PORT:-3001}
+      - VPS_HOST=${VPS_HOST}
+      - VPS_BASE_DOMAIN=${VPS_BASE_DOMAIN}
+      - VPS_PORT_MIN=${VPS_PORT_MIN:-10000}
+      - VPS_PORT_MAX=${VPS_PORT_MAX:-20000}
+      - VPS_SANDBOX_IMAGE=${VPS_SANDBOX_IMAGE:-node:22-slim}
+      - VPS_DEFAULT_TIMEOUT_MINUTES=${VPS_DEFAULT_TIMEOUT_MINUTES:-45}
+      - VPS_DATA_DIR=${VPS_DATA_DIR:-/data/vps-agent}
+      - VPS_SANDBOX_WORKING_DIR=${VPS_SANDBOX_WORKING_DIR:-/vercel/sandbox}

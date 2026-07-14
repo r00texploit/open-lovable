@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireUser } from '@/lib/auth/server';
-import { verifyProjectDomain } from '@/lib/vercel';
+import { verifyVpsDomain } from '@/lib/vps-hosting';
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUser();
@@ -21,12 +21,12 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     return NextResponse.json({ error: 'Site or custom domain not found' }, { status: 404 });
   }
 
-  const result = await verifyProjectDomain(site.customDomain);
+  const verified = await verifyVpsDomain(site.customDomain);
   const updated = await prisma.site.update({
     where: { id: site.id },
     data: {
-      customDomainVerified: result.verified,
-      domainStatus: result.verified ? 'verified' : 'pending_verification',
+      customDomainVerified: verified,
+      domainStatus: verified ? 'verified' : 'pending_verification',
     },
   });
 
@@ -37,6 +37,15 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       customDomainVerified: updated.customDomainVerified,
       domainStatus: updated.domainStatus,
     },
-    verification: result.verification || [],
+    verification: verified
+      ? []
+      : [
+          {
+            type: 'A',
+            domain: site.customDomain,
+            value: process.env.VPS_PUBLIC_IP || 'Set an A record pointing to your VPS IP',
+            reason: 'Domain must resolve to the VPS IP',
+          },
+        ],
   });
 }

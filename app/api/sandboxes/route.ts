@@ -89,6 +89,19 @@ export async function POST(request: NextRequest) {
       status: 'creating',
     });
 
+    // Look up the associated site before creating the sandbox so we can assign
+    // the subdomain directly on the VPS provider.
+    let siteInfo: { slug: string; subdomain: string; userId: string } | null = null;
+    if (dbSession.siteId) {
+      const site = await prisma.site.findUnique({
+        where: { id: dbSession.siteId },
+        select: { id: true, slug: true, subdomain: true, userId: true }
+      });
+      if (site) {
+        siteInfo = site;
+      }
+    }
+
     // Create the actual sandbox
     const provider = await SandboxFactory.create();
     const sandboxName = buildPersistentSandboxName(dbSession.id, dbSession.siteId);
@@ -96,6 +109,7 @@ export async function POST(request: NextRequest) {
       appSandboxId: sandboxId,
       sandboxName,
       setupOnCreate: true,
+      subdomain: siteInfo?.subdomain,
     });
 
     // Register with sandbox manager for the user
@@ -105,25 +119,18 @@ export async function POST(request: NextRequest) {
     let previewUrl = sandboxInfo.url;
     let siteSlug: string | null = null;
 
-    if (dbSession.siteId) {
-      const site = await prisma.site.findUnique({
-        where: { id: dbSession.siteId },
-        select: { id: true, slug: true, subdomain: true, userId: true }
-      });
-
-      if (site) {
-        siteSlug = site.slug;
-        // Register preview mapping for the site subdomain
-        registerPreviewMapping(
-          site.subdomain,
-          sandboxInfo.url,
-          sandboxId,
-          site.id,
-          site.userId
-        );
-        // Use custom preview URL
-        previewUrl = buildPreviewUrl(site.subdomain);
-      }
+    if (siteInfo) {
+      siteSlug = siteInfo.slug;
+      // Register preview mapping for the site subdomain
+      registerPreviewMapping(
+        siteInfo.subdomain,
+        sandboxInfo.url,
+        sandboxId,
+        dbSession.siteId!,
+        siteInfo.userId
+      );
+      // Use custom preview URL
+      previewUrl = buildPreviewUrl(siteInfo.subdomain);
     }
 
     // Update session with sandbox URL
@@ -134,6 +141,8 @@ export async function POST(request: NextRequest) {
       sandboxName: sandboxInfo.sandboxName || sandboxName,
       sandboxRuntimeStatus: sandboxInfo.runtimeStatus || 'running',
       currentSnapshotId: sandboxInfo.currentSnapshotId || null,
+      sandboxContainerId: sandboxInfo.containerId || null,
+      sandboxHost: sandboxInfo.host ? `${sandboxInfo.host}:${sandboxInfo.port ?? ''}` : null,
       status: 'running',
     });
 

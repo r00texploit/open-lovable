@@ -47,6 +47,9 @@ next-env.d.ts
 *.tar.gz
 e2b-template-*
 
+# Claude Code worktrees
+.claude/worktrees/
+
 # IDE
 .vscode/
 .idea/

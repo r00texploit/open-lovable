@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireUser } from '@/lib/auth/server';
-import { getProjectDomain } from '@/lib/vercel';
+import { getVpsDomain } from '@/lib/vps-hosting';
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUser();
@@ -21,7 +21,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     return NextResponse.json({ error: 'Site or custom domain not found' }, { status: 404 });
   }
 
-  const result = await getProjectDomain(site.customDomain);
+  const result = await getVpsDomain(site.customDomain);
   const updated = await prisma.site.update({
     where: { id: site.id },
     data: {

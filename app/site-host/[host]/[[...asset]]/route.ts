@@ -3,6 +3,14 @@ import { findSiteByHostname, getPublishedAsset } from '@/lib/tenancy/site-publis
 import { decodeTenantHost, getRootDomain, isTenantSubdomainHost } from '@/lib/tenancy/hostname';
 import { prisma } from '@/lib/db/prisma';
 import { ensureSessionSandboxRunning, persistSandboxRuntime } from '@/lib/sandbox/persistent-sandbox';
+import type { SandboxInfo } from '@/lib/sandbox/types';
+
+function getSandboxProxyUrl(info: SandboxInfo): string {
+  if (info.host && info.port) {
+    return `http://${info.host}:${info.port}`;
+  }
+  return info.url;
+}
 
 export async function GET(request: NextRequest, context: { params: Promise<unknown> }) {
   const { host, asset } = (await context.params) as { host: string; asset?: string[] };
@@ -24,7 +32,7 @@ export async function GET(request: NextRequest, context: { params: Promise<unkno
     const previewSession = await prisma.generationSession.findFirst({
       where: {
         siteId: site.id,
-        sandboxProvider: 'vercel',
+        sandboxProvider: { in: ['vercel', 'vps'] },
         OR: [
           { rawSandboxUrl: { not: null } },
           { sandboxName: { not: null } },
@@ -37,7 +45,7 @@ export async function GET(request: NextRequest, context: { params: Promise<unkno
       try {
         const { info } = await ensureSessionSandboxRunning(previewSession);
         await persistSandboxRuntime(previewSession.id, info, `https://${hostname}`);
-        return proxyToSandbox(request, info.url, asset);
+        return proxyToSandbox(request, getSandboxProxyUrl(info), asset);
       } catch (error) {
         console.error('[site-host] Failed to resume sandbox preview:', error);
         if (!site.published) {

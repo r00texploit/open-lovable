@@ -19,25 +19,29 @@ export interface ViteAppFiles {
 /**
  * Get the port based on provider
  */
-export function getVitePort(provider: 'vercel' | 'e2b'): number {
-  return provider === 'vercel'
-    ? appConfig.vercelSandbox.devPort
-    : appConfig.e2b.vitePort;
+export function getVitePort(provider: 'vercel' | 'e2b' | 'vps'): number {
+  if (provider === 'e2b') {
+    return appConfig.e2b.vitePort;
+  }
+  if (provider === 'vps') {
+    return appConfig.vps.devPort;
+  }
+  return appConfig.vercelSandbox.devPort;
 }
 
 /**
  * Get file templates for Vite React app setup
  */
-export function getViteAppTemplates(provider: 'vercel' | 'e2b'): ViteAppFiles {
+export function getViteAppTemplates(provider: 'vercel' | 'e2b' | 'vps'): ViteAppFiles {
   const port = getVitePort(provider);
-  const isVercel = provider === 'vercel';
+  const isFixedPort = provider === 'vercel' || provider === 'vps';
 
   const packageJson = {
     name: "sandbox-app",
     version: "1.0.0",
     type: "module",
     scripts: {
-      dev: isVercel
+      dev: isFixedPort
         ? `vite --host --port ${port}`
         : "vite --host",
       build: "vite build",
@@ -66,14 +70,14 @@ export default defineConfig({
     host: '0.0.0.0',
     port: ${port},
     strictPort: true,
-    allowedHosts: [
+    allowedHosts: ${provider === 'vps' ? 'true' : `[
       '.vercel.run',
       '.e2b.dev',
       '.e2b.app',
       'localhost',
       '127.0.0.1'
-    ],
-    ${isVercel ? `hmr: {
+    ]`},
+    ${isFixedPort ? `hmr: {
       clientPort: 443,
       protocol: 'wss'
     },` : 'hmr: false,'}

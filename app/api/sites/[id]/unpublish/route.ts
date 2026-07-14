@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireUser } from '@/lib/auth/server';
 import { toSiteDto } from '@/lib/tenancy/site-dto';
+import { isVpsDeploymentEnabled, undeployStaticSiteFromVps } from '@/lib/vps-deployments';
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUser();
@@ -19,6 +20,14 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
   if (!site) {
     return NextResponse.json({ error: 'Site not found' }, { status: 404 });
+  }
+
+  if (isVpsDeploymentEnabled()) {
+    try {
+      await undeployStaticSiteFromVps(site.id);
+    } catch (error) {
+      console.error('[unpublish] Failed to remove VPS deployment:', error);
+    }
   }
 
   const updated = await prisma.site.update({
