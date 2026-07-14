@@ -34,22 +34,23 @@ model Session {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  name          String?
-  image         String?
-  emailVerified DateTime?
-  password      String?        // Hashed password for credential provider
-  role          String         @default("user") // "user" | "admin"
-  accounts      Account[]
-  sessions      Session[]
-  subscription  Subscription?
-  usage         Usage?
-  generations          Generation[]
-  generationSessions   GenerationSession[]
-  sites                Site[]
-  aiCredentials        AiCredential[]
-  createdAt     DateTime       @default(now())
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  name               String?
+  image              String?
+  emailVerified      DateTime?
+  password           String? // Hashed password for credential provider
+  role               String              @default("user") // "user" | "admin"
+  accounts           Account[]
+  sessions           Session[]
+  subscription       Subscription?
+  usage              Usage?
+  generations        Generation[]
+  generationSessions GenerationSession[]
+  sites              Site[]
+  aiCredentials      AiCredential[]
+  githubConnections  GitHubConnection[]
+  createdAt          DateTime            @default(now())
 }
 
 model VerificationToken {
@@ -71,18 +72,18 @@ model PasswordResetToken {
 }
 
 model Subscription {
-  id                     String   @id @default(cuid())
-  userId                 String   @unique
-  stripeCustomerId       String?  @unique
-  stripeSubscriptionId   String?  @unique
-  stripePriceId          String?
-  status                 String   @default("inactive") // active, canceled, past_due, trialing
-  tier                   String   @default("free")      // free, pro, team
-  currentPeriodEnd       DateTime?
-  cancelAtPeriodEnd      Boolean  @default(false)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId        String?
+  status               String    @default("inactive") // active, canceled, past_due, trialing
+  tier                 String    @default("free") // free, pro, team
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Usage {
@@ -105,51 +106,52 @@ model Generation {
 }
 
 model GenerationSession {
-  id              String    @id @default(cuid())
-  userId          String
-  siteId          String?
-  sandboxId       String    @unique
-  sandboxProvider String    @default("vercel")
-  sandboxUrl      String?
-  rawSandboxUrl   String?
-  sandboxName     String?   @unique
+  id                   String   @id @default(cuid())
+  userId               String
+  siteId               String?
+  sandboxId            String   @unique
+  sandboxProvider      String   @default("vercel")
+  sandboxUrl           String?
+  rawSandboxUrl        String?
+  sandboxName          String?  @unique
   sandboxRuntimeStatus String?
-  currentSnapshotId String?
-  status          String    @default("creating")
-  chatMessages    Json      @default("[]")
-  conversationCtx Json?
-  aiModel         String?
-  fileCache       Json      @default("{}")
-  existingFiles   String[]
-  viteErrors      Json      @default("[]")
-  lastActiveAt    DateTime  @default(now())
-  expiresAt       DateTime  @default(dbgenerated("(now() + '24:00:00'::interval)"))
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  site            Site?     @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  currentSnapshotId    String?
+  status               String   @default("creating")
+  chatMessages         Json     @default("[]")
+  conversationCtx      Json?
+  aiModel              String?
+  fileCache            Json     @default("{}")
+  existingFiles        String[]
+  viteErrors           Json     @default("[]")
+  lastActiveAt         DateTime @default(now())
+  expiresAt            DateTime @default(dbgenerated("(now() + '24:00:00'::interval)"))
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site                 Site?    @relation(fields: [siteId], references: [id], onDelete: SetNull)
 
   @@index([userId, lastActiveAt])
   @@index([siteId, lastActiveAt])
 }
 
 model Site {
-  id                   String      @id @default(cuid())
+  id                   String              @id @default(cuid())
   userId               String
   name                 String
-  slug                 String      @unique
-  subdomain            String      @unique
-  customDomain         String?     @unique
-  customDomainVerified Boolean     @default(false)
-  domainStatus         String      @default("unconfigured")
-  published            Boolean     @default(false)
+  slug                 String              @unique
+  subdomain            String              @unique
+  customDomain         String?             @unique
+  customDomainVerified Boolean             @default(false)
+  domainStatus         String              @default("unconfigured")
+  published            Boolean             @default(false)
   lastPublishedAt      DateTime?
-  createdAt            DateTime    @default(now())
-  updatedAt            DateTime    @updatedAt
-  user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   assets               SiteAsset[]
   generationSessions   GenerationSession[]
   aiCredentials        AiCredential[]
+  gitHubConnection     GitHubConnection?
 
   @@index([userId, createdAt])
 }
@@ -159,21 +161,21 @@ model Site {
 // with `proxyToken`, and the proxy decrypts the matching key to call the
 // provider. siteId is optional — null means an account-wide default key.
 model AiCredential {
-  id          String    @id @default(cuid())
-  userId      String
-  siteId      String?
-  provider    String    @default("openai") // openai, anthropic, ...
-  last4       String    // for display, e.g. show "sk-…abcd" without the secret
-  ciphertext  String    // base64 AES-256-GCM ciphertext of the API key
-  iv          String    // base64 nonce
-  authTag     String    // base64 GCM auth tag
-  proxyToken  String    @unique // opaque token embedded in the generated site
-  revoked     Boolean   @default(false)
-  lastUsedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  site        Site?     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  userId     String
+  siteId     String?
+  provider   String    @default("openai") // openai, anthropic, ...
+  last4      String // for display, e.g. show "sk-…abcd" without the secret
+  ciphertext String // base64 AES-256-GCM ciphertext of the API key
+  iv         String // base64 nonce
+  authTag    String // base64 GCM auth tag
+  proxyToken String    @unique // opaque token embedded in the generated site
+  revoked    Boolean   @default(false)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site       Site?     @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@unique([userId, provider, siteId])
   @@index([userId])
@@ -182,15 +184,35 @@ model AiCredential {
 
 model SiteAsset {
   id          String   @id @default(cuid())
-  siteId       String
-  path         String
-  contentType  String
-  content      Bytes
-  size         Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  site         Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId      String
+  path        String
+  contentType String
+  content     Bytes
+  size        Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@unique([siteId, path])
   @@index([siteId])
+}
+
+// Encrypted GitHub OAuth token for a user/site. Tokens are encrypted with the
+// same AES-256-GCM vault used for AI credentials and are never exposed to clients.
+model GitHubConnection {
+  id           String   @id @default(cuid())
+  userId       String
+  siteId       String   @unique
+  accessToken  String // base64 AES-256-GCM ciphertext
+  iv           String // base64 nonce
+  authTag      String // base64 GCM auth tag
+  scope        String // e.g. "repo"
+  githubUserId String?
+  githubLogin  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site         Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

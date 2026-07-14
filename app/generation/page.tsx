@@ -26,11 +26,15 @@ import {
   SiJavascript,
   SiReact,
   SiCss3,
-  SiJson
+  SiJson,
+  Upload,
+  Download,
+  Link2,
 } from '@/lib/icons';
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
 import { extractSiteNameFromPrompt, slugifySiteName } from '@/lib/tenancy/site-naming';
+import { fileCacheToFiles, hasRealSource } from '@/lib/sandbox/source-heuristics';
 import { UsageBar } from '@/components/subscription/usage-bar';
 import { getTierDisplayName, getTierColor } from '@/lib/stripe/subscription-display';
 
@@ -107,6 +111,7 @@ interface ChatMessage {
     commandType?: 'input' | 'output' | 'error' | 'success';
     brandingData?: any;
     sourceUrl?: string;
+    revertSnapshot?: Record<string, string | null>;
   };
 }
 
@@ -296,6 +301,9 @@ function AISandboxPage() {
   const [siteActionLoading, setSiteActionLoading] = useState<'create' | 'publish' | 'unpublish' | null>(null);
   const [siteStatusMessage, setSiteStatusMessage] = useState<string | null>(null);
   const [showNewSiteForm, setShowNewSiteForm] = useState(false);
+  const [githubStatus, setGithubStatus] = useState<{ connected: boolean; githubLogin?: string | null } | null>(null);
+  const [githubActionLoading, setGithubActionLoading] = useState<'push' | 'pull' | 'connect' | null>(null);
+  const [githubStatusMessage, setGithubStatusMessage] = useState<string | null>(null);
   const [usage, setUsage] = useState<{ used: number; limit: number; tier: string } | null>(null);
 
   const [conversationContext, setConversationContext] = useState<{
@@ -332,6 +340,32 @@ function AISandboxPage() {
 
   useEffect(() => {
     activeSiteIdRef.current = activeSiteId;
+  }, [activeSiteId]);
+
+  useEffect(() => {
+    const fetchGitHubStatus = async () => {
+      if (!activeSiteId) {
+        setGithubStatus(null);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/github/status?siteId=${encodeURIComponent(activeSiteId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setGithubStatus({
+            connected: data.connected,
+            githubLogin: data.connection?.githubLogin,
+          });
+        } else {
+          setGithubStatus({ connected: false });
+        }
+      } catch (error) {
+        console.error('Failed to fetch GitHub status:', error);
+        setGithubStatus({ connected: false });
+      }
+    };
+
+    fetchGitHubStatus();
   }, [activeSiteId]);
 
   const fileTypeFromPath = useCallback((path: string) => {
@@ -400,9 +434,10 @@ function AISandboxPage() {
       ...payload,
       chatMessages: payload.chatMessages.slice(-appConfig.ui.maxRecentMessagesContext),
       conversationCtx: stripLargeSessionContext(conversationContext),
-      // Omit fileCache from autosaves: apply-ai-code-stream persists the
-      // authoritative copy server-side, and JSON.stringify drops undefined.
-      fileCache: undefined,
+      // Keep fileCache as a fallback: apply-ai-code-stream writes the
+      // authoritative copy, but the client cache guarantees the Code tab and
+      // cross-device restore work even when the server-side persist is skipped.
+      fileCache: Object.keys(fileCache).length > 0 ? fileCache : undefined,
     };
 
     // Always persist to localStorage so session survives a refresh on the same device
@@ -417,6 +452,13 @@ function AISandboxPage() {
 
     // Also persist to DB if user is logged in (for cross-device restore)
     if (!session?.user?.id) return;
+    console.log('[saveSession] Persisting to DB:', {
+      sandboxId: sd.sandboxId,
+      chatCount: dbPayload.chatMessages.length,
+      fileCacheKeys: Object.keys(fileCache).length,
+      hasHomeUrl: !!homeUrlInput,
+      siteId: dbPayload.siteId,
+    });
     try {
       const response = await fetch('/api/generation-session', {
         method: 'POST',
@@ -425,9 +467,11 @@ function AISandboxPage() {
       });
       if (!response.ok) {
         console.warn('[saveSession] DB save skipped:', response.status, response.statusText);
+      } else {
+        console.log('[saveSession] DB save OK:', sd.sandboxId);
       }
-    } catch {
-      // non-blocking — DB save failed, localStorage fallback already done
+    } catch (err) {
+      console.warn('[saveSession] DB save failed:', err);
     }
   }, [sandboxData, sandboxFiles, chatMessages, conversationContext, homeUrlInput, homeContextInput, aiModel, activeSiteId, session?.user?.id]);
 
@@ -615,6 +659,15 @@ function AISandboxPage() {
 
           // Restore non-sandbox state immediately (chat, model, site)
           if (savedSession && isMounted) {
+            console.log('[home] Restoring session fields:', {
+              chatCount: Array.isArray(savedSession.chatMessages) ? savedSession.chatMessages.length : 0,
+              hasHomeUrl: !!(savedSession.homeUrlInput ?? savedSession.conversationCtx?.homeUrlInput),
+              hasHomeContext: !!(savedSession.homeContextInput ?? savedSession.conversationCtx?.homeContextInput),
+              fileCacheKeys: Object.keys(savedSession.fileCache?.files ?? savedSession.fileCache ?? {}).length,
+              siteId: savedSession.siteId,
+              aiModel: savedSession.aiModel,
+            });
+
             if (Array.isArray(savedSession.chatMessages) && savedSession.chatMessages.length > 0) {
               setChatMessages(savedSession.chatMessages.map((m: any) => ({
                 ...m,
@@ -652,6 +705,18 @@ function AISandboxPage() {
                   files: filesCacheToProgressFiles(restoredFiles),
                 }));
               }
+            }
+
+            // If the session has any real work in it (URL, files, or chat beyond
+            // the default welcome message), treat it as an existing project so the
+            // sidebar input is hidden and the chat/explorer reflect the restored
+            // state instead of looking like a fresh session.
+            const hasRestoredWork =
+              !!savedHomeUrl ||
+              hadRestoredFiles ||
+              (Array.isArray(savedSession.chatMessages) && savedSession.chatMessages.length > 1);
+            if (hasRestoredWork) {
+              setHasInitialSubmission(true);
             }
           }
 
@@ -695,12 +760,6 @@ function AISandboxPage() {
             // if it's just the template while we hold durable saved source,
             // re-apply that source so the editor shows the real site instead of
             // "Sandbox Ready".
-            const TEMPLATE_ONLY_PATHS = new Set([
-              'src/App.tsx', 'src/App.jsx', 'src/main.tsx', 'src/main.jsx', 'src/index.css',
-              'index.html', 'package.json', 'vite.config.js', 'tailwind.config.js', 'postcss.config.js',
-            ]);
-            const hasRealSource = (files: Record<string, unknown>) =>
-              Object.keys(files).some(p => p.startsWith('src/') && !TEMPLATE_ONLY_PATHS.has(p));
 
             // Resolve durable saved source: localStorage first, then DB fileCache.
             let savedSource: Record<string, string> | null = null;
@@ -709,24 +768,22 @@ function AISandboxPage() {
               if (raw) savedSource = JSON.parse(raw);
             } catch { /* parse error */ }
             if (!savedSource) {
-              const cache = savedSession.fileCache?.files ?? savedSession.fileCache;
-              if (cache && typeof cache === 'object') {
-                savedSource = Object.fromEntries(
-                  Object.entries(cache).map(([p, v]: [string, any]) => [p, typeof v === 'string' ? v : v?.content ?? ''])
-                    .filter(([, c]) => typeof c === 'string')
-                ) as Record<string, string>;
-              }
+              savedSource = fileCacheToFiles(savedSession.fileCache);
             }
             const savedHasSource = !!savedSource && hasRealSource(savedSource);
 
             // Inspect the live sandbox (this also backfills the DB server-side).
             let liveFiles: Record<string, string> = {};
             let liveStructure = '';
+            console.log('[home] Reading live sandbox files for:', savedSession.sandboxId);
             try {
               const res = await fetch(`/api/get-sandbox-files?sandboxId=${encodeURIComponent(savedSession.sandboxId)}`);
               if (res.ok) {
                 const data = await res.json();
                 if (data.success && data.files) { liveFiles = data.files; liveStructure = data.structure || ''; }
+                console.log('[home] Live sandbox file count:', Object.keys(liveFiles).length, 'hasRealSource:', hasRealSource(liveFiles));
+              } else {
+                console.warn('[home] get-sandbox-files returned non-OK status:', res.status);
               }
             } catch (readErr) {
               console.warn('[home] Live-sandbox read failed:', readErr);
@@ -739,7 +796,11 @@ function AISandboxPage() {
                 const res = await fetch('/api/restore-files', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ sandboxId: savedSession.sandboxId, files: savedSource }),
+                  body: JSON.stringify({
+                    sandboxId: savedSession.sandboxId,
+                    files: savedSource,
+                    siteId: savedSession.siteId || activeSiteIdRef.current || activeSiteId,
+                  }),
                 });
                 const result = await res.json();
                 if (result.success) {
@@ -759,6 +820,26 @@ function AISandboxPage() {
               // Sandbox has the real code (or we have nothing better) — show it.
               setSandboxFiles(liveFiles);
               setFileStructure(liveStructure);
+              setGenerationProgress(prev => ({
+                ...prev,
+                files: filesCacheToProgressFiles(liveFiles),
+              }));
+
+              // If the DB copy was empty but the live sandbox has real files,
+              // backfill the DB so future restores can read from it.
+              if (!hadRestoredFiles) {
+                console.log('[home] Backfilling empty DB cache with live sandbox files');
+                const liveSandboxData = {
+                  sandboxId: savedSession.sandboxId,
+                  url: savedUrl,
+                  rawSandboxUrl: savedUrl,
+                  previewUrl: savedSession.sandboxUrl && savedSession.sandboxUrl !== savedUrl ? savedSession.sandboxUrl : undefined,
+                  sandboxName: savedSession.sandboxName,
+                  provider: savedSession.sandboxProvider ?? 'vercel',
+                  success: true,
+                } as any;
+                await saveSession(liveSandboxData, chatMessages, savedSession.siteId || activeSiteIdRef.current || activeSiteId);
+              }
             }
           } else {
             if (savedUrl) console.log('[home] Saved sandbox expired — creating fresh sandbox, chat history preserved');
@@ -773,13 +854,7 @@ function AISandboxPage() {
                 if (raw) savedFiles = JSON.parse(raw);
               } catch { /* parse error */ }
               if (!savedFiles && savedSession?.fileCache) {
-                const cachedFiles = savedSession.fileCache.files ?? savedSession.fileCache;
-                savedFiles = Object.fromEntries(
-                  Object.entries(cachedFiles).map(([path, value]: [string, any]) => [
-                    path,
-                    typeof value === 'string' ? value : value?.content ?? '',
-                  ]).filter(([, content]) => typeof content === 'string')
-                ) as Record<string, string>;
+                savedFiles = fileCacheToFiles(savedSession.fileCache);
               }
 
               if (savedFiles && Object.keys(savedFiles).length > 0) {
@@ -788,12 +863,20 @@ function AISandboxPage() {
                   const res = await fetch('/api/restore-files', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sandboxId: freshSandbox.sandboxId, files: savedFiles }),
+                    body: JSON.stringify({
+                      sandboxId: freshSandbox.sandboxId,
+                      files: savedFiles,
+                      siteId: savedSession.siteId || activeSiteIdRef.current || activeSiteId,
+                    }),
                   });
                   const result = await res.json();
                   if (result.success) {
                     addChatMessage(`✅ Restored ${result.written} file${result.written === 1 ? '' : 's'}.`, 'system');
                     setSandboxFiles(savedFiles);
+                    setGenerationProgress(prev => ({
+                      ...prev,
+                      files: filesCacheToProgressFiles(savedFiles),
+                    }));
                     // Refresh iframe to show restored files
                     setTimeout(() => {
                       if (iframeRef.current && freshSandbox.url) {
@@ -1090,7 +1173,11 @@ function AISandboxPage() {
     const res = await fetch('/api/restore-files', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sandboxId: targetSandbox.sandboxId, files }),
+      body: JSON.stringify({
+        sandboxId: targetSandbox.sandboxId,
+        files,
+        siteId: activeSiteIdRef.current || activeSiteId,
+      }),
     });
     const result = await res.json();
     if (!res.ok || !result.success) {
@@ -1166,6 +1253,58 @@ function AISandboxPage() {
     setResponseArea(prev => [...prev, `[${type}] ${message}`]);
   };
 
+  /**
+   * Revert the most recent AI edit by restoring the captured before-snapshot.
+   * The snapshot is stored on the latest AI chat message and sent to the
+   * /api/revert-edit endpoint. After a successful revert the preview iframe is
+   * refreshed and a system message is added to the chat.
+   */
+  const revertLastEdit = async (messageIndex: number) => {
+    const message = chatMessages[messageIndex];
+    if (!message?.metadata?.revertSnapshot || !sandboxData?.sandboxId) return;
+
+    const snapshot = message.metadata.revertSnapshot;
+    const changedFiles = Object.keys(snapshot);
+
+    const confirmed = window.confirm(
+      `Revert the last edit? This will restore ${changedFiles.length} file${changedFiles.length === 1 ? '' : 's'} to their previous state.`
+    );
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/revert-edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sandboxId: sandboxData.sandboxId, snapshot }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to revert edit');
+      }
+
+      // Remove the revert snapshot from the reverted message so it can't be
+      // reverted again (it already is the previous state).
+      setChatMessages(prev =>
+        prev.map((m, i) =>
+          i === messageIndex ? { ...m, metadata: { ...m.metadata, revertSnapshot: undefined } } : m
+        )
+      );
+
+      addChatMessage(`Reverted ${result.restored?.length ?? changedFiles.length} file(s).`, 'system');
+
+      // Refresh the file explorer and the preview iframe.
+      await fetchSandboxFiles();
+      await refreshSandboxPreview(sandboxData, 'Preview refreshed after revert.');
+    } catch (error: any) {
+      console.error('[revertLastEdit] Failed:', error);
+      addChatMessage(`Failed to revert edit: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addChatMessage = (content: unknown, type: ChatMessage['type'], metadata?: ChatMessage['metadata']) => {
     const messageContent = getErrorMessage(content, '');
     setChatMessages(prev => {
@@ -1179,6 +1318,24 @@ function AISandboxPage() {
       return [...prev, { content: messageContent, type, timestamp: new Date(), metadata }];
     });
   };
+
+  /**
+   * Attach a revert snapshot to the most recent AI chat message. Called after
+   * applyGeneratedCode completes so the user can undo the last edit.
+   */
+  const attachRevertSnapshotToLastAiMessage = useCallback((beforeSnapshot?: Record<string, string | null>) => {
+    if (!beforeSnapshot || Object.keys(beforeSnapshot).length === 0) return;
+
+    setChatMessages(prev => {
+      const lastAiIndex = prev.map(m => m.type).lastIndexOf('ai');
+      if (lastAiIndex === -1) return prev;
+
+      const next = prev.map((m, i) =>
+        i === lastAiIndex ? { ...m, metadata: { ...m.metadata, revertSnapshot: beforeSnapshot } } : m
+      );
+      return next;
+    });
+  }, []);
   
   const checkAndInstallPackages = async () => {
     // This function is only called when user explicitly requests it
@@ -1486,7 +1643,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
   };
 
-  const applyGeneratedCode = async (code: string, isEdit: boolean = false, overrideSandboxData?: SandboxData, images?: UploadedImagePayload[]) => {
+  const applyGeneratedCode = async (code: string, isEdit: boolean = false, overrideSandboxData?: SandboxData, images?: UploadedImagePayload[]): Promise<{ beforeSnapshot?: Record<string, string | null> }> => {
     console.log('[applyGeneratedCode] STARTED:', {
       codeLength: code?.length || 0,
       isEdit,
@@ -1675,7 +1832,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           autoCompletedComponents: finalData.autoCompletedComponents,
           warning: finalData.warning,
           missingImports: finalData.missingImports,
-          debug: finalData.debug
+          debug: finalData.debug,
+          beforeSnapshot: finalData.beforeSnapshot,
         };
         
         if (data.success) {
@@ -1825,8 +1983,16 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           }
           
           // Fetch updated file structure
-          await fetchSandboxFiles();
-          
+          const refreshedFiles = await fetchSandboxFiles();
+
+          // Persist the updated state immediately so a refresh does not lose the
+          // just-applied code, chat, or URL. The debounced autosave may not fire
+          // before the user leaves the page.
+          if (effectiveSandboxData?.sandboxId) {
+            console.log('[applyGeneratedCode] Immediate save after apply with', Object.keys(refreshedFiles || {}).length, 'files');
+            await saveSession(effectiveSandboxData, chatMessages, activeSiteIdRef.current || activeSiteId);
+          }
+
           // Skip automatic package check - it's not needed here and can cause false "no sandbox" messages
           // Packages are already installed during the apply-ai-code-stream process
           
@@ -1865,12 +2031,17 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           const firstError = finalData?.results?.errors?.[0];
           throw new Error(firstError || finalData?.message || finalData?.error || 'Failed to apply code');
         }
+
+        return { beforeSnapshot: data.beforeSnapshot };
       } else {
         // If no final data was received, still close loading
         addChatMessage('Code application may have partially succeeded. Check the preview.', 'system');
       }
+
+      return {};
     } catch (error: any) {
       log(`Failed to apply code: ${error.message}`, 'error');
+      return {};
     } finally {
       setLoading(false);
       codeApplicationInProgress.current = false; // Allow health check to run again
@@ -2079,7 +2250,88 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       setSiteError('Failed to copy URL');
     }
   };
-  
+
+  const connectGitHub = () => {
+    if (!activeSiteId || !sandboxData?.sandboxId) {
+      setSiteError('Select a site and create a sandbox before connecting GitHub.');
+      return;
+    }
+    setGithubActionLoading('connect');
+    window.location.href = `/api/github/connect?siteId=${encodeURIComponent(activeSiteId)}`;
+  };
+
+  const pushToGitHub = async () => {
+    if (!activeSiteId || !sandboxData?.sandboxId) return;
+    setGithubActionLoading('push');
+    setGithubStatusMessage(null);
+    setSiteError(null);
+
+    try {
+      const response = await fetch('/api/github/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          siteId: activeSiteId,
+          sandboxId: sandboxData.sandboxId,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to push to GitHub');
+      }
+
+      setGithubStatusMessage(
+        data.success
+          ? `Pushed ${data.pushed?.length || 0} files to GitHub`
+          : `Push completed with ${data.failed?.length || 0} failures`
+      );
+    } catch (error: any) {
+      setGithubStatusMessage(`GitHub push failed: ${error.message}`);
+    } finally {
+      setGithubActionLoading(null);
+    }
+  };
+
+  const pullFromGitHub = async () => {
+    if (!activeSiteId || !sandboxData?.sandboxId) return;
+    setGithubActionLoading('pull');
+    setGithubStatusMessage(null);
+    setSiteError(null);
+
+    try {
+      const response = await fetch('/api/github/pull', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          siteId: activeSiteId,
+          sandboxId: sandboxData.sandboxId,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to pull from GitHub');
+      }
+
+      setGithubStatusMessage(
+        data.success
+          ? `Pulled ${data.written?.length || 0} files from GitHub`
+          : `Pull completed with ${data.failed?.length || 0} failures`
+      );
+
+      // Refresh file list and preview after pulling
+      await fetchSandboxFiles();
+      if (iframeRef.current && sandboxData?.url) {
+        iframeRef.current.src = `${sandboxData.url}?t=${Date.now()}`;
+      }
+    } catch (error: any) {
+      setGithubStatusMessage(`GitHub pull failed: ${error.message}`);
+    } finally {
+      setGithubActionLoading(null);
+    }
+  };
+
 //   const restartViteServer = async () => {
 //     try {
 //       addChatMessage('Restarting Vite dev server...', 'system');
@@ -2927,15 +3179,23 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       // Backend now manages file state - no need to fetch from frontend
       console.log('[chat] Using backend file cache for context');
       
+      // Keep the request body small: the server reads the authoritative source
+      // from the DB/sandbox by sandboxId, so we must NOT upload the full code
+      // here (it blows past Vercel's ~4.5MB body cap → 413). We strip scraped
+      // page content, generated-component bodies, lastGeneratedCode, and trim
+      // chat history to short text. See stripLargeSessionContext.
       const fullContext = {
         sandboxId: sandboxData?.sandboxId || (sandboxCreating ? 'pending' : null),
         structure: structureContent,
-        recentMessages: chatMessages.slice(-20),
-        conversationContext: {
+        recentMessages: chatMessages.slice(-10).map(m => ({
+          type: m.type,
+          content: typeof m.content === 'string' ? m.content.slice(0, 1000) : '',
+        })),
+        conversationContext: stripLargeSessionContext({
           ...conversationContext,
           uploadedImages: undefined,
-          lastGeneratedImages: undefined
-        },
+          lastGeneratedImages: undefined,
+        }),
         currentCode: promptInput,
         sandboxUrl: sandboxData?.rawSandboxUrl || sandboxData?.url,
         sandboxCreating: sandboxCreating
@@ -3369,7 +3629,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             undefined,
             conversationContext.lastGeneratedImages
           );
-          await applyGeneratedCode(codeToApply, isEdit, activeSandboxData, imagesForApply);
+          const { beforeSnapshot } = await applyGeneratedCode(codeToApply, isEdit, activeSandboxData, imagesForApply);
+          attachRevertSnapshotToLastAiMessage(beforeSnapshot);
         } else {
           console.error('[startGeneration] NOT calling applyGeneratedCode - missing:', {
             activeSandboxData: !!activeSandboxData,
@@ -3478,7 +3739,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       conversationContext.uploadedImages,
       conversationContext.lastGeneratedImages
     );
-    await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit, undefined, imagesForReapply);
+    const { beforeSnapshot } = await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit, undefined, imagesForReapply);
+    attachRevertSnapshotToLastAiMessage(beforeSnapshot);
   };
 
   // Auto-scroll code display to bottom when streaming
@@ -4532,7 +4794,7 @@ Focus on the key sections and content, making it clean and modern.`;
           setPromptInput(generatedCode);
 
           // Apply the code (first time is not edit mode)
-          await applyGeneratedCode(generatedCode, false, undefined, uploadedImages);
+          const { beforeSnapshot } = await applyGeneratedCode(generatedCode, false, undefined, uploadedImages);
 
           addChatMessage(
             brandExtensionMode
@@ -4545,6 +4807,8 @@ Focus on the key sections and content, making it clean and modern.`;
               generatedCode: generatedCode
             }
           );
+
+          attachRevertSnapshotToLastAiMessage(beforeSnapshot);
           
           setConversationContext(prev => ({
             ...prev,
@@ -4628,10 +4892,11 @@ Focus on the key sections and content, making it clean and modern.`;
       <div className="font-sans bg-[var(--bg-primary)] text-foreground h-screen flex flex-col">
 
 
-      <div className="bg-background-lighter/90 backdrop-blur-xl px-4 py-2 border-b border-border-muted flex items-center justify-between gap-4">
+      <div className="relative px-4 py-2 flex items-center justify-between gap-4 bg-gradient-to-r from-[#fff7ed] via-[#fff0e6] to-[#ffe8d6] border-b border-[#ffdac2]/40">
+        <div className="absolute inset-x-0 bottom-0 h-4 translate-y-full bg-gradient-to-b from-[#fff0e6]/80 via-[#fff0e6]/40 to-transparent backdrop-blur-sm pointer-events-none" />
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2 px-2 text-foreground transition-colors hover:text-brand-orange">
-            <NoeronLogo iconClassName="h-[28px] w-[28px]" textClassName="text-foreground" />
+            <NoeronLogo iconClassName="h-[112px] w-[112px]" showText={false} variant="light" />
           </Link>
           <div className="hidden sm:block w-[190px]">
             <BrandSelect
@@ -4667,7 +4932,7 @@ Focus on the key sections and content, making it clean and modern.`;
         <div className="flex items-center gap-3">
           {usage && (
             <div className="hidden md:flex items-center gap-3">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${getTierColor(usage.tier as any).bg} ${getTierColor(usage.tier as any).text} ${getTierColor(usage.tier as any).border} border`}>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-brand-orange/10 text-brand-orange border border-brand-orange/25">
                 {getTierDisplayName(usage.tier as any)} Plan
               </span>
               <UsageBar
@@ -4675,6 +4940,7 @@ Focus on the key sections and content, making it clean and modern.`;
                 limit={usage.limit}
                 showLabel={false}
                 showTimer={false}
+                showRemaining={true}
                 size="sm"
                 variant="compact"
               />
@@ -4803,6 +5069,57 @@ Focus on the key sections and content, making it clean and modern.`;
                 >
                   {siteActionLoading === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
                 </button>
+
+                {activeSiteId && sandboxData?.sandboxId && (
+                  <div className="flex items-center gap-2 pl-3 border-l border-warm-750/12">
+                    {githubStatus?.connected ? (
+                      <>
+                        <span className="text-xs text-warm-500 hidden sm:inline">
+                          GitHub{githubStatus.githubLogin ? ` • ${githubStatus.githubLogin}` : ''}
+                        </span>
+                        <button
+                          onClick={pushToGitHub}
+                          disabled={githubActionLoading !== null}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-warm-750/12 px-3 py-2 text-sm text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800 disabled:cursor-not-allowed disabled:opacity-50"
+                          title="Push sandbox files to GitHub"
+                        >
+                          {githubActionLoading === 'push' ? (
+                            <span className="w-4 h-4 border-2 border-warm-500 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Upload className="w-4 h-4" />
+                          )}
+                          <span className="hidden sm:inline">Push</span>
+                        </button>
+                        <button
+                          onClick={pullFromGitHub}
+                          disabled={githubActionLoading !== null}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-warm-750/12 px-3 py-2 text-sm text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800 disabled:cursor-not-allowed disabled:opacity-50"
+                          title="Pull latest files from GitHub"
+                        >
+                          {githubActionLoading === 'pull' ? (
+                            <span className="w-4 h-4 border-2 border-warm-500 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                          <span className="hidden sm:inline">Pull</span>
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={connectGitHub}
+                        disabled={githubActionLoading !== null}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-warm-750/12 px-3 py-2 text-sm text-warm-500 transition-colors hover:bg-warm-800/5 hover:text-warm-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {githubActionLoading === 'connect' ? (
+                          <span className="w-4 h-4 border-2 border-warm-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Link2 className="w-4 h-4" />
+                        )}
+                        Connect GitHub
+                      </button>
+                    )}
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -4856,6 +5173,7 @@ Focus on the key sections and content, making it clean and modern.`;
           </p>
         )}
         {siteStatusMessage && <p className="mt-2 text-sm text-brand-orange-dark">{siteStatusMessage}</p>}
+        {githubStatusMessage && <p className="mt-2 text-sm text-warm-500">{githubStatusMessage}</p>}
         {siteError && <p className="mt-2 text-sm text-red-600">{siteError}</p>}
       </div>
 
@@ -4868,6 +5186,7 @@ Focus on the key sections and content, making it clean and modern.`;
             {!hasInitialSubmission ? (
               <div className="p-4 border-b border-[var(--border-default)]">
                 <SidebarInput
+                  initialUrl={homeUrlInput}
                   onSubmit={(url, style, model, instructions) => {
                     // Mark that we've had an initial submission
                     setHasInitialSubmission(true);
@@ -4975,13 +5294,13 @@ Focus on the key sections and content, making it clean and modern.`;
             ref={chatMessagesRef}>
             {chatMessages.map((msg, idx) => {
               // Check if this message is from a successful generation
-              const isGenerationComplete = msg.content.includes('Successfully recreated') || 
+              const isGenerationComplete = msg.content.includes('Successfully recreated') ||
                                          msg.content.includes('AI recreation generated!') ||
                                          msg.content.includes('Code generated!');
-              
+
               // Get the files from metadata if this is a completion message
               // const completedFiles = msg.metadata?.appliedFiles || [];
-              
+
               return (
                 <div key={idx} className="block">
                   <div className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -5280,12 +5599,35 @@ Focus on the key sections and content, making it clean and modern.`;
                       </div>
                     </div>
                   )}
+
                     </div>
                     </div>
                   </div>
               );
             })}
-            
+
+            {/* Revert action for the latest AI edit - shown as a clear button below the chat, aligned with user messages */}
+            {(() => {
+              const lastAiIndex = chatMessages.map(m => m.type).lastIndexOf('ai');
+              const lastAiMsg = chatMessages[lastAiIndex];
+              if (!lastAiMsg?.metadata?.revertSnapshot) return null;
+              return (
+                <div className="flex justify-end px-4 pb-3">
+                  <button
+                    onClick={() => revertLastEdit(lastAiIndex)}
+                    disabled={loading}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-warm-100 border border-border-muted text-xs font-semibold text-foreground hover:bg-warm-200 transition-colors disabled:opacity-50"
+                    aria-label="Revert the last AI edit"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                    </svg>
+                    Revert
+                  </button>
+                </div>
+              );
+            })()}
+
             {/* Code application progress */}
             {codeApplicationState.stage && (
               <CodeApplicationProgress state={codeApplicationState} />

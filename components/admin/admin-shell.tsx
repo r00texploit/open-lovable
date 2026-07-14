@@ -17,10 +17,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background-base">
       {/* Top bar */}
       <header className="sticky top-0 z-40 bg-background-lighter/80 backdrop-blur-xl border-b border-border-faint">
-        <div className="flex items-center justify-between h-16 px-4 md:px-6">
+        <div className="flex items-center justify-between h-32 px-4 md:px-6">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
-              <NoeronLogo iconClassName="h-7 w-7" textClassName="text-foreground font-semibold" />
+              <NoeronLogo iconClassName="h-28 w-28" showText={false} variant="light" />
             </Link>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-heat-8 px-2.5 py-1 text-xs font-semibold text-heat-100">
               <ShieldCheck className="h-3.5 w-3.5" />

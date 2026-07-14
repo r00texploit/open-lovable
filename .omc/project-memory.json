@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1783410615484,
+  "lastScanned": 1784014179708,
   "projectRoot": "/home/halim/open-lovable-review",
   "techStack": {
     "languages": [
@@ -115,7 +115,7 @@
       "path": "app",
       "purpose": "Application code",
       "fileCount": 5,
-      "lastAccessed": 1783410615478,
+      "lastAccessed": 1784014179703,
       "keyFiles": [
         "favicon.ico",
         "globals.css",
@@ -128,7 +128,7 @@
       "path": "atoms",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1783410615480,
+      "lastAccessed": 1784014179703,
       "keyFiles": [
         "sheets.ts"
       ]
@@ -137,7 +137,7 @@
       "path": "components",
       "purpose": "UI components",
       "fileCount": 10,
-      "lastAccessed": 1783410615481,
+      "lastAccessed": 1784014179705,
       "keyFiles": [
         "CodeApplicationProgress.tsx",
         "FirecrawlIcon.tsx",
@@ -150,7 +150,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 1,
-      "lastAccessed": 1783410615481,
+      "lastAccessed": 1784014179705,
       "keyFiles": [
         "app.config.ts"
       ]
@@ -159,14 +159,14 @@
       "path": "design-system",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1783410615481,
+      "lastAccessed": 1784014179706,
       "keyFiles": []
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 7,
-      "lastAccessed": 1783410615481,
+      "lastAccessed": 1784014179706,
       "keyFiles": [
         "FLUID-COMPUTE-SECURITY.md",
         "IMPLEMENTATION-SUMMARY.md",
@@ -179,7 +179,7 @@
       "path": "hooks",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1783410615481,
+      "lastAccessed": 1784014179706,
       "keyFiles": [
         "useSwitchingCode.ts"
       ]
@@ -187,8 +187,8 @@
     "lib": {
       "path": "lib",
       "purpose": "Library code",
-      "fileCount": 15,
-      "lastAccessed": 1783410615482,
+      "fileCount": 16,
+      "lastAccessed": 1784014179706,
       "keyFiles": [
         "build-validator.ts",
         "context-selector.ts",
@@ -201,14 +201,14 @@
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1783410615482,
+      "lastAccessed": 1784014179706,
       "keyFiles": []
     },
     "prisma": {
       "path": "prisma",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1783410615482,
+      "lastAccessed": 1784014179706,
       "keyFiles": [
         "schema.prisma"
       ]
@@ -217,7 +217,7 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 7,
-      "lastAccessed": 1783410615482,
+      "lastAccessed": 1784014179707,
       "keyFiles": [
         "compressor.json",
         "file.svg",
@@ -230,7 +230,7 @@
       "path": "screenshots",
       "purpose": null,
       "fileCount": 16,
-      "lastAccessed": 1783410615482,
+      "lastAccessed": 1784014179707,
       "keyFiles": [
         "cta.png",
         "faq.png",
@@ -242,21 +242,21 @@
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 6,
-      "lastAccessed": 1783410615482,
+      "fileCount": 7,
+      "lastAccessed": 1784014179707,
       "keyFiles": [
         "generate-jwt.cjs",
         "init-db.ts",
+        "make-admin.ts",
         "seed-test-session.ts",
-        "seed-test-user.ts",
-        "test-encode-decode.cjs"
+        "seed-test-user.ts"
       ]
     },
     "styles": {
       "path": "styles",
       "purpose": null,
       "fileCount": 5,
-      "lastAccessed": 1783410615482,
+      "lastAccessed": 1784014179707,
       "keyFiles": [
         "chrome-bug.css",
         "colors.json",
@@ -269,7 +269,7 @@
       "path": "tests",
       "purpose": "Test files",
       "fileCount": 3,
-      "lastAccessed": 1783410615483,
+      "lastAccessed": 1784014179707,
       "keyFiles": [
         "api-endpoints.test.js",
         "auth-api.test.cjs",
@@ -280,7 +280,7 @@
       "path": "types",
       "purpose": "Type definitions",
       "fileCount": 3,
-      "lastAccessed": 1783410615483,
+      "lastAccessed": 1784014179707,
       "keyFiles": [
         "conversation.ts",
         "file-manifest.ts",
@@ -291,7 +291,7 @@
       "path": "utils",
       "purpose": "Utility functions",
       "fileCount": 3,
-      "lastAccessed": 1783410615483,
+      "lastAccessed": 1784014179707,
       "keyFiles": [
         "init-canvas.ts",
         "set-timeout-on-visible.ts",
@@ -302,21 +302,21 @@
       "path": "app/api",
       "purpose": "API routes",
       "fileCount": 0,
-      "lastAccessed": 1783410615483,
+      "lastAccessed": 1784014179707,
       "keyFiles": []
     },
     "components/app": {
       "path": "components/app",
       "purpose": "Application code",
       "fileCount": 0,
-      "lastAccessed": 1783410615483,
+      "lastAccessed": 1784014179707,
       "keyFiles": []
     },
     "prisma/migrations": {
       "path": "prisma/migrations",
       "purpose": "Database migrations",
       "fileCount": 2,
-      "lastAccessed": 1783410615484,
+      "lastAccessed": 1784014179708,
       "keyFiles": [
         "add_rls_policies.sql",
         "migration_lock.toml"
@@ -326,7 +326,7 @@
       "path": "styles/components",
       "purpose": "UI components",
       "fileCount": 3,
-      "lastAccessed": 1783410615484,
+      "lastAccessed": 1784014179708,
       "keyFiles": [
         "button.css",
         "code.css",
@@ -334,308 +334,7 @@
       ]
     }
   },
-  "hotPaths": [
-    {
-      "path": "lib/sandbox/providers/vercel-provider.ts",
-      "accessCount": 47,
-      "lastAccessed": 1783431545515,
-      "type": "file"
-    },
-    {
-      "path": "lib/sandbox/providers/base-provider.ts",
-      "accessCount": 27,
-      "lastAccessed": 1783431183573,
-      "type": "file"
-    },
-    {
-      "path": "lib/sandbox/sandbox-manager.ts",
-      "accessCount": 23,
-      "lastAccessed": 1782759835315,
-      "type": "file"
-    },
-    {
-      "path": "lib/session-store.ts",
-      "accessCount": 20,
-      "lastAccessed": 1782737983313,
-      "type": "file"
-    },
-    {
-      "path": "lib/sandbox/templates/vite-templates.ts",
-      "accessCount": 19,
-      "lastAccessed": 1783431177200,
-      "type": "file"
-    },
-    {
-      "path": "app/api/create-ai-sandbox/route.ts",
-      "accessCount": 18,
-      "lastAccessed": 1782311229504,
-      "type": "file"
-    },
-    {
-      "path": "config/app.config.ts",
-      "accessCount": 16,
-      "lastAccessed": 1783409211521,
-      "type": "file"
-    },
-    {
-      "path": "prisma/schema.prisma",
-      "accessCount": 14,
-      "lastAccessed": 1783486995836,
-      "type": "file"
-    },
-    {
-      "path": "package.json",
-      "accessCount": 12,
-      "lastAccessed": 1783423753230,
-      "type": "file"
-    },
-    {
-      "path": "components/shared/pixi/Pixi.tsx",
-      "accessCount": 11,
-      "lastAccessed": 1782229132388,
-      "type": "file"
-    },
-    {
-      "path": "lib/tenancy/hostname.ts",
-      "accessCount": 10,
-      "lastAccessed": 1782746799166,
-      "type": "file"
-    },
-    {
-      "path": "lib/icons.ts",
-      "accessCount": 9,
-      "lastAccessed": 1783419581953,
-      "type": "file"
-    },
-    {
-      "path": "components/shared/header/BrandKit/BrandKit.tsx",
-      "accessCount": 6,
-      "lastAccessed": 1782484657299,
-      "type": "file"
-    },
-    {
-      "path": "lib/sandbox/types.ts",
-      "accessCount": 6,
-      "lastAccessed": 1782751766001,
-      "type": "file"
-    },
-    {
-      "path": "lib/sandbox/providers/e2b-provider.ts",
-      "accessCount": 6,
-      "lastAccessed": 1782751958937,
-      "type": "file"
-    },
-    {
-      "path": "lib/sandbox/factory.ts",
-      "accessCount": 5,
-      "lastAccessed": 1782748470088,
-      "type": "file"
-    },
-    {
-      "path": "lib/request-context.ts",
-      "accessCount": 4,
-      "lastAccessed": 1782269010018,
-      "type": "file"
-    },
-    {
-      "path": "lib/ai/provider-manager.ts",
-      "accessCount": 4,
-      "lastAccessed": 1782718305146,
-      "type": "file"
-    },
-    {
-      "path": "lib/auth/server.ts",
-      "accessCount": 4,
-      "lastAccessed": 1783487694130,
-      "type": "file"
-    },
-    {
-      "path": "lib/tenancy/site-dto.ts",
-      "accessCount": 3,
-      "lastAccessed": 1782735393242,
-      "type": "file"
-    },
-    {
-      "path": "lib/validations/site.ts",
-      "accessCount": 3,
-      "lastAccessed": 1783486244508,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/skills/tailwind-expert/skill.md",
-      "accessCount": 2,
-      "lastAccessed": 1782254892708,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/skills/prisma-expert/skill.md",
-      "accessCount": 2,
-      "lastAccessed": 1782254892760,
-      "type": "file"
-    },
-    {
-      "path": "lib/edit-intent-analyzer.ts",
-      "accessCount": 2,
-      "lastAccessed": 1782267743637,
-      "type": "file"
-    },
-    {
-      "path": "lib/utils.ts",
-      "accessCount": 2,
-      "lastAccessed": 1782269010007,
-      "type": "file"
-    },
-    {
-      "path": "lib/session-helpers.ts",
-      "accessCount": 2,
-      "lastAccessed": 1782269015914,
-      "type": "file"
-    },
-    {
-      "path": "utils/sleep.ts",
-      "accessCount": 2,
-      "lastAccessed": 1782269020908,
-      "type": "file"
-    },
-    {
-      "path": "lib/context-selector.ts",
-      "accessCount": 2,
-      "lastAccessed": 1782340569509,
-      "type": "file"
-    },
-    {
-      "path": "lib/morph-fast-apply.ts",
-      "accessCount": 2,
-      "lastAccessed": 1782527466521,
-      "type": "file"
-    },
-    {
-      "path": "types/conversation.ts",
-      "accessCount": 2,
-      "lastAccessed": 1783416601275,
-      "type": "file"
-    },
-    {
-      "path": "lib/db/prisma.ts",
-      "accessCount": 2,
-      "lastAccessed": 1783486238005,
-      "type": "file"
-    },
-    {
-      "path": "utils/cn.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782228663943,
-      "type": "file"
-    },
-    {
-      "path": "lib/session-wrapper.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782228676686,
-      "type": "file"
-    },
-    {
-      "path": "lib/file-parser.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782228682270,
-      "type": "file"
-    },
-    {
-      "path": "lib/effects/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782228688177,
-      "type": "file"
-    },
-    {
-      "path": "utils/set-timeout-on-visible.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782228693072,
-      "type": "file"
-    },
-    {
-      "path": "hooks/useDebouncedEffect.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782228693132,
-      "type": "file"
-    },
-    {
-      "path": "hooks/useDebouncedCallback.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782228693187,
-      "type": "file"
-    },
-    {
-      "path": "lib/edit-examples.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782228697941,
-      "type": "file"
-    },
-    {
-      "path": "lib/validations/auth.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782228708288,
-      "type": "file"
-    },
-    {
-      "path": "types/file-manifest.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782228721954,
-      "type": "file"
-    },
-    {
-      "path": "eslint.config.mjs",
-      "accessCount": 1,
-      "lastAccessed": 1782254268676,
-      "type": "file"
-    },
-    {
-      "path": ".claude/settings.local.json",
-      "accessCount": 1,
-      "lastAccessed": 1782254268994,
-      "type": "file"
-    },
-    {
-      "path": ".claude/hooks.json",
-      "accessCount": 1,
-      "lastAccessed": 1782254303099,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/skills/nextjs-expert/skill.md",
-      "accessCount": 1,
-      "lastAccessed": 1782254402628,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/skills/react-expert/skill.md",
-      "accessCount": 1,
-      "lastAccessed": 1782254415784,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/skills/typescript-expert/skill.md",
-      "accessCount": 1,
-      "lastAccessed": 1782254447293,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/skills/sandbox-expert/skill.md",
-      "accessCount": 1,
-      "lastAccessed": 1782254885380,
-      "type": "file"
-    },
-    {
-      "path": ".claude/AGENTS.md",
-      "accessCount": 1,
-      "lastAccessed": 1782254909216,
-      "type": "file"
-    },
-    {
-      "path": "lib/errors.ts",
-      "accessCount": 1,
-      "lastAccessed": 1782268255927,
-      "type": "file"
-    }
-  ],
+  "hotPaths": [],
   "userDirectives": [
     {
       "timestamp": 1782254934962,

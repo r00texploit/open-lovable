@@ -7,10 +7,11 @@ import { appConfig } from "@/config/app.config";
 interface SidebarInputProps {
   onSubmit: (url: string, style: string, model: string, instructions?: string) => void;
   disabled?: boolean;
+  initialUrl?: string;
 }
 
-export default function SidebarInput({ onSubmit, disabled = false }: SidebarInputProps) {
-  const [url, setUrl] = useState<string>("");
+export default function SidebarInput({ onSubmit, disabled = false, initialUrl = "" }: SidebarInputProps) {
+  const [url, setUrl] = useState<string>(initialUrl);
   const [selectedStyle, setSelectedStyle] = useState<string>("1");
   const [selectedModel, setSelectedModel] = useState<string>(appConfig.ai.defaultModel);
   const [additionalInstructions, setAdditionalInstructions] = useState<string>("");

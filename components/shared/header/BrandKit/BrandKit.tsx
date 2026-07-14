@@ -44,8 +44,9 @@ export default function HeaderBrandKit() {
         }}
       >
         <NoeronLogo
-          iconClassName="h-[34px] w-[34px] rounded-[10px]"
-          textClassName="text-[19px] font-bold text-warm-950"
+          iconClassName="h-[136px] w-[136px] rounded-[10px]"
+          showText={false}
+          variant="light"
         />
       </Link>
 

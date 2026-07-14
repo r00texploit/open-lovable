@@ -1,6 +1,7 @@
 "use client";
 
-import { useId } from "react";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 type NoeronLogoProps = {
   className?: string;
@@ -10,62 +11,87 @@ type NoeronLogoProps = {
   variant?: "light" | "dark";
 };
 
-function NoeronIcon({ className = "", variant = "dark" }: { className?: string; variant?: "light" | "dark" }) {
-  const isLight = variant === "light";
-  const gradId = useId();
-  return (
-    <svg
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-    >
-      {/* Background circle */}
-      <rect width="100" height="100" rx="22" fill={isLight ? "#f0f4ff" : "#0a1628"} />
-      {/* Arc */}
-      <path
-        d="M 22 38 A 32 32 0 0 1 78 38"
-        stroke={isLight ? "#3a5aad" : "#4a7fd4"}
-        strokeWidth="4"
-        strokeLinecap="round"
-        fill="none"
-      />
-      {/* Star / compass shape */}
-      <path
-        d="M50 18 L53 44 L76 50 L53 56 L50 82 L47 56 L24 50 L47 44 Z"
-        fill={`url(#${gradId})`}
-      />
-      {/* Center glow */}
-      <circle cx="50" cy="50" r="5" fill="white" opacity="0.9" />
-      {/* Wing left */}
-      <path d="M36 56 L44 50 L36 44 L30 50 Z" fill={isLight ? "#1a2f5e" : "#1a3060"} opacity="0.85" />
-      {/* Wing right */}
-      <path d="M64 44 L56 50 L64 56 L70 50 Z" fill={isLight ? "#1a2f5e" : "#1a3060"} opacity="0.85" />
-      <defs>
-        <linearGradient id={gradId} x1="50" y1="18" x2="50" y2="82" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor={isLight ? "#2a4db5" : "#2a6dd9"} />
-          <stop offset="50%" stopColor={isLight ? "#4169e1" : "#4a90f5"} />
-          <stop offset="100%" stopColor={isLight ? "#1a2f5e" : "#1a3060"} />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
+/**
+ * Tailwind v3 default spacing scale for `h-*` utility classes.
+ * Values are in px (assuming 1rem = 16px). Dynamic values (h-full, h-screen,
+ * h-auto, etc.) fall back to the default 40px.
+ */
+const TAILWIND_HEIGHT_PX: Record<string, number> = {
+  "h-0": 0,
+  "h-0.5": 2,
+  "h-1": 4,
+  "h-1.5": 6,
+  "h-2": 8,
+  "h-2.5": 10,
+  "h-3": 12,
+  "h-3.5": 14,
+  "h-4": 16,
+  "h-5": 20,
+  "h-6": 24,
+  "h-7": 28,
+  "h-8": 32,
+  "h-9": 36,
+  "h-10": 40,
+  "h-11": 44,
+  "h-12": 48,
+  "h-14": 56,
+  "h-16": 64,
+  "h-20": 80,
+  "h-24": 96,
+  "h-28": 112,
+  "h-32": 128,
+  "h-36": 144,
+  "h-40": 160,
+  "h-44": 176,
+  "h-48": 192,
+  "h-52": 208,
+  "h-56": 224,
+  "h-60": 240,
+  "h-64": 256,
+  "h-72": 288,
+  "h-80": 320,
+  "h-96": 384,
+  "h-px": 1,
+};
+
+function parseHeight(className: string): number {
+  const pxMatch = className.match(/h-\[(\d+(?:\.\d+)?)px\]/);
+  if (pxMatch) return parseFloat(pxMatch[1]);
+
+  const remMatch = className.match(/h-\[(\d+(?:\.\d+)?)rem\]/);
+  if (remMatch) return parseFloat(remMatch[1]) * 16;
+
+  const tailwindMatch = className.match(/h-(\d+(?:\.\d+)?)\b/);
+  if (tailwindMatch) {
+    const key = `h-${tailwindMatch[1]}`;
+    const mapped = TAILWIND_HEIGHT_PX[key];
+    if (mapped !== undefined) return mapped;
+  }
+
+  return 40;
 }
 
 export function NoeronLogo({
   className = "",
   iconClassName = "h-[40px] w-[40px]",
-  textClassName = "",
   showText = true,
   variant = "dark",
 }: NoeronLogoProps) {
+  const height = parseHeight(iconClassName);
+  const src = variant === "light" ? "/brand/logo-light.png" : "/brand/logo-dark.png";
+
   return (
-    <span className={`inline-flex items-center gap-3 ${className}`}>
-      <NoeronIcon className={`shrink-0 ${iconClassName}`} variant={variant} />
+    <span className={cn("inline-flex items-center gap-3", className)}>
+      <Image
+        src={src}
+        alt="Noeron"
+        width={height}
+        height={height}
+        className={cn("shrink-0", iconClassName)}
+        priority
+      />
       {showText ? (
-        <span className={`font-semibold tracking-[-0.02em] ${textClassName}`}>
-          Noeron
-        </span>
+        <span className={cn("font-semibold tracking-[-0.02em]")}>Noeron</span>
       ) : null}
     </span>
   );

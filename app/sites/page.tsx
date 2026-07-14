@@ -106,7 +106,15 @@ export default function SitesPage() {
   }, [status]);
 
   const handleEdit = (siteId: string) => {
-    router.push(`/generation?site=${siteId}`);
+    // Open the site's most recent session so the editor restores its code. The
+    // server backfills a template-only sandbox from the site's best session, so
+    // any of the site's sessions recovers the real source.
+    const latest = sessions.find((s) => s.site?.id === siteId);
+    if (latest) {
+      router.push(`/generation?sandbox=${latest.sandboxId}`);
+    } else {
+      router.push(`/generation?site=${siteId}`);
+    }
   };
 
   const handleCreate = () => {
@@ -129,9 +137,9 @@ export default function SitesPage() {
       {/* Navigation */}
       <header className="sticky top-0 z-10 bg-background-lighter/80 backdrop-blur-xl border-b border-border-faint">
         <div className="container-modern">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-32">
             <Link href="/" className="flex items-center gap-2">
-              <NoeronLogo iconClassName="h-7 w-7" textClassName="text-foreground font-semibold" />
+              <NoeronLogo iconClassName="h-28 w-28" showText={false} variant="light" />
             </Link>
 
             <div className="flex items-center gap-3">

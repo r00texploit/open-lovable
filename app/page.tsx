@@ -37,13 +37,13 @@ export default async function HomePage() {
       {/* Navigation - Clean with proper spacing */}
       <header className="fixed top-0 left-0 right-0 z-50 glass-dark border-b border-white/[0.06]">
         <div className="container-modern">
-          <div className="flex items-center justify-between h-16 lg:h-20">
+          <div className="flex items-center justify-between h-32 lg:h-32">
             {/* Logo */}
             <Link href="/" className="flex items-center" aria-label="Noeron Home">
               <NoeronLogo
                 variant="dark"
-                iconClassName="h-8 w-8"
-                textClassName="text-lg font-semibold text-white"
+                iconClassName="h-32 w-32"
+                showText={false}
               />
             </Link>
 

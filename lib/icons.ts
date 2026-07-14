@@ -19,3 +19,9 @@ export {
   SiCss3,
   SiJson
 } from 'react-icons/si';
+
+export {
+  Upload,
+  Download,
+  Link2,
+} from 'lucide-react';

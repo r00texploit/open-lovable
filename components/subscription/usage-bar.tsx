@@ -10,6 +10,7 @@ interface UsageBarProps {
   limit: number;
   showLabel?: boolean;
   showTimer?: boolean;
+  showRemaining?: boolean;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'compact' | 'card';
 }
@@ -26,6 +27,7 @@ export function UsageBar({
   limit,
   showLabel = true,
   showTimer = true,
+  showRemaining = false,
   size = 'md',
   variant = 'default',
 }: UsageBarProps) {
@@ -68,18 +70,25 @@ export function UsageBar({
     return (
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <Zap className={`w-4 h-4 ${isAtLimit ? 'text-red-500' : 'text-warm-600'}`} />
-          <span className={`text-sm font-medium ${isAtLimit ? 'text-red-500' : 'text-warm-800'}`}>
+          <Zap className={`w-4 h-4 ${isAtLimit ? 'text-red-500' : 'text-brand-orange'}`} />
+          <span className={`text-sm font-medium ${isAtLimit ? 'text-red-500' : 'text-foreground'}`}>
             {formatTokens(used)}/{formatTokens(limit)}
           </span>
         </div>
-        <div className={`w-24 ${sizeClasses[size].bar} bg-warm-800/10 rounded-full overflow-hidden`}>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${percentage}%` }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-            className={`h-full ${getBarColor()} rounded-full`}
-          />
+        <div className="flex flex-col gap-1">
+          <div className={`w-24 ${sizeClasses[size].bar} bg-warm-800/10 rounded-full overflow-hidden`}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${percentage}%` }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className={`h-full ${getBarColor()} rounded-full`}
+            />
+          </div>
+          {showRemaining && (
+            <span className="text-[10px] text-warm-500">
+              {isAtLimit ? 'Limit reached' : `${formatTokens(remaining)} tokens left`}
+            </span>
+          )}
         </div>
       </div>
     );

@@ -138,7 +138,8 @@ export async function updateSession(
     });
 
     return session as unknown as SandboxSession;
-  } catch {
+  } catch (error) {
+    console.error('[updateSession] Failed to update session', sessionId, error);
     return null;
   }
 }

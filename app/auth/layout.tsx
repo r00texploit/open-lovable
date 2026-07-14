@@ -12,20 +12,15 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
       <div className="ol-noise" />
 
       <div className="relative z-10 mx-auto grid min-h-[calc(100dvh-40px)] w-full max-w-[1180px] gap-6 lg:grid-cols-[1fr_520px]">
-        <section className="hidden rounded-[32px] border border-warm-725/10 bg-warm-100/85 p-8 text-warm-800 shadow-[0_28px_80px_rgba(65,42,18,0.16)] lg:flex lg:flex-col lg:justify-between">
+<section className="hidden rounded-[32px] border border-warm-725/10 bg-warm-100/85 p-8 text-warm-800 shadow-[0_28px_80px_rgba(65,42,18,0.16)] lg:flex lg:flex-col lg:gap-8">
           <Link href="/" className="inline-flex w-max items-center gap-3 text-[15px] font-semibold tracking-[-0.02em]">
-            <NoeronLogo iconClassName="h-[40px] w-[40px]" textClassName="text-warm-800" />
+            <NoeronLogo iconClassName="h-[160px] w-[160px]" showText={false} variant="light" />
           </Link>
 
           <div className="max-w-[620px]">
             <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.2em] text-warm-600">
               Builder access
             </p>
-            <NoeronLogo
-              iconClassName="h-[64px] w-[64px]"
-              textClassName="bg-gradient-to-r from-demo-navy via-demo-purple to-demo-cyan bg-clip-text text-5xl font-black text-transparent"
-              className="mb-8 gap-4"
-            />
             <h2 className="text-7xl font-black leading-[0.9] tracking-[-0.07em]">
               Your next site starts with a working app.
             </h2>
@@ -47,7 +42,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <div className="w-full max-w-[520px]">
             <div className="mb-6 flex items-center justify-between lg:hidden">
               <Link href="/" className="inline-flex items-center gap-3 text-[15px] font-semibold tracking-[-0.02em] text-warm-800">
-                <NoeronLogo iconClassName="h-[40px] w-[40px]" textClassName="text-warm-800" />
+                <NoeronLogo iconClassName="h-[160px] w-[160px]" showText={false} variant="light" />
               </Link>
             </div>
             {children}

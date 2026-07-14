@@ -4,6 +4,7 @@ import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
 import { sanitizeLucideImports } from '@/lib/ai/sanitize-lucide-imports';
 import { getUploadedImageSandboxPath } from '@/lib/ai/uploaded-image-paths';
+import { storeSiteAsset } from '@/lib/site-assets';
 import {
   getSandboxState,
   setSandboxState,
@@ -12,6 +13,8 @@ import {
 } from '@/lib/sandbox/sandbox-state';
 import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 import { updateSession } from '@/lib/session-store';
+import { prisma } from '@/lib/db/prisma';
+import { getGitHubTokenForSite, pushSiteChanges } from '@/lib/github/github-client';
 
 // Pro plan allows up to 800s. Applying a large multi-file generation can take
 // longer than the 300s default; without this, the apply fetch can abort mid-write.
@@ -672,7 +675,26 @@ export async function POST(request: NextRequest) {
         if (morphUpdatedPaths.size > 0) {
           filteredFiles = filteredFiles.filter(file => !file?.path || !morphUpdatedPaths.has(file.path));
         }
-        
+
+        // Capture the state of every file before it is written, so the edit can
+        // be reverted later. Use the in-memory cache first (fastest), fall back
+        // to reading from the live sandbox. null means the file did not exist.
+        const beforeSnapshot: Record<string, string | null> = {};
+        for (const file of filteredFiles) {
+          const normalizedPath = file.path;
+          const cached = sandboxState?.fileCache?.files?.[normalizedPath]?.content;
+          if (cached !== undefined) {
+            beforeSnapshot[normalizedPath] = cached;
+            continue;
+          }
+          try {
+            const content = await providerInstance.readFile(normalizedPath);
+            beforeSnapshot[normalizedPath] = content;
+          } catch {
+            beforeSnapshot[normalizedPath] = null;
+          }
+        }
+
         for (const [index, file] of filteredFiles.entries()) {
           try {
             // Send progress for each file
@@ -871,6 +893,18 @@ export async function POST(request: NextRequest) {
                 const imageBuffer = Buffer.from(img.base64, 'base64');
                 imageFiles.push({ path: imagePath, content: imageBuffer });
 
+                // Persist image bytes durably so resets/recreates can restore them.
+                // The file cache only keeps a text placeholder, which is not enough
+                // to serve the image after a sandbox restore.
+                const siteId = resolved.value.session?.siteId;
+                if (siteId) {
+                  try {
+                    await storeSiteAsset(siteId, imagePath, img.type || 'image/png', imageBuffer);
+                  } catch (assetError) {
+                    console.warn('[apply-ai-code-stream] Failed to store image asset:', assetError);
+                  }
+                }
+
                 // Add image to file cache so it appears in code explorer
                 if (sandboxState?.fileCache) {
                   sandboxState.fileCache.files[imagePath] = {
@@ -990,6 +1024,13 @@ export async function POST(request: NextRequest) {
         if (applySucceeded) {
           try {
             const sessionRecord = resolved.value.session;
+            console.log('[apply-ai-code-stream] Persist step:', {
+              hasSessionRecord: !!sessionRecord,
+              sessionId: sessionRecord?.id,
+              sandboxId: effectiveSandboxId,
+              userId: resolved.value.userId,
+              fileCacheKeyCount: Object.keys(sandboxState?.fileCache?.files || {}).length,
+            });
             if (sessionRecord?.id) {
               const existingDbCache = (sessionRecord.fileCache && typeof sessionRecord.fileCache === 'object')
                 ? sessionRecord.fileCache as Record<string, any>
@@ -1006,15 +1047,20 @@ export async function POST(request: NextRequest) {
                   mergedCache[path] = fileData;
                 }
               }
+              console.log('[apply-ai-code-stream] Merged cache size:', Object.keys(mergedCache).length);
               if (Object.keys(mergedCache).length > 0) {
-                await updateSession(sessionRecord.id, { fileCache: mergedCache });
-                console.log(`[apply-ai-code-stream] Persisted ${Object.keys(mergedCache).length} files to session record ${sessionRecord.id}`);
+                const updated = await updateSession(sessionRecord.id, { fileCache: mergedCache });
+                if (updated) {
+                  console.log(`[apply-ai-code-stream] Persisted ${Object.keys(mergedCache).length} files to session record ${sessionRecord.id}`);
+                } else {
+                  console.error(`[apply-ai-code-stream] updateSession returned null for ${sessionRecord.id}; file cache may not be persisted`);
+                }
               }
             } else {
               console.warn('[apply-ai-code-stream] No session record available - file cache not persisted to DB');
             }
           } catch (persistError) {
-            console.warn('[apply-ai-code-stream] Failed to persist file cache to DB:', persistError);
+            console.error('[apply-ai-code-stream] Failed to persist file cache to DB:', persistError);
           }
         }
 
@@ -1030,7 +1076,8 @@ export async function POST(request: NextRequest) {
         const sandboxInfo = providerInstance.getSandboxInfo();
         console.log('[apply-ai-code-stream] DEBUG: Sending complete event with sandbox:', sandboxInfo);
 
-        // Send final results with sandbox info
+        // Send final results with sandbox info and the pre-edit snapshot so the
+        // frontend can offer a revert action for this apply.
         await sendProgress({
           type: 'complete',
           success: applySucceeded,
@@ -1040,11 +1087,60 @@ export async function POST(request: NextRequest) {
           message: applySucceeded
             ? `Successfully applied ${changedFiles.length} files`
             : `No files were applied${results.errors.length > 0 ? `: ${results.errors[0]}` : ''}`,
+          beforeSnapshot,
           sandbox: sandboxInfo ? {
             sandboxId: sandboxId || sandboxInfo.sandboxId,
             url: sandboxInfo.url
           } : undefined
         });
+
+        // Best-effort background push of changed files to the site's connected
+        // GitHub repo. This is fire-and-forget: failures are logged but never
+        // block the apply response or surface as user errors.
+        if (applySucceeded && changedFiles.length > 0 && resolved.value.session?.siteId) {
+          const siteId = resolved.value.session.siteId;
+          const userId = resolved.value.userId;
+          (async () => {
+            try {
+              const site = await prisma.site.findFirst({
+                where: { id: siteId, userId },
+                select: { id: true, slug: true, name: true },
+              });
+              if (!site) return;
+
+              const auth = await getGitHubTokenForSite(userId, siteId);
+              if (!auth) return;
+
+              const filesToPush: Record<string, string> = {};
+              for (const path of changedFiles) {
+                try {
+                  const content = await providerInstance.readFile(path);
+                  filesToPush[path] = content;
+                } catch (readError) {
+                  console.warn(`[apply-ai-code-stream] Skipping ${path} from GitHub push:`, readError);
+                }
+              }
+
+              if (Object.keys(filesToPush).length === 0) return;
+
+              const pushResult = await pushSiteChanges(
+                auth.token,
+                site.slug,
+                filesToPush,
+                `Apply from Noeron — ${site.name || site.slug}`
+              );
+
+              console.log('[apply-ai-code-stream] GitHub auto-push result:', {
+                siteId,
+                repoUrl: pushResult.repo.htmlUrl,
+                pushed: pushResult.pushed.length,
+                failed: pushResult.failed.length,
+              });
+            } catch (pushError) {
+              console.error('[apply-ai-code-stream] Background GitHub push failed:', pushError);
+            }
+          })();
+        }
 
         // Track applied files in conversation state
         if (global.conversationState && changedFiles.length > 0) {

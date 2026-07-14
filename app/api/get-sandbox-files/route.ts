@@ -4,6 +4,7 @@ import { FileManifest, FileInfo, RouteInfo } from '@/types/file-manifest';
 import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 import { getSandboxState } from '@/lib/sandbox/sandbox-state';
 import { updateSession } from '@/lib/session-store';
+import { storeSiteAsset } from '@/lib/site-assets';
 
 function shellQuote(value: string) {
   return `'${value.replace(/'/g, `'\\''`)}'`;
@@ -87,11 +88,30 @@ export async function GET(request: Request) {
       }
     }
 
-    // Add image files to the content list (mark as binary/image)
+    // Add image files to the content list (mark as binary/image) and capture
+    // their bytes durably in SiteAsset so sandbox resets can restore them.
+    const siteId = resolved.value.session?.siteId;
     for (const imagePath of imageFiles) {
       const relativePath = imagePath.replace(/^\.\//, '');
       if (relativePath) {
         filesContent[relativePath] = `[Binary image file]`;
+      }
+      if (siteId && relativePath) {
+        try {
+          const sizeResult = await commandStdout(sandbox, `wc -c < ${shellQuote(imagePath)}`);
+          const fileSize = parseInt(sizeResult.stdout, 10);
+          if (sizeResult.exitCode === 0 && fileSize > 0 && fileSize < 5_000_000) {
+            const b64Result = await commandStdout(sandbox, `base64 -w 0 ${shellQuote(imagePath)}`);
+            if (b64Result.exitCode === 0 && b64Result.stdout) {
+              const buffer = Buffer.from(b64Result.stdout, 'base64');
+              const ext = relativePath.split('.').pop() || 'png';
+              const contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+              await storeSiteAsset(siteId, relativePath, contentType, buffer);
+            }
+          }
+        } catch (imageErr) {
+          console.warn(`[get-sandbox-files] Failed to capture image ${imagePath}:`, imageErr);
+        }
       }
     }
 

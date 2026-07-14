@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
@@ -20,6 +20,11 @@ import {
   Globe,
   LogOut,
   ChevronRight,
+  Github,
+  Link2,
+  Unlink,
+  Upload,
+  Download,
 } from 'lucide-react';
 import { NoeronLogo } from '@/components/brand/noeron-logo';
 import {
@@ -56,12 +61,17 @@ export default function SettingsPage() {
   const { data: session, status } = useSession();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'subscription' | 'usage' | 'billing'>('subscription');
+  const [activeTab, setActiveTab] = useState<'subscription' | 'usage' | 'billing' | 'github'>('subscription');
+  const [sites, setSites] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+  const [githubStatus, setGithubStatus] = useState<Record<string, { connected: boolean; githubLogin?: string | null }>>({});
+  const [githubActionLoading, setGithubActionLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (status === 'authenticated') {
       fetchSubscription();
+      fetchSitesAndGithubStatus();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
   const fetchSubscription = async () => {
@@ -75,6 +85,59 @@ export default function SettingsPage() {
       console.error('Failed to fetch subscription:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSitesAndGithubStatus = useCallback(async () => {
+    try {
+      const sitesRes = await fetch('/api/sites');
+      if (!sitesRes.ok) return;
+      const sitesData = await sitesRes.json();
+      const siteList = sitesData.sites || [];
+      setSites(siteList);
+
+      const statusMap: Record<string, { connected: boolean; githubLogin?: string | null }> = {};
+      await Promise.all(
+        siteList.map(async (site: { id: string }) => {
+          try {
+            const res = await fetch(`/api/github/status?siteId=${encodeURIComponent(site.id)}`);
+            if (res.ok) {
+              const data = await res.json();
+              statusMap[site.id] = {
+                connected: data.connected,
+                githubLogin: data.connection?.githubLogin,
+              };
+            }
+          } catch (error) {
+            console.error('Failed to fetch GitHub status:', error);
+          }
+        })
+      );
+      setGithubStatus(statusMap);
+    } catch (error) {
+      console.error('Failed to fetch sites:', error);
+    }
+  }, []);
+
+  const connectGitHub = (siteId: string) => {
+    window.location.href = `/api/github/connect?siteId=${encodeURIComponent(siteId)}`;
+  };
+
+  const disconnectGitHub = async (siteId: string) => {
+    setGithubActionLoading((prev) => ({ ...prev, [siteId]: true }));
+    try {
+      const res = await fetch('/api/github/disconnect', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteId }),
+      });
+      if (res.ok) {
+        setGithubStatus((prev) => ({ ...prev, [siteId]: { connected: false } }));
+      }
+    } catch (error) {
+      console.error('Failed to disconnect GitHub:', error);
+    } finally {
+      setGithubActionLoading((prev) => ({ ...prev, [siteId]: false }));
     }
   };
 
@@ -123,9 +186,9 @@ export default function SettingsPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background-lighter/80 backdrop-blur-xl border-b border-border-faint">
         <div className="container-modern">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-32">
             <Link href="/" className="flex items-center gap-2">
-              <NoeronLogo iconClassName="h-7 w-7" textClassName="text-foreground font-semibold" />
+              <NoeronLogo iconClassName="h-28 w-28" showText={false} variant="light" />
             </Link>
             <div className="flex items-center gap-3">
               {session?.user?.role === 'admin' && (
@@ -171,6 +234,7 @@ export default function SettingsPage() {
             { id: 'subscription', label: 'Subscription', icon: Crown },
             { id: 'usage', label: 'Usage', icon: Zap },
             { id: 'billing', label: 'Billing', icon: CreditCard },
+            { id: 'github', label: 'GitHub', icon: Github },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -427,6 +491,84 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
+            </motion.div>
+          )}
+
+          {activeTab === 'github' && (
+            <motion.div
+              key="github"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              <div className="bg-background-lighter rounded-2xl border border-border-faint p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">GitHub Connection</h3>
+                    <p className="text-foreground-dimmer text-sm">
+                      Connect a GitHub account per site to push and pull your code.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-foreground rounded-xl">
+                    <Github className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+
+                {sites.length === 0 ? (
+                  <div className="text-center py-8 text-foreground-dimmer">
+                    <Globe className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p>No sites yet. Create a site from the builder first.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {sites.map((site) => {
+                      const status = githubStatus[site.id];
+                      const isLoading = githubActionLoading[site.id];
+
+                      return (
+                        <div
+                          key={site.id}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-background-base rounded-xl border border-border-muted"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground truncate">{site.name}</p>
+                            <p className="text-sm text-foreground-dimmer truncate">{site.slug}</p>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            {status?.connected ? (
+                              <>
+                                <span className="text-sm text-green-600 flex items-center gap-1.5">
+                                  <Link2 className="w-4 h-4" />
+                                  {status.githubLogin ? `Connected as ${status.githubLogin}` : 'Connected'}
+                                </span>
+                                <button
+                                  onClick={() => disconnectGitHub(site.id)}
+                                  disabled={isLoading}
+                                  className="btn btn-secondary-light text-sm"
+                                >
+                                  <Unlink className="w-4 h-4" />
+                                  Disconnect
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => connectGitHub(site.id)}
+                                disabled={isLoading}
+                                className="btn btn-primary text-sm"
+                              >
+                                <Link2 className="w-4 h-4" />
+                                Connect GitHub
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

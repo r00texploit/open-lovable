@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const page = await context.newPage();
+await page.goto('http://localhost:3000/auth/signin', { waitUntil: 'domcontentloaded', timeout: 10000 });
+await page.waitForTimeout(800);
+const section = await page.locator('section').first();
+await section.screenshot({ path: '/tmp/auth-left-panel.png' });
+const heroLogo = await page.locator('section > div > p + div img, section > div > p + div svg').first();
+const src = await heroLogo.getAttribute('src');
+console.log('hero logo src:', src?.split('/').pop());
+await browser.close();

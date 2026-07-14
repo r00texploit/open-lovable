@@ -313,7 +313,7 @@
     background:
       radial-gradient(circle at 16% 12%, rgba(255, 116, 43, 0.22), transparent 31%),
       radial-gradient(circle at 90% 80%, rgba(162, 133, 82, 0.2), transparent 34%),
-      linear-gradient(135deg, #fff5e3 0%, #eadac1 42%, #17120d 42.2%, #0e0d0b 100%);
+      linear-gradient(135deg, #fff5e3 0%, #eadac1 68%, #17120d 68.2%, #0e0d0b 100%);
   }
 
   .ol-auth-card {
