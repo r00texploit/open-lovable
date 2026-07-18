@@ -1,0 +1,10 @@
+.git
+.next
+node_modules
+vps-agent/node_modules
+vps-agent/dist
+.env
+.env.*
+!.env.example
+*.log
+.omc

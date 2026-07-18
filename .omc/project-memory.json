@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1784014179708,
+  "lastScanned": 1784302207472,
   "projectRoot": "/home/halim/open-lovable-review",
   "techStack": {
     "languages": [
@@ -115,7 +115,7 @@
       "path": "app",
       "purpose": "Application code",
       "fileCount": 5,
-      "lastAccessed": 1784014179703,
+      "lastAccessed": 1784302207467,
       "keyFiles": [
         "favicon.ico",
         "globals.css",
@@ -128,7 +128,7 @@
       "path": "atoms",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1784014179703,
+      "lastAccessed": 1784302207469,
       "keyFiles": [
         "sheets.ts"
       ]
@@ -137,7 +137,7 @@
       "path": "components",
       "purpose": "UI components",
       "fileCount": 10,
-      "lastAccessed": 1784014179705,
+      "lastAccessed": 1784302207470,
       "keyFiles": [
         "CodeApplicationProgress.tsx",
         "FirecrawlIcon.tsx",
@@ -150,7 +150,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 1,
-      "lastAccessed": 1784014179705,
+      "lastAccessed": 1784302207470,
       "keyFiles": [
         "app.config.ts"
       ]
@@ -159,14 +159,14 @@
       "path": "design-system",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1784014179706,
+      "lastAccessed": 1784302207470,
       "keyFiles": []
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 7,
-      "lastAccessed": 1784014179706,
+      "lastAccessed": 1784302207470,
       "keyFiles": [
         "FLUID-COMPUTE-SECURITY.md",
         "IMPLEMENTATION-SUMMARY.md",
@@ -179,7 +179,7 @@
       "path": "hooks",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1784014179706,
+      "lastAccessed": 1784302207471,
       "keyFiles": [
         "useSwitchingCode.ts"
       ]
@@ -187,8 +187,8 @@
     "lib": {
       "path": "lib",
       "purpose": "Library code",
-      "fileCount": 16,
-      "lastAccessed": 1784014179706,
+      "fileCount": 18,
+      "lastAccessed": 1784302207471,
       "keyFiles": [
         "build-validator.ts",
         "context-selector.ts",
@@ -201,14 +201,14 @@
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1784014179706,
+      "lastAccessed": 1784302207471,
       "keyFiles": []
     },
     "prisma": {
       "path": "prisma",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1784014179706,
+      "lastAccessed": 1784302207471,
       "keyFiles": [
         "schema.prisma"
       ]
@@ -217,7 +217,7 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 7,
-      "lastAccessed": 1784014179707,
+      "lastAccessed": 1784302207471,
       "keyFiles": [
         "compressor.json",
         "file.svg",
@@ -230,7 +230,7 @@
       "path": "screenshots",
       "purpose": null,
       "fileCount": 16,
-      "lastAccessed": 1784014179707,
+      "lastAccessed": 1784302207471,
       "keyFiles": [
         "cta.png",
         "faq.png",
@@ -243,7 +243,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 7,
-      "lastAccessed": 1784014179707,
+      "lastAccessed": 1784302207471,
       "keyFiles": [
         "generate-jwt.cjs",
         "init-db.ts",
@@ -256,7 +256,7 @@
       "path": "styles",
       "purpose": null,
       "fileCount": 5,
-      "lastAccessed": 1784014179707,
+      "lastAccessed": 1784302207471,
       "keyFiles": [
         "chrome-bug.css",
         "colors.json",
@@ -269,7 +269,7 @@
       "path": "tests",
       "purpose": "Test files",
       "fileCount": 3,
-      "lastAccessed": 1784014179707,
+      "lastAccessed": 1784302207471,
       "keyFiles": [
         "api-endpoints.test.js",
         "auth-api.test.cjs",
@@ -280,7 +280,7 @@
       "path": "types",
       "purpose": "Type definitions",
       "fileCount": 3,
-      "lastAccessed": 1784014179707,
+      "lastAccessed": 1784302207471,
       "keyFiles": [
         "conversation.ts",
         "file-manifest.ts",
@@ -291,32 +291,45 @@
       "path": "utils",
       "purpose": "Utility functions",
       "fileCount": 3,
-      "lastAccessed": 1784014179707,
+      "lastAccessed": 1784302207471,
       "keyFiles": [
         "init-canvas.ts",
         "set-timeout-on-visible.ts",
         "sleep.ts"
       ]
     },
+    "vps-agent": {
+      "path": "vps-agent",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1784302207471,
+      "keyFiles": [
+        "Dockerfile",
+        "INSTALL.md",
+        "README.md",
+        "docker-compose.yml",
+        "package-lock.json"
+      ]
+    },
     "app/api": {
       "path": "app/api",
       "purpose": "API routes",
       "fileCount": 0,
-      "lastAccessed": 1784014179707,
+      "lastAccessed": 1784302207472,
       "keyFiles": []
     },
     "components/app": {
       "path": "components/app",
       "purpose": "Application code",
       "fileCount": 0,
-      "lastAccessed": 1784014179707,
+      "lastAccessed": 1784302207472,
       "keyFiles": []
     },
     "prisma/migrations": {
       "path": "prisma/migrations",
       "purpose": "Database migrations",
       "fileCount": 2,
-      "lastAccessed": 1784014179708,
+      "lastAccessed": 1784302207472,
       "keyFiles": [
         "add_rls_policies.sql",
         "migration_lock.toml"
@@ -326,11 +339,29 @@
       "path": "styles/components",
       "purpose": "UI components",
       "fileCount": 3,
-      "lastAccessed": 1784014179708,
+      "lastAccessed": 1784302207472,
       "keyFiles": [
         "button.css",
         "code.css",
         "index.css"
+      ]
+    },
+    "vps-agent/node_modules": {
+      "path": "vps-agent/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1784302207472,
+      "keyFiles": []
+    },
+    "vps-agent/src": {
+      "path": "vps-agent/src",
+      "purpose": "Source code",
+      "fileCount": 8,
+      "lastAccessed": 1784302207472,
+      "keyFiles": [
+        "auth.ts",
+        "deployments.ts",
+        "docker.ts"
       ]
     }
   },

@@ -46,6 +46,7 @@ export class VpsProvider extends BaseSandboxProvider {
     init?: RequestInit
   ): Promise<T> {
     const url = `${this.agentUrl}${pathname}`;
+    const requestTimeoutMs = Number(process.env.VPS_AGENT_REQUEST_TIMEOUT_MS) || 330_000;
     const response = await fetch(url, {
       ...init,
       headers: {
@@ -54,6 +55,7 @@ export class VpsProvider extends BaseSandboxProvider {
         ...(init?.headers || {}),
       },
       cache: 'no-store',
+      signal: init?.signal || AbortSignal.timeout(requestTimeoutMs),
     });
 
     const payload = await response.json().catch(() => ({}));
@@ -340,7 +342,7 @@ export class VpsProvider extends BaseSandboxProvider {
 
   protected async startViteServer(): Promise<void> {
     await this.killViteProcess();
-    await this.runCommand('nohup npm run dev > /tmp/vite.log 2>&1 &');
+    await this.runCommand('nohup npm run dev > /tmp/vite.log 2>&1 & echo $! > /tmp/vite.pid');
     this.logger.info('Vite server started in background');
     await new Promise((resolve) => setTimeout(resolve, appConfig.vps.devServerStartupDelay || 7000));
     const isReady = await this.verifyDevServerReady();
@@ -368,15 +370,17 @@ export class VpsProvider extends BaseSandboxProvider {
     for (let i = 0; i < maxAttempts; i++) {
       try {
         const result = await this.runCommand(
-          `curl -s -o /dev/null -w "%{http_code}" http://localhost:${this.devPort} || echo "000"`
+          `node -e "fetch('http://127.0.0.1:${this.devPort}').then(r=>{console.log(r.status)}).catch(()=>{console.log('000')})"`
         );
         const statusCode = result.stdout.trim();
         if (['200', '403', '404'].includes(statusCode)) {
           this.logger.info(`Dev server ready (status: ${statusCode})`);
           return true;
         }
-        const processCheck = await this.runCommand('pgrep -f vite || echo "none"');
-        if (processCheck.stdout.trim() === 'none') {
+        const processCheck = await this.runCommand(
+          'test -s /tmp/vite.pid && kill -0 "$(cat /tmp/vite.pid)" 2>/dev/null && echo running || echo none'
+        );
+        if (!processCheck.stdout.includes('running')) {
           this.logger.error('Vite process not found');
           return false;
         }
@@ -390,7 +394,9 @@ export class VpsProvider extends BaseSandboxProvider {
   }
 
   protected async killViteProcess(): Promise<void> {
-    await this.runCommand('pkill -f vite || true');
+    await this.runCommand(
+      'if test -s /tmp/vite.pid; then kill "$(cat /tmp/vite.pid)" 2>/dev/null || true; fi; rm -f /tmp/vite.pid'
+    );
   }
 
   async terminate(): Promise<void> {

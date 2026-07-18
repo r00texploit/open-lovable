@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireAdminOr403 } from '@/lib/auth/admin';
 import { toSiteDto } from '@/lib/tenancy/site-dto';
+import { isVpsDeploymentEnabled, terminateSandboxOnVps, undeployStaticSiteFromVps } from '@/lib/vps-deployments';
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdminOr403();
@@ -13,14 +14,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const site = await prisma.site.findUnique({ where: { id } });
   if (!site) return NextResponse.json({ error: 'Site not found' }, { status: 404 });
 
-  // Admin can force-publish/unpublish; publishing requires assets to exist
-  // (matches the constraint in the user-facing sites/[id] route).
-  if (body?.published === true && !site.published) {
-    const assetCount = await prisma.siteAsset.count({ where: { siteId: site.id } });
-    if (assetCount === 0) {
+  if (body?.published === true) {
+    return NextResponse.json({ error: 'Republish from the generation workspace' }, { status: 400 });
+  }
+  if (body?.published === false && site.published && isVpsDeploymentEnabled()) {
+    try {
+      await undeployStaticSiteFromVps(site.id);
+    } catch (error) {
       return NextResponse.json(
-        { error: 'Site has no published assets to publish' },
-        { status: 400 },
+        { error: error instanceof Error ? error.message : 'VPS undeployment failed' },
+        { status: 502 },
       );
     }
   }
@@ -28,7 +31,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const data: Record<string, unknown> = {};
   if (typeof body?.published === 'boolean') {
     data.published = body.published;
-    if (body.published) data.lastPublishedAt = new Date();
   }
   if (typeof body?.name === 'string' && body.name.trim()) data.name = body.name.trim();
 
@@ -41,10 +43,22 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const site = await prisma.site.findUnique({ where: { id }, select: { id: true } });
+  const site = await prisma.site.findUnique({
+    where: { id },
+    select: { id: true, generationSessions: { select: { sandboxId: true } } },
+  });
   if (!site) return NextResponse.json({ error: 'Site not found' }, { status: 404 });
 
-  // Cascade deletes assets + nullifies generationSessions (per schema relations).
+  try {
+    if (isVpsDeploymentEnabled()) await undeployStaticSiteFromVps(site.id);
+    for (const session of site.generationSessions) await terminateSandboxOnVps(session.sandboxId);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to remove VPS resources' },
+      { status: 502 },
+    );
+  }
+
   await prisma.site.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

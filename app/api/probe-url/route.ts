@@ -1,24 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
+import { getSandboxWithUser } from '@/lib/session-store';
+import { assertSafeSandboxProbeUrl } from '@/lib/security/sandbox-probe-url';
 
-// GET /api/probe-url?url=https://sb-xxx.vercel.run
-// Server-side HEAD probe so the client can see the actual HTTP status code
-// (client-side no-cors fetch can't distinguish 200 from 410).
+// Authenticated, ownership-scoped sandbox health probe. The server derives the
+// URL from the session rather than accepting an arbitrary outbound URL.
 export async function GET(request: NextRequest) {
-  const url = request.nextUrl.searchParams.get('url');
-  if (!url) {
-    return NextResponse.json({ error: 'url is required' }, { status: 400 });
+  const authSession = await getServerSession(authOptions);
+  if (!authSession?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sandboxId = request.nextUrl.searchParams.get('sandboxId');
+  if (!sandboxId) {
+    return NextResponse.json({ error: 'sandboxId is required' }, { status: 400 });
+  }
+  const sandboxSession = await getSandboxWithUser(sandboxId, authSession.user.id);
+  if (!sandboxSession) {
+    return NextResponse.json({ error: 'Sandbox not found' }, { status: 404 });
+  }
+  const storedUrl = sandboxSession.rawSandboxUrl || sandboxSession.sandboxUrl;
+  if (!storedUrl) {
+    return NextResponse.json({ status: 0, ok: false, error: 'Sandbox URL is unavailable' });
   }
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch(url, {
+    const url = await assertSafeSandboxProbeUrl(storedUrl, sandboxSession.sandboxProvider);
+    const res = await fetch(url.toString(), {
       method: 'HEAD',
-      signal: controller.signal,
+      signal: AbortSignal.timeout(6000),
       redirect: 'manual',
       cache: 'no-store',
     });
-    clearTimeout(timeout);
     return NextResponse.json({
       status: res.status,
       ok: res.status >= 200 && res.status < 400,
@@ -26,7 +40,7 @@ export async function GET(request: NextRequest) {
       needsRecreation: [410, 502, 503].includes(res.status),
       code: res.status === 410 ? 'SANDBOX_STOPPED' : undefined,
     });
-  } catch (err: any) {
-    return NextResponse.json({ status: 0, ok: false, error: err.message });
+  } catch (err: unknown) {
+    return NextResponse.json({ status: 0, ok: false, error: err instanceof Error ? err.message : 'Probe failed' });
   }
 }

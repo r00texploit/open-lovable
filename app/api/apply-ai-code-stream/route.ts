@@ -387,10 +387,12 @@ export async function POST(request: NextRequest) {
     }
     console.log('[apply-ai-code-stream] Packages found:', parsed.packages);
 
-    // Initialize existingFiles if not already
-    if (!global.existingFiles) {
-      global.existingFiles = new Set<string>();
-    }
+    // Request-local, sandbox-scoped tracking. A process-global Set leaks file
+    // state between concurrent tenants and can misclassify another user's files.
+    const existingFiles = new Set<string>([
+      ...(Array.isArray(resolved.value.session?.existingFiles) ? resolved.value.session.existingFiles : []),
+      ...Object.keys(sandboxState?.fileCache?.files || {}),
+    ]);
 
     const provider = resolved.value.provider;
 
@@ -612,7 +614,7 @@ export async function POST(request: NextRequest) {
           try {
             await providerInstance.runCommand(`rm -f ${staleTwins.map(p => `"${p}"`).join(' ')}`);
             for (const twin of staleTwins) {
-              global.existingFiles?.delete(twin);
+              existingFiles.delete(twin);
               if (sandboxState?.fileCache?.files) {
                 delete sandboxState.fileCache.files[twin];
               }
@@ -709,7 +711,7 @@ export async function POST(request: NextRequest) {
             // Paths were normalized (and .jsx renamed to .tsx) before conflict handling
             const normalizedPath = file.path;
 
-            const isUpdate = global.existingFiles.has(normalizedPath);
+            const isUpdate = existingFiles.has(normalizedPath);
 
             // Keep CSS imports - they are needed for custom styles alongside Tailwind
             let fileContent = file.content;
@@ -773,7 +775,7 @@ export async function POST(request: NextRequest) {
               if (results.filesUpdated) results.filesUpdated.push(normalizedPath);
             } else {
               if (results.filesCreated) results.filesCreated.push(normalizedPath);
-              if (global.existingFiles) global.existingFiles.add(normalizedPath);
+              existingFiles.add(normalizedPath);
             }
 
             await sendProgress({
@@ -912,9 +914,7 @@ export async function POST(request: NextRequest) {
                     lastModified: Date.now()
                   };
                 }
-                if (global.existingFiles) {
-                  global.existingFiles.add(imagePath);
-                }
+                existingFiles.add(imagePath);
 
                 console.log(`[apply-ai-code-stream] Prepared image: ${imagePath} (${imageBuffer.length} bytes)`);
               }

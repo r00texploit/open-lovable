@@ -76,15 +76,8 @@ export function clearRequestGlobalState(): void {
   if (typeof global !== 'undefined') {
     // These should be per-session, not global
     // In multi-tenant mode, these would be stored in request context instead
-    // @ts-ignore
-    global.activeSandbox = undefined;
-    // @ts-ignore
-    global.sandboxState = undefined;
-    // @ts-ignore
-    global.conversationState = undefined;
-    // @ts-ignore
-    global.existingFiles = undefined;
-    // @ts-ignore
-    global.sandboxData = undefined;
+    for (const key of ['activeSandbox', 'sandboxState', 'conversationState', 'existingFiles', 'sandboxData']) {
+      Reflect.deleteProperty(global, key);
+    }
   }
 }

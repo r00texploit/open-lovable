@@ -102,9 +102,20 @@ export async function POST(request: NextRequest) {
   const hasFileCache =
     fileCache && typeof fileCache === 'object' && Object.keys(fileCache).length > 0;
 
+  const existingSession = await prisma.generationSession.findUnique({
+    where: { sandboxId },
+    select: { id: true, userId: true, sandboxProvider: true },
+  });
+
+  if (existingSession && existingSession.userId !== session.user.id) {
+    return NextResponse.json({ error: 'Sandbox not found' }, { status: 404 });
+  }
+
   const data = {
     userId: session.user.id,
-    sandboxProvider: sandboxProvider ?? 'vercel',
+    // Provider identity is server-owned. Client autosaves must never rewrite an
+    // existing VPS session into another provider.
+    sandboxProvider: existingSession?.sandboxProvider || process.env.SANDBOX_PROVIDER || 'vps',
     sandboxUrl: sandboxUrl ?? null,
     rawSandboxUrl: rawSandboxUrl ?? sandboxUrl ?? null,
     sandboxName: sandboxName ?? null,
@@ -121,15 +132,6 @@ export async function POST(request: NextRequest) {
     siteId: validSiteId,
     lastActiveAt: new Date(),
   };
-
-  const existingSession = await prisma.generationSession.findUnique({
-    where: { sandboxId },
-    select: { id: true, userId: true },
-  });
-
-  if (existingSession && existingSession.userId !== session.user.id) {
-    return NextResponse.json({ error: 'Sandbox not found' }, { status: 404 });
-  }
 
   const genSession = existingSession
     ? await prisma.generationSession.update({

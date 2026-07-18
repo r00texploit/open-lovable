@@ -59,7 +59,7 @@ async function runTests() {
   console.log('\n=== PUBLIC API TESTS ===');
   await test('GET / (home)', 'GET', '/', 200);
   await test('POST /api/scrape-website', 'POST', '/api/scrape-website', 200, { body: JSON.stringify({ url: 'https://example.com' }) });
-  await test('GET /api/probe-url', 'GET', '/api/probe-url?url=https://example.com', 200);
+  await test('GET /api/probe-url (no auth)', 'GET', '/api/probe-url?sandboxId=missing', 401);
 
   console.log('\n=== AUTHENTICATED API TESTS ===');
   await test('GET /api/generation-session (auth)', 'GET', '/api/generation-session', 200, { auth: true, expectJson: true });

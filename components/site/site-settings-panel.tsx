@@ -489,7 +489,7 @@ export function SiteSettingsPanel() {
                   Verification status: {selectedSite.customDomainVerified ? 'Verified' : selectedSite.domainStatus}
                 </p>
                 <p className="mt-1 text-sm text-warm-500">
-                  Point your DNS to Vercel, then refresh and verify here. Wildcard and root platform domains are configured once at the platform level; this screen is for per-site customer domains.
+                  Add both the ownership TXT record and the VPS address record shown below, then verify. Routing and TLS stay disabled until ownership is proven.
                 </p>
                 {verification.length > 0 && (
                   <div className="mt-3 space-y-2 text-xs text-warm-500">
@@ -508,7 +508,7 @@ export function SiteSettingsPanel() {
                 DNS setup flow:
                 <div className="mt-2 space-y-1">
                   <p>1. Add the domain here.</p>
-                  <p>2. Apply the DNS records Vercel asks for.</p>
+                  <p>2. Add the TXT ownership record and VPS A record shown above.</p>
                   <p>3. Refresh status and verify once propagation completes.</p>
                   <p>4. Keep the default Noeron URL as your fallback path.</p>
                 </div>

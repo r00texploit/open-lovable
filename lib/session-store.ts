@@ -59,7 +59,7 @@ export async function createSession(
     data: {
       userId,
       sandboxId: data.sandboxId || `sb_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`,
-      sandboxProvider: data.sandboxProvider || 'vercel',
+      sandboxProvider: data.sandboxProvider || process.env.SANDBOX_PROVIDER || 'vps',
       sandboxUrl: data.sandboxUrl || null,
       rawSandboxUrl: data.rawSandboxUrl || null,
       sandboxName: data.sandboxName || null,

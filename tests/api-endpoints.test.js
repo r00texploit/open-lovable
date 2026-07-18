@@ -30,6 +30,20 @@ async function runTests() {
     if (res.status !== 401) throw new Error(`Expected 401, got ${res.status}`);
   });
 
+  await test('GET /api/probe-url rejects unauthenticated probes', async () => {
+    const res = await fetch(`${BASE_URL}/api/probe-url?sandboxId=unowned`);
+    if (res.status !== 401) throw new Error(`Expected 401, got ${res.status}`);
+  });
+
+  await test('POST /api/restore-files rejects unauthenticated restores', async () => {
+    const res = await fetch(`${BASE_URL}/api/restore-files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sandboxId: 'unowned' }),
+    });
+    if (res.status !== 401) throw new Error(`Expected 401, got ${res.status}`);
+  });
+
   await test('GET /builder redirects to signin without auth', async () => {
     const res = await fetch(`${BASE_URL}/builder`, { redirect: 'manual' });
     if (res.status !== 307) throw new Error(`Expected 307, got ${res.status}`);

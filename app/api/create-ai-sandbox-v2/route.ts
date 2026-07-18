@@ -8,6 +8,7 @@ import { setSandboxState, setSandboxProvider } from '@/lib/sandbox/sandbox-state
 import { registerPreviewMapping, buildPreviewUrl } from '@/lib/tenancy/preview-mapping';
 import { prisma } from '@/lib/db/prisma';
 import { buildPersistentSandboxName } from '@/lib/sandbox/persistent-sandbox';
+import { enforceUserVpsSandboxLimit } from '@/lib/sandbox/vps-session-reconciliation';
 
 // ponytail: global state kept for backward compat
 // Use session-scoped sandboxes via sandboxManager
@@ -57,9 +58,10 @@ export async function POST(request: Request) {
     }
 
     if (!session) {
+      await enforceUserVpsSandboxLimit(user.id);
       session = await createSession(user.id, {
         sandboxId: `sb_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`,
-        sandboxProvider: process.env.SANDBOX_PROVIDER || 'vercel',
+        sandboxProvider: process.env.SANDBOX_PROVIDER || 'vps',
         siteId: validSiteId,
       });
       console.log(`[create-ai-sandbox-v2] Created new session with siteId:`, validSiteId);
@@ -73,6 +75,8 @@ export async function POST(request: Request) {
     if (!session) {
       return NextResponse.json({ error: 'Failed to create or retrieve session' }, { status: 500 });
     }
+
+    await enforceUserVpsSandboxLimit(user.id, session.sandboxId);
 
     console.log(`[create-ai-sandbox-v2] Creating sandbox for session ${session.id}...`);
 
@@ -203,10 +207,9 @@ export async function POST(request: Request) {
     
     return NextResponse.json(
       { 
-        error: error instanceof Error ? error.message : 'Failed to create sandbox',
-        details: error instanceof Error ? error.stack : undefined
+        error: error instanceof Error ? error.message : 'Failed to create sandbox'
       },
-      { status: 500 }
+      { status: typeof error === 'object' && error && 'status' in error ? Number((error as { status: number }).status) : 500 }
     );
   }
 }

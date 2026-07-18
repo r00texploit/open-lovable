@@ -67,6 +67,9 @@ export interface VpsRouteEntry {
   };
   sandboxId?: string;
   siteId?: string;
+  /** Present only after the control plane has verified custom-domain ownership. */
+  domainAuthorizationVersion?: number;
+  domainAuthorizationExpiresAt?: string;
 }
 
 export interface VpsHealthStatus {

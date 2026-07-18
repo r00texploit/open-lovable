@@ -27,6 +27,10 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       await undeployStaticSiteFromVps(site.id);
     } catch (error) {
       console.error('[unpublish] Failed to remove VPS deployment:', error);
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'VPS undeployment failed' },
+        { status: 502 },
+      );
     }
   }
 

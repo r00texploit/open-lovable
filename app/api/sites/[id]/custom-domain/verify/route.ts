@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireUser } from '@/lib/auth/server';
-import { verifyVpsDomain } from '@/lib/vps-hosting';
+import { addDomainToVps, getVpsVerificationRecords, verifyVpsDomain } from '@/lib/vps-hosting';
+import { removeDomainFromVps } from '@/lib/vps-hosting';
+import { randomBytes } from 'node:crypto';
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUser();
@@ -10,7 +12,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   }
 
   const { id } = await params;
-  const site = await prisma.site.findFirst({
+  let site = await prisma.site.findFirst({
     where: {
       id,
       userId: auth.user.id,
@@ -20,8 +22,31 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   if (!site || !site.customDomain) {
     return NextResponse.json({ error: 'Site or custom domain not found' }, { status: 404 });
   }
+  if (!site.domainVerificationToken) {
+    const token = randomBytes(24).toString('base64url');
+    await removeDomainFromVps(site.customDomain).catch(() => undefined);
+    site = await prisma.site.update({
+      where: { id: site.id },
+      data: { customDomainVerified: false, domainStatus: 'pending_verification', domainVerificationToken: token },
+    });
+  }
+  const domain = site.customDomain!;
+  const verificationToken = site.domainVerificationToken!;
 
-  const verified = await verifyVpsDomain(site.customDomain);
+  const verified = await verifyVpsDomain(domain, verificationToken);
+  if (!verified && site.customDomainVerified) {
+    await removeDomainFromVps(domain).catch((error) => {
+      console.error('[custom-domain/verify] Failed to deactivate stale domain route:', error);
+    });
+  }
+  if (verified && site.published) {
+    try {
+      await addDomainToVps(domain, site.id, verificationToken);
+    } catch (error) {
+      console.error('[custom-domain/verify] Failed to activate verified domain:', error);
+      return NextResponse.json({ error: 'Domain verified, but VPS routing activation failed' }, { status: 502 });
+    }
+  }
   const updated = await prisma.site.update({
     where: { id: site.id },
     data: {
@@ -37,15 +62,6 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       customDomainVerified: updated.customDomainVerified,
       domainStatus: updated.domainStatus,
     },
-    verification: verified
-      ? []
-      : [
-          {
-            type: 'A',
-            domain: site.customDomain,
-            value: process.env.VPS_PUBLIC_IP || 'Set an A record pointing to your VPS IP',
-            reason: 'Domain must resolve to the VPS IP',
-          },
-        ],
+    verification: verified ? [] : getVpsVerificationRecords(domain, verificationToken),
   });
 }

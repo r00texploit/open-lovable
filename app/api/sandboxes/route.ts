@@ -12,6 +12,7 @@ import { SandboxFactory } from '@/lib/sandbox/factory';
 import { registerPreviewMapping, buildPreviewUrl, removePreviewMapping } from '@/lib/tenancy/preview-mapping';
 import { prisma } from '@/lib/db/prisma';
 import { buildPersistentSandboxName } from '@/lib/sandbox/persistent-sandbox';
+import { enforceUserVpsSandboxLimit, reconcileUserVpsSandboxes } from '@/lib/sandbox/vps-session-reconciliation';
 
 /**
  * GET /api/sandboxes
@@ -24,6 +25,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    await reconcileUserVpsSandboxes(session.user.id);
     const sandboxes = await getUserSandboxes(session.user.id);
 
     // Enhance with live status from sandbox manager
@@ -68,24 +70,13 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Check if user already has too many active sandboxes (limit to 5 concurrent)
-    const existingSandboxes = await getUserSandboxes(session.user.id);
-    const activeCount = existingSandboxes.filter(sb => sb.status === 'running').length;
-
-    if (activeCount >= 5) {
-      return NextResponse.json(
-        {
-          error: 'Maximum number of concurrent sandboxes (5) reached. Please delete an existing sandbox before creating a new one.',
-          code: 'SANDBOX_LIMIT_REACHED'
-        },
-        { status: 429 }
-      );
-    }
+    await enforceUserVpsSandboxLimit(session.user.id);
 
     // Create new sandbox session
     const sandboxId = `sb_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
     const dbSession = await createSession(session.user.id, {
       sandboxId,
-      sandboxProvider: process.env.SANDBOX_PROVIDER || 'vercel',
+      sandboxProvider: process.env.SANDBOX_PROVIDER || 'vps',
       status: 'creating',
     });
 
@@ -167,7 +158,7 @@ export async function POST(request: NextRequest) {
     console.error('[sandboxes] POST error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create sandbox' },
-      { status: 500 }
+      { status: typeof error === 'object' && error && 'status' in error ? Number((error as { status: number }).status) : 500 }
     );
   }
 }

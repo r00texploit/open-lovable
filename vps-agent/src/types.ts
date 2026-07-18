@@ -54,6 +54,11 @@ export interface VpsDeploymentPayload {
   files: VpsFileWrite[];
 }
 
+export type VpsDeploymentRecord = Omit<VpsDeploymentPayload, 'files'> & {
+  releaseDir: string;
+  deployedAt: string;
+};
+
 export interface VpsRouteEntry {
   /** Hostname to match (e.g. "my-site.noeron.net" or "custom.com"). */
   host: string;
@@ -65,6 +70,12 @@ export interface VpsRouteEntry {
   };
   sandboxId?: string;
   siteId?: string;
+  /** Present only after the control plane has verified custom-domain ownership. */
+  domainAuthorizationVersion?: number;
+  /** DNS TXT challenge, kept only in the private agent state. */
+  domainVerificationToken?: string;
+  /** Custom-domain routes fail closed unless DNS ownership is refreshed. */
+  domainAuthorizationExpiresAt?: string;
 }
 
 export interface VpsHealthStatus {

@@ -146,7 +146,13 @@ async function createEnvFile(projectPath, sandbox, answers) {
   envContent += `# REQUIRED - Web scraping for cloning websites\n`;
   envContent += `FIRECRAWL_API_KEY=${answers.firecrawlApiKey || 'your_firecrawl_api_key_here'}\n\n`;
   
-  if (sandbox === 'e2b') {
+  if (sandbox === 'vps') {
+    envContent += `# REQUIRED - Self-hosted VPS sandbox agent\n`;
+    envContent += `VPS_AGENT_URL=${answers.vpsAgentUrl || 'http://127.0.0.1:3001'}\n`;
+    envContent += `VPS_AGENT_TOKEN=${answers.vpsAgentToken || 'replace_with_a_32_character_secret'}\n`;
+    envContent += `VPS_BASE_DOMAIN=${answers.vpsBaseDomain || 'example.com'}\n`;
+    envContent += `VPS_DEPLOYMENTS_ENABLED=true\n\n`;
+  } else if (sandbox === 'e2b') {
     envContent += `# REQUIRED - E2B Sandboxes\n`;
     envContent += `E2B_API_KEY=${answers.e2bApiKey || 'your_e2b_api_key_here'}\n\n`;
   } else if (sandbox === 'vercel') {
@@ -202,7 +208,13 @@ async function createEnvExample(projectPath, sandbox) {
   envContent += `# Get yours at https://firecrawl.dev\n`;
   envContent += `FIRECRAWL_API_KEY=your_firecrawl_api_key_here\n\n`;
   
-  if (sandbox === 'e2b') {
+  if (sandbox === 'vps') {
+    envContent += `# REQUIRED - Self-hosted VPS sandbox agent\n`;
+    envContent += `VPS_AGENT_URL=http://127.0.0.1:3001\n`;
+    envContent += `VPS_AGENT_TOKEN=replace_with_a_32_character_secret\n`;
+    envContent += `VPS_BASE_DOMAIN=example.com\n`;
+    envContent += `VPS_DEPLOYMENTS_ENABLED=true\n\n`;
+  } else if (sandbox === 'e2b') {
     envContent += `# REQUIRED - Sandboxes for code execution\n`;
     envContent += `# Get yours at https://e2b.dev\n`;
     envContent += `E2B_API_KEY=your_e2b_api_key_here\n\n`;

@@ -7,14 +7,14 @@ This guide walks you through installing the `vps-agent` service on your own VPS 
 1. A VPS running a recent Linux distro (Ubuntu 22.04/24.04, Debian 12, etc.).
 2. A static public IP address on the VPS.
 3. DNS configured as follows:
-   - `*.noeron.net` (or your `VPS_BASE_DOMAIN`) → VPS public IP
-   - `app.noeron.net` → wherever your Next.js app is hosted (e.g. Vercel)
-   - `noeron.net` apex → your Next.js app or marketing site
+   - `noeron.net` apex → the VPS public IP for the included production topology
+   - `*.noeron.net` (or your `VPS_BASE_DOMAIN`) → the same VPS public IP
 4. Docker installed on the VPS.
-5. (Optional) `docker-compose-plugin` or `docker-compose` if you want to use the compose file.
-6. A reverse proxy on the VPS to route incoming subdomains/custom domains to the agent's containers and static site directories. nginx or Traefik are most common. Caddy also works.
+5. The gVisor `runsc` Docker runtime installed and registered for untrusted production sandboxes.
+6. `docker-compose-plugin` for the canonical deployment.
+7. The included Compose deployment builds and configures Caddy. For a custom deployment, provide an equivalent host-aware reverse proxy.
 
-> This repo's app does **not** move to the VPS. Only the sandbox data plane (containers + static files + routing table) runs there. The Next.js app stays on Vercel/self-hosted and calls the agent API.
+> The canonical `docker-compose.yml` runs the Next.js control plane, VPS agent, firewall enforcer, and Caddy together on one dedicated VPS. The agent API and sandbox ports remain loopback-only; Caddy is the only public service.
 
 ## Quick overview
 
@@ -34,7 +34,7 @@ VPS reverse proxy (nginx/Traefik)  ← reads routing table from vps-agent
 vps-agent (Node/Express, port 3001)
     ▲
     │
-Next.js app on Vercel
+Next.js app on the same VPS (loopback-only)
 ```
 
 ## Step 1 — Install Docker
@@ -72,7 +72,7 @@ Create an environment file on the VPS:
 ssh root@YOUR_VPS_IP "mkdir -p /opt/vps-agent && cat > /opt/vps-agent/.env <<'EOF'
 VPS_AGENT_TOKEN=CHANGE_ME_TO_A_LONG_RANDOM_STRING
 VPS_AGENT_PORT=3001
-VPS_HOST=YOUR_VPS_PUBLIC_IP
+VPS_HOST=127.0.0.1
 VPS_BASE_DOMAIN=noeron.net
 VPS_PORT_MIN=10000
 VPS_PORT_MAX=20000
@@ -85,7 +85,7 @@ EOF"
 
 Replace:
 - `CHANGE_ME_TO_A_LONG_RANDOM_STRING` with a secure token. The Next.js app will send this as `Authorization: Bearer <token>`.
-- `YOUR_VPS_PUBLIC_IP` with the actual public IP of the VPS.
+- Keep `VPS_HOST=127.0.0.1`; sandbox ports must never be publicly bound.
 - `noeron.net` with your real base domain.
 
 Start the agent:
@@ -127,7 +127,7 @@ User=root
 WorkingDirectory=/opt/vps-agent
 Environment=VPS_AGENT_TOKEN=CHANGE_ME_TO_A_LONG_RANDOM_STRING
 Environment=VPS_AGENT_PORT=3001
-Environment=VPS_HOST=YOUR_VPS_PUBLIC_IP
+Environment=VPS_HOST=127.0.0.1
 Environment=VPS_BASE_DOMAIN=noeron.net
 Environment=VPS_PORT_MIN=10000
 Environment=VPS_PORT_MAX=20000
@@ -187,6 +187,8 @@ Expected:
 ```
 
 ## Step 4 — Configure the reverse proxy
+
+The canonical Compose deployment already includes Caddy and needs no generated nginx/Traefik route files. The alternatives below apply only to custom non-Compose deployments.
 
 The reverse proxy is the entry point for all sandbox preview subdomains and custom domains. It must:
 
@@ -387,8 +389,8 @@ Set these environment variables in the project that runs the Next.js app:
 # Switch from Vercel to the VPS provider
 SANDBOX_PROVIDER=vps
 
-# Connection to the agent
-VPS_AGENT_URL=https://YOUR_VPS_PUBLIC_IP:3001
+# Connection to the loopback-only agent in the canonical Compose topology
+VPS_AGENT_URL=http://127.0.0.1:3001
 VPS_AGENT_TOKEN=CHANGE_ME_TO_A_LONG_RANDOM_STRING
 
 # Domain setup
@@ -396,11 +398,10 @@ VPS_BASE_DOMAIN=noeron.net
 VPS_PUBLIC_IP=YOUR_VPS_PUBLIC_IP
 VPS_SANDBOX_DEV_PORT=3000
 
-# Optionally deploy static sites to the VPS even if SANDBOX_PROVIDER is not vps
 VPS_DEPLOYMENTS_ENABLED=true
 ```
 
-If your agent is behind a private network or uses a self-signed cert, set `VPS_AGENT_URL` to the internal HTTP endpoint the Next.js app can reach (e.g. `http://10.0.0.5:3001`). For production traffic it must be reachable from the app servers.
+Never expose port 3001 publicly. If the control plane and agent are on separate dedicated hosts, use a private authenticated network and firewall the agent to the control-plane address.
 
 Redeploy the Next.js app after changing env vars.
 
@@ -411,7 +412,7 @@ Redeploy the Next.js app after changing env vars.
 3. The app should call `POST /api/create-ai-sandbox-v2` and create a container on the VPS.
 4. Browse to `https://<site-subdomain>.noeron.net`. The reverse proxy should forward to the container.
 5. Publish the site. The app should call `POST /api/sites/[id]/publish`, the agent should write files to `/data/vps-agent/sites/<siteId>`, and the published subdomain should serve the static build.
-6. Add a custom domain. Point its A record to the VPS IP, then use the app's custom-domain UI. The agent will add the route and the reverse proxy will pick it up on the next poll.
+6. Add a custom domain. Publish both the per-site TXT ownership challenge and the A record shown by the UI. The agent adds the route only after both records verify.
 
 ## Troubleshooting
 

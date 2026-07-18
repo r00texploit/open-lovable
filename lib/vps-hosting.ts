@@ -7,6 +7,7 @@
  */
 
 import { domainSchema } from '@/lib/validations/site';
+import { resolve4, resolveTxt } from 'node:dns/promises';
 
 interface VpsDomainResult {
   name: string;
@@ -32,6 +33,7 @@ function getAgentToken() {
 }
 
 async function agentFetch<T>(pathname: string, init?: RequestInit): Promise<T> {
+  const requestTimeoutMs = Number(process.env.VPS_AGENT_REQUEST_TIMEOUT_MS) || 330_000;
   const response = await fetch(`${getAgentUrl()}${pathname}`, {
     ...init,
     headers: {
@@ -40,6 +42,7 @@ async function agentFetch<T>(pathname: string, init?: RequestInit): Promise<T> {
       ...(init?.headers || {}),
     },
     cache: 'no-store',
+    signal: init?.signal || AbortSignal.timeout(requestTimeoutMs),
   });
 
   const payload = await response.json().catch(() => ({}));
@@ -60,77 +63,82 @@ export function getVpsIp() {
   return process.env.VPS_PUBLIC_IP;
 }
 
+function verificationHost(domain: string) {
+  return `_noeron-verification.${domain}`;
+}
+
+async function withDnsTimeout<T>(operation: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('DNS lookup timed out')), 5000);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+export function getVpsVerificationRecords(domain: string, token: string) {
+  return [
+    {
+      type: 'TXT',
+      domain: verificationHost(domain),
+      value: token,
+      reason: 'Proves control of this domain before Noeron enables routing and TLS',
+    },
+    {
+      type: 'A',
+      domain,
+      value: getVpsIp() || 'Set an A record pointing to your VPS IP',
+      reason: 'Routes the verified domain to the VPS',
+    },
+  ];
+}
+
 /**
  * Add a custom domain to a site.
  *
  * The agent clones the existing subdomain route (sandbox or static) so the
  * custom domain points to the same target.
  */
-export async function addDomainToVps(domain: string, siteId: string): Promise<VpsDomainResult> {
+export async function addDomainToVps(domain: string, siteId: string, verificationToken: string): Promise<{ name: string }> {
   const name = domainSchema.parse(domain);
   await agentFetch<{ added: boolean }>('/domains', {
     method: 'POST',
-    body: JSON.stringify({ domain: name, siteId }),
+    body: JSON.stringify({ domain: name, siteId, verificationToken }),
   });
-  const verified = await verifyVpsDomain(name);
-  return {
-    name,
-    verified,
-    verification: verified
-      ? []
-      : [
-          {
-            type: 'A',
-            domain: name,
-            value: getVpsIp() || 'Set an A record pointing to your VPS IP',
-            reason: 'Domain must resolve to the VPS IP',
-          },
-        ],
-  };
+  return { name };
 }
 
-export async function getVpsDomain(domain: string): Promise<VpsDomainResult> {
+export async function getVpsDomain(domain: string, verificationToken: string): Promise<VpsDomainResult> {
   const name = domainSchema.parse(domain);
   const routes = await agentFetch<{ routes: Array<{ host: string }> }>('/routes');
   const found = routes.routes.some((r) => r.host === name);
-  const verified = found ? await verifyVpsDomain(name) : false;
+  const verified = found && await verifyVpsDomain(name, verificationToken);
   return {
     name,
     verified,
-    verification: verified
-      ? []
-      : [
-          {
-            type: 'A',
-            domain: name,
-            value: getVpsIp() || 'Set an A record pointing to your VPS IP',
-            reason: 'Domain must resolve to the VPS IP',
-          },
-        ],
+    verification: verified ? [] : getVpsVerificationRecords(name, verificationToken),
   };
 }
 
-export async function verifyVpsDomain(domain: string): Promise<boolean> {
+export async function verifyVpsDomain(domain: string, verificationToken: string): Promise<boolean> {
   const name = domainSchema.parse(domain);
   const expectedIp = getVpsIp();
-  if (!expectedIp) {
-    // Without a known VPS IP we cannot verify automatically; fall back to a
-    // connectivity check against the agent's /routes endpoint.
-    try {
-      const routes = await agentFetch<{ routes: Array<{ host: string }> }>('/routes');
-      return routes.routes.some((r) => r.host === name);
-    } catch {
-      return false;
-    }
+  if (!expectedIp || !verificationToken) {
+    return false;
   }
 
   try {
-    const response = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(name)}&type=A`, {
-      cache: 'no-store',
-    });
-    const data = (await response.json()) as { Answer?: Array<{ data: string }> };
-    const answers = data.Answer?.map((a) => a.data) || [];
-    return answers.includes(expectedIp);
+    const [addresses, textRecords] = await Promise.all([
+      withDnsTimeout(resolve4(name)),
+      withDnsTimeout(resolveTxt(verificationHost(name))),
+    ]);
+    const tokens = textRecords.map((parts) => parts.join(''));
+    return addresses.includes(expectedIp) && tokens.includes(verificationToken);
   } catch (error) {
     console.warn(`[vps-hosting] DNS verification failed for ${name}:`, error);
     return false;

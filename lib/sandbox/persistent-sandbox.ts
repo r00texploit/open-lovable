@@ -39,7 +39,7 @@ export async function ensureSessionSandboxRunning(session: {
   let provider = sandboxManager.getProvider(session.sandboxId);
 
   if (!provider) {
-    provider = await SandboxFactory.create(session.sandboxProvider || 'vercel');
+    provider = await SandboxFactory.create(session.sandboxProvider || 'vps');
     const sandboxName = session.sandboxName || buildPersistentSandboxName(session.id, session.siteId);
     if (typeof (provider as any).reconnect === 'function') {
       await (provider as any).reconnect(sandboxName, session.sandboxId);

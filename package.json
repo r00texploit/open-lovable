@@ -7,10 +7,13 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test:api": "node tests/api-endpoints.test.js",
     "test:code": "node tests/code-execution.test.js",
-    "test:all": "npm run test:integration && npm run test:api && npm run test:code"
+    "test:integration": "node tests/api-endpoints.test.js",
+    "test:vps": "npm --prefix vps-agent test",
+    "test:all": "pnpm typecheck && pnpm lint && pnpm test:vps"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.1",

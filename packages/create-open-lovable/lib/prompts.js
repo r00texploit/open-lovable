@@ -26,6 +26,11 @@ export function getPrompts(config) {
       message: 'Choose your sandbox provider:',
       choices: [
         {
+          name: 'VPS - Self-hosted hardened Docker sandboxes',
+          value: 'vps',
+          short: 'VPS'
+        },
+        {
           name: 'E2B - Full-featured development sandboxes',
           value: 'e2b',
           short: 'E2B'
@@ -36,7 +41,7 @@ export function getPrompts(config) {
           short: 'Vercel'
         }
       ],
-      default: 'e2b'
+      default: 'vps'
     });
   }
 
@@ -66,7 +71,28 @@ export function getEnvPrompts(provider) {
     }
   });
 
-  if (provider === 'e2b') {
+  if (provider === 'vps') {
+    prompts.push({
+      type: 'input',
+      name: 'vpsAgentUrl',
+      message: 'VPS agent URL:',
+      default: 'http://127.0.0.1:3001',
+      validate: (input) => input?.trim() ? true : 'VPS agent URL is required'
+    });
+    prompts.push({
+      type: 'password',
+      name: 'vpsAgentToken',
+      message: 'VPS agent token (at least 32 characters):',
+      mask: '*',
+      validate: (input) => input?.length >= 32 ? true : 'VPS agent token must be at least 32 characters'
+    });
+    prompts.push({
+      type: 'input',
+      name: 'vpsBaseDomain',
+      message: 'VPS base domain:',
+      validate: (input) => input?.trim() ? true : 'VPS base domain is required'
+    });
+  } else if (provider === 'e2b') {
     prompts.push({
       type: 'input',
       name: 'e2bApiKey',

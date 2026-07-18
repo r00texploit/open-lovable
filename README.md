@@ -35,11 +35,17 @@ GROQ_API_KEY=your_groq_api_key            # https://console.groq.com
 MORPH_API_KEY=your_morphllm_api_key    # https://morphllm.com/dashboard
 
 # =================================================================
-# SANDBOX PROVIDER - Choose ONE: Vercel (default) or E2B
+# SANDBOX PROVIDER - VPS is the production default
 # =================================================================
-SANDBOX_PROVIDER=vercel  # or 'e2b'
+SANDBOX_PROVIDER=vps
 
-# Option 1: Vercel Sandbox (default)
+VPS_AGENT_URL=http://127.0.0.1:3001
+VPS_AGENT_TOKEN=replace_with_a_random_32_character_secret
+VPS_BASE_DOMAIN=example.com
+VPS_PUBLIC_IP=203.0.113.10
+VPS_DEPLOYMENTS_ENABLED=true
+
+# Optional compatibility provider: Vercel Sandbox
 # Choose one authentication method:
 
 # Method A: OIDC Token (recommended for development)
@@ -51,7 +57,7 @@ VERCEL_OIDC_TOKEN=auto_generated_by_vercel_env_pull
 # VERCEL_PROJECT_ID=prj_xxxxxxxxx    # Your Vercel project ID
 # VERCEL_TOKEN=vercel_xxxxxxxxxxxx   # Personal access token from Vercel dashboard
 
-# Option 2: E2B Sandbox
+# Optional compatibility provider: E2B Sandbox
 # E2B_API_KEY=your_e2b_api_key      # https://e2b.dev
 ```
 

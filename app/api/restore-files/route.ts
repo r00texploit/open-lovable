@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
-import { getSessionBySandboxId } from '@/lib/session-store';
 import { restoreSiteAssets, isImagePath } from '@/lib/site-assets';
+import { resolveRequestSandbox } from '@/lib/sandbox/resolve-request-sandbox';
 
 // POST /api/restore-files — write saved files back into a sandbox after recreation
 // or reset, including binary image assets stored in SiteAsset.
@@ -19,24 +18,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'sandboxId and files are required' }, { status: 400 });
     }
 
-    let provider = sandboxManager.getProvider(sandboxId);
-    if (!provider) {
-      try {
-        provider = await sandboxManager.getOrCreateProvider(sandboxId);
-      } catch {
-        return NextResponse.json({ error: 'Sandbox not found' }, { status: 404 });
-      }
+    const resolved = await resolveRequestSandbox(sandboxId);
+    if (!resolved.ok) {
+      return resolved.response;
     }
+    const provider = resolved.value.provider;
 
-    // Resolve the siteId if not provided (e.g. restoring to the same sandbox).
-    if (!siteId) {
-      try {
-        const session = await getSessionBySandboxId(sandboxId);
-        siteId = session?.siteId ?? undefined;
-      } catch {
-        // non-blocking — image restore may be skipped
-      }
+    const ownedSiteId = resolved.value.session?.siteId ?? undefined;
+    if (siteId && siteId !== ownedSiteId) {
+      return NextResponse.json({ error: 'Site does not belong to this sandbox session' }, { status: 403 });
     }
+    siteId = ownedSiteId;
 
     const entries = Object.entries(files);
     let written = 0;

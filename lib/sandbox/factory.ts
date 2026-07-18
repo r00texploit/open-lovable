@@ -3,7 +3,7 @@ import { SandboxProvider, SandboxProviderConfig } from './types';
 export class SandboxFactory {
   static async create(provider?: string, config?: SandboxProviderConfig): Promise<SandboxProvider> {
     // Use environment variable if provider not specified
-    const selectedProvider = provider || process.env.SANDBOX_PROVIDER || 'vercel';
+    const selectedProvider = provider || process.env.SANDBOX_PROVIDER || 'vps';
 
     switch (selectedProvider.toLowerCase()) {
       case 'e2b': {

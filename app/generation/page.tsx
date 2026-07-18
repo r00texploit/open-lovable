@@ -411,7 +411,7 @@ function AISandboxPage() {
 
     const payload = {
       sandboxId: sd.sandboxId,
-      sandboxProvider: sd.provider ?? 'vercel',
+      sandboxProvider: sd.provider ?? 'vps',
       sandboxUrl: sd.previewUrl || sd.url || null,
       rawSandboxUrl: sd.rawSandboxUrl || sd.url || null,
       sandboxName: sd.sandboxName || null,
@@ -725,7 +725,7 @@ function AISandboxPage() {
           let sandboxAlive = false;
           if (savedUrl) {
             try {
-              const probe = await fetch(`/api/probe-url?url=${encodeURIComponent(savedUrl)}`);
+              const probe = await fetch(`/api/probe-url?sandboxId=${encodeURIComponent(savedSession.sandboxId)}`);
               const result = await probe.json();
               sandboxAlive = Boolean(result.ok);
               if (result.needsRecreation || result.stopped) {
@@ -746,7 +746,7 @@ function AISandboxPage() {
                 ? savedSession.sandboxUrl
                 : undefined,
               sandboxName: savedSession.sandboxName,
-              provider: savedSession.sandboxProvider ?? 'vercel',
+              provider: savedSession.sandboxProvider ?? 'vps',
               success: true,
             } as any);
             updateStatus('Sandbox active', true);
@@ -835,7 +835,7 @@ function AISandboxPage() {
                   rawSandboxUrl: savedUrl,
                   previewUrl: savedSession.sandboxUrl && savedSession.sandboxUrl !== savedUrl ? savedSession.sandboxUrl : undefined,
                   sandboxName: savedSession.sandboxName,
-                  provider: savedSession.sandboxProvider ?? 'vercel',
+                  provider: savedSession.sandboxProvider ?? 'vps',
                   success: true,
                 } as any;
                 await saveSession(liveSandboxData, chatMessages, savedSession.siteId || activeSiteIdRef.current || activeSiteId);
@@ -1231,7 +1231,7 @@ function AISandboxPage() {
     if (!targetSandbox?.url) return;
 
     try {
-      const probe = await fetch(`/api/probe-url?url=${encodeURIComponent(targetSandbox.url)}`);
+      const probe = await fetch(`/api/probe-url?sandboxId=${encodeURIComponent(targetSandbox.sandboxId)}`);
       const result = await probe.json();
       if (result.needsRecreation || result.stopped) {
         await recoverStoppedSandbox(reason);
@@ -1607,7 +1607,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           const deadline = Date.now() + 60_000; // 60s max wait
           while (Date.now() < deadline) {
             try {
-              const probe = await fetch(`/api/probe-url?url=${encodeURIComponent(data.url)}`);
+              const probe = await fetch(`/api/probe-url?sandboxId=${encodeURIComponent(data.sandboxId)}`);
               const result = await probe.json();
               if (result.ok) break; // HTTP 2xx/3xx — Vite is up
             } catch { /* ignore, retry */ }

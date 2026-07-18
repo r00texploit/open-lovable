@@ -1,37 +1,48 @@
 import fs from 'fs/promises';
 import path from 'path';
-import type { VpsSandboxInfo, VpsRouteEntry, VpsDeploymentPayload } from './types';
-
-const DATA_DIR = process.env.VPS_DATA_DIR ?? '/data/vps-agent';
-const STATE_FILE = path.join(DATA_DIR, 'state.json');
+import type { VpsSandboxInfo, VpsRouteEntry, VpsDeploymentRecord } from './types';
 
 interface PersistedState {
   sandboxes: Record<string, VpsSandboxInfo>;
-  deployments: Record<string, VpsDeploymentPayload>;
+  deployments: Record<string, VpsDeploymentRecord>;
   routes: VpsRouteEntry[];
 }
 
 export class AgentStore {
   sandboxes: Map<string, VpsSandboxInfo> = new Map();
-  deployments: Map<string, VpsDeploymentPayload> = new Map();
+  deployments: Map<string, VpsDeploymentRecord> = new Map();
   routes: VpsRouteEntry[] = [];
 
-  constructor() {
-    this.load().catch((err) => console.error('Failed to load state:', err));
+  private saveQueue: Promise<void> = Promise.resolve();
+  private readonly dataDir: string;
+  private readonly stateFile: string;
+
+  constructor(dataDir = process.env.VPS_DATA_DIR ?? '/data/vps-agent') {
+    this.dataDir = dataDir;
+    this.stateFile = path.join(dataDir, 'state.json');
   }
 
   private async ensureDir(): Promise<void> {
-    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.mkdir(this.dataDir, { recursive: true });
   }
 
   async load(): Promise<void> {
     try {
       await this.ensureDir();
-      const raw = await fs.readFile(STATE_FILE, 'utf8');
+      const raw = await fs.readFile(this.stateFile, 'utf8');
       const state: PersistedState = JSON.parse(raw);
       this.sandboxes = new Map(Object.entries(state.sandboxes ?? {}));
-      this.deployments = new Map(Object.entries(state.deployments ?? {}));
       this.routes = state.routes ?? [];
+      this.deployments = new Map(Object.entries(state.deployments ?? {}).map(([siteId, value]) => {
+        const route = this.routes.find((candidate) => candidate.siteId === siteId && candidate.target.type === 'static');
+        return [siteId, {
+          siteId,
+          subdomain: value.subdomain,
+          customDomain: value.customDomain,
+          releaseDir: value.releaseDir || route?.target.value || '',
+          deployedAt: value.deployedAt || new Date(0).toISOString(),
+        }];
+      }));
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
         throw err;
@@ -40,13 +51,18 @@ export class AgentStore {
   }
 
   async save(): Promise<void> {
-    await this.ensureDir();
-    const state: PersistedState = {
-      sandboxes: Object.fromEntries(this.sandboxes),
-      deployments: Object.fromEntries(this.deployments),
-      routes: this.routes
-    };
-    await fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2), 'utf8');
+    this.saveQueue = this.saveQueue.then(async () => {
+      await this.ensureDir();
+      const state: PersistedState = {
+        sandboxes: Object.fromEntries(this.sandboxes),
+        deployments: Object.fromEntries(this.deployments),
+        routes: this.routes
+      };
+      const temporary = `${this.stateFile}.${process.pid}.tmp`;
+      await fs.writeFile(temporary, JSON.stringify(state, null, 2), { encoding: 'utf8', mode: 0o600 });
+      await fs.rename(temporary, this.stateFile);
+    });
+    return this.saveQueue;
   }
 
   setSandbox(info: VpsSandboxInfo): void {
@@ -63,12 +79,12 @@ export class AgentStore {
     this.save().catch((err) => console.error('Failed to save state:', err));
   }
 
-  setDeployment(siteId: string, payload: VpsDeploymentPayload): void {
+  setDeployment(siteId: string, payload: VpsDeploymentRecord): void {
     this.deployments.set(siteId, payload);
     this.save().catch((err) => console.error('Failed to save state:', err));
   }
 
-  getDeployment(siteId: string): VpsDeploymentPayload | undefined {
+  getDeployment(siteId: string): VpsDeploymentRecord | undefined {
     return this.deployments.get(siteId);
   }
 

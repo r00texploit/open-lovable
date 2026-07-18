@@ -1,21 +1,142 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
+  firewall:
+    build: .
+    container_name: vps-sandbox-firewall
+    restart: unless-stopped
+    logging: *default-logging
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - VPS_SANDBOX_SUBNET=${VPS_SANDBOX_SUBNET:-172.30.0.0/24}
+    command: ["sh", "-c", "while true; do /app/install-firewall.sh; sleep 30; done"]
+    healthcheck:
+      test: ["CMD-SHELL", "iptables -C DOCKER-USER -s $${VPS_SANDBOX_SUBNET} -j VPS-SANDBOX-EGRESS"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: Dockerfile.production
+      target: migrator
+    restart: "no"
+    logging: *default-logging
+    env_file:
+      - path: ../.env.production
+        required: false
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile.production
+      args:
+        NEXT_PUBLIC_ROOT_DOMAIN: ${NEXT_PUBLIC_ROOT_DOMAIN:?NEXT_PUBLIC_ROOT_DOMAIN is required}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
+    container_name: noeron-app
+    restart: unless-stopped
+    logging: *default-logging
+    network_mode: host
+    env_file:
+      - path: ../.env.production
+        required: false
+    environment:
+      - NODE_ENV=production
+      - HOSTNAME=127.0.0.1
+      - PORT=3000
+      - SANDBOX_PROVIDER=vps
+      - VPS_AGENT_URL=http://127.0.0.1:${VPS_AGENT_PORT:-3001}
+      - VPS_AGENT_TOKEN=${VPS_AGENT_TOKEN:?VPS_AGENT_TOKEN is required}
+      - VPS_BASE_DOMAIN=${VPS_BASE_DOMAIN:?VPS_BASE_DOMAIN is required}
+      - VPS_PUBLIC_IP=${VPS_PUBLIC_IP:?VPS_PUBLIC_IP is required}
+      - VPS_DEPLOYMENTS_ENABLED=true
+      - VPS_AGENT_REQUEST_TIMEOUT_MS=${VPS_AGENT_REQUEST_TIMEOUT_MS:-330000}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      vps-agent:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
   vps-agent:
     build: .
     container_name: vps-agent
     restart: unless-stopped
-    ports:
-      - "${VPS_AGENT_PORT:-3001}:${VPS_AGENT_PORT:-3001}"
+    logging: *default-logging
+    network_mode: host
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${VPS_DATA_DIR:-/data/vps-agent}:/data
+      - ${VPS_DATA_DIR:-/data/vps-agent}:/data/vps-agent
     environment:
-      - VPS_AGENT_TOKEN=${VPS_AGENT_TOKEN}
+      - VPS_AGENT_TOKEN=${VPS_AGENT_TOKEN:?VPS_AGENT_TOKEN is required}
       - VPS_AGENT_PORT=${VPS_AGENT_PORT:-3001}
-      - VPS_HOST=${VPS_HOST}
-      - VPS_BASE_DOMAIN=${VPS_BASE_DOMAIN}
+      - VPS_PUBLIC_ROUTER_PORT=${VPS_PUBLIC_ROUTER_PORT:-8080}
+      - VPS_HOST=${VPS_HOST:-127.0.0.1}
+      - VPS_BASE_DOMAIN=${VPS_BASE_DOMAIN:?VPS_BASE_DOMAIN is required}
+      - VPS_PUBLIC_IP=${VPS_PUBLIC_IP:?VPS_PUBLIC_IP is required}
       - VPS_PORT_MIN=${VPS_PORT_MIN:-10000}
       - VPS_PORT_MAX=${VPS_PORT_MAX:-20000}
-      - VPS_SANDBOX_IMAGE=${VPS_SANDBOX_IMAGE:-node:22-slim}
+      - VPS_SANDBOX_IMAGE=${VPS_SANDBOX_IMAGE:-node:22.23.1-bookworm-slim}
       - VPS_DEFAULT_TIMEOUT_MINUTES=${VPS_DEFAULT_TIMEOUT_MINUTES:-45}
-      - VPS_DATA_DIR=${VPS_DATA_DIR:-/data/vps-agent}
+      - VPS_DATA_DIR=/data/vps-agent
       - VPS_SANDBOX_WORKING_DIR=${VPS_SANDBOX_WORKING_DIR:-/vercel/sandbox}
+      - VPS_SANDBOX_BIND_IP=127.0.0.1
+      - VPS_SANDBOX_MEMORY_BYTES=${VPS_SANDBOX_MEMORY_BYTES:-1073741824}
+      - VPS_SANDBOX_NANO_CPUS=${VPS_SANDBOX_NANO_CPUS:-1000000000}
+      - VPS_SANDBOX_PIDS_LIMIT=${VPS_SANDBOX_PIDS_LIMIT:-256}
+      - VPS_SANDBOX_DISK_BYTES=${VPS_SANDBOX_DISK_BYTES:-805306368}
+      - VPS_SANDBOX_TMP_BYTES=${VPS_SANDBOX_TMP_BYTES:-134217728}
+      - VPS_SANDBOX_USER=1000:1000
+      - VPS_SANDBOX_RUNTIME=${VPS_SANDBOX_RUNTIME:-runsc}
+      - VPS_EXEC_TIMEOUT_SECONDS=${VPS_EXEC_TIMEOUT_SECONDS:-300}
+      - VPS_SANDBOX_NETWORK=${VPS_SANDBOX_NETWORK:-vps-sandbox-network}
+      - VPS_SANDBOX_SUBNET=${VPS_SANDBOX_SUBNET:-172.30.0.0/24}
+      - VPS_MAX_SANDBOXES=${VPS_MAX_SANDBOXES:-50}
+      - VPS_MAX_DEPLOYMENT_BYTES=${VPS_MAX_DEPLOYMENT_BYTES:-52428800}
+    depends_on:
+      firewall:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  caddy:
+    build:
+      context: .
+      dockerfile: Caddy.Dockerfile
+    container_name: vps-caddy
+    restart: unless-stopped
+    logging: *default-logging
+    network_mode: host
+    depends_on:
+      app:
+        condition: service_healthy
+      vps-agent:
+        condition: service_healthy
+    environment:
+      - ACME_EMAIL=${ACME_EMAIL:?ACME_EMAIL is required}
+      - VPS_AGENT_PORT=${VPS_AGENT_PORT:-3001}
+      - VPS_PUBLIC_ROUTER_PORT=${VPS_PUBLIC_ROUTER_PORT:-8080}
+      - VPS_BASE_DOMAIN=${VPS_BASE_DOMAIN:?VPS_BASE_DOMAIN is required}
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is required}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

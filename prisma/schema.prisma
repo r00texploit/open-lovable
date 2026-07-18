@@ -110,7 +110,7 @@ model GenerationSession {
   userId               String
   siteId               String?
   sandboxId            String   @unique
-  sandboxProvider      String   @default("vercel")
+  sandboxProvider      String   @default("vps")
   sandboxUrl           String?
   rawSandboxUrl        String?
   sandboxName          String?  @unique
@@ -146,6 +146,7 @@ model Site {
   subdomain            String              @unique
   customDomain         String?             @unique
   customDomainVerified Boolean             @default(false)
+  domainVerificationToken String?
   domainStatus         String              @default("unconfigured")
   published            Boolean             @default(false)
   lastPublishedAt      DateTime?

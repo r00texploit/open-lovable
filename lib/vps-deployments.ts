@@ -12,6 +12,12 @@ interface AgentError {
   code?: string;
 }
 
+class VpsAgentRequestError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
 function getAgentUrl() {
   const url = process.env.VPS_AGENT_URL;
   if (!url) throw new Error('VPS_AGENT_URL is not configured');
@@ -25,6 +31,7 @@ function getAgentToken() {
 }
 
 async function agentFetch<T>(pathname: string, init?: RequestInit): Promise<T> {
+  const requestTimeoutMs = Number(process.env.VPS_AGENT_REQUEST_TIMEOUT_MS) || 330_000;
   const response = await fetch(`${getAgentUrl()}${pathname}`, {
     ...init,
     headers: {
@@ -33,6 +40,7 @@ async function agentFetch<T>(pathname: string, init?: RequestInit): Promise<T> {
       ...(init?.headers || {}),
     },
     cache: 'no-store',
+    signal: init?.signal || AbortSignal.timeout(requestTimeoutMs),
   });
 
   const payload = await response.json().catch(() => ({}));
@@ -40,10 +48,21 @@ async function agentFetch<T>(pathname: string, init?: RequestInit): Promise<T> {
     const message =
       (payload as AgentError).message ||
       (payload as { error?: { message?: string } }).error?.message ||
+      (typeof (payload as { error?: unknown }).error === 'string' ? (payload as { error: string }).error : undefined) ||
       `VPS agent request failed: ${response.status}`;
-    throw new Error(message);
+    throw new VpsAgentRequestError(message, response.status);
   }
   return payload as T;
+}
+
+export async function isSandboxActiveOnVps(sandboxId: string): Promise<boolean> {
+  try {
+    const info = await agentFetch<{ status: string }>(`/sandboxes/${encodeURIComponent(sandboxId)}`);
+    return info.status === 'running' || info.status === 'creating';
+  } catch (error) {
+    if (error instanceof VpsAgentRequestError && error.status === 404) return false;
+    throw error;
+  }
 }
 
 export function isVpsDeploymentEnabled(): boolean {
@@ -57,7 +76,6 @@ export async function deployStaticSiteToVps(
   siteId: string,
   subdomain: string,
   files: Array<{ path: string; contentType: string; content: Buffer; size: number }>,
-  customDomain?: string | null
 ): Promise<{ deployed: boolean; url: string }> {
   const baseDomain = process.env.VPS_BASE_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'noeron.net';
   const url = `https://${subdomain}.${baseDomain}`;
@@ -65,7 +83,6 @@ export async function deployStaticSiteToVps(
   const payload: VpsDeploymentPayload = {
     siteId,
     subdomain,
-    customDomain: customDomain || undefined,
     files: files.map((file) => {
       const isBinary = !/\.(html|css|js|mjs|json|svg|xml|txt|md|yaml|yml)$/i.test(file.path);
       return {
@@ -86,6 +103,13 @@ export async function deployStaticSiteToVps(
 
 export async function undeployStaticSiteFromVps(siteId: string): Promise<{ removed: boolean }> {
   const result = await agentFetch<{ removed: boolean }>(`/deployments/${encodeURIComponent(siteId)}`, {
+    method: 'DELETE',
+  });
+  return result;
+}
+
+export async function terminateSandboxOnVps(sandboxId: string): Promise<{ removed: boolean }> {
+  const result = await agentFetch<{ removed: boolean }>(`/sandboxes/${encodeURIComponent(sandboxId)}`, {
     method: 'DELETE',
   });
   return result;

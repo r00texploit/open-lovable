@@ -60,17 +60,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
   }
 
-  if (parsed.data.published === true && site.published === false) {
-    const assetCount = await prisma.siteAsset.count({
-      where: { siteId: site.id },
-    });
-
-    if (assetCount === 0) {
-      return NextResponse.json(
-        { error: 'Publish this site from the generation workspace before enabling public access' },
-        { status: 400 }
-      );
-    }
+  if (typeof parsed.data.published === 'boolean') {
+    return NextResponse.json(
+      { error: 'Use the publish or unpublish endpoint to change publication status' },
+      { status: 400 },
+    );
   }
 
   const updated = await prisma.site.update({
@@ -78,7 +72,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     data: {
       ...(parsed.data.name ? { name: parsed.data.name } : {}),
       ...(nextSlug ? { slug: nextSlug, subdomain: nextSlug } : {}),
-      ...(typeof parsed.data.published === 'boolean' ? { published: parsed.data.published } : {}),
     },
   });
 

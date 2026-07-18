@@ -1,0 +1,44 @@
+{
+	admin off
+	email {$ACME_EMAIL}
+	on_demand_tls {
+		ask http://127.0.0.1:{$VPS_AGENT_PORT:3001}/caddy/ask
+	}
+}
+
+# The control plane has a fixed hostname and is routed separately.
+https://{$VPS_BASE_DOMAIN} {
+	tls {
+		dns cloudflare {$CLOUDFLARE_API_TOKEN}
+	}
+	reverse_proxy 127.0.0.1:3000
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+	}
+}
+
+# One wildcard certificate avoids per-subdomain ACME rate limits.
+https://*.{$VPS_BASE_DOMAIN} {
+	tls {
+		dns cloudflare {$CLOUDFLARE_API_TOKEN}
+	}
+	reverse_proxy 127.0.0.1:{$VPS_PUBLIC_ROUTER_PORT:8080}
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+	}
+}
+
+# Site DNS must point at this VPS. Certificates are issued only after the agent
+# confirms that a hostname belongs to a configured route.
+https:// {
+	tls {
+		on_demand
+	}
+	reverse_proxy 127.0.0.1:{$VPS_PUBLIC_ROUTER_PORT:8080}
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+	}
+}

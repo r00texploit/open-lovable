@@ -6,16 +6,96 @@ import type { VpsSandboxConfig, VpsSandboxInfo, VpsExecResult, VpsFileWrite } fr
 import { getViteTemplate } from './template';
 import { addSandboxRoutes, removeSandboxRoutes } from './routes';
 import type { AgentStore } from './store';
+import { assertSafeId, resolvePosixContainedPath } from './security';
 
 export const docker = new Docker();
 
-const HOST = process.env.VPS_HOST ?? 'localhost';
+const HOST = process.env.VPS_HOST ?? '127.0.0.1';
 const PORT_MIN = parseInt(process.env.VPS_PORT_MIN ?? '10000', 10);
 const PORT_MAX = parseInt(process.env.VPS_PORT_MAX ?? '20000', 10);
 const IMAGE = process.env.VPS_SANDBOX_IMAGE ?? 'node:22-slim';
 const DEFAULT_TIMEOUT_MINUTES = parseInt(process.env.VPS_DEFAULT_TIMEOUT_MINUTES ?? '45', 10);
 const WORKING_DIR = process.env.VPS_SANDBOX_WORKING_DIR ?? '/vercel/sandbox';
 const AGENT_LABEL = 'vps-agent';
+const BIND_IP = process.env.VPS_SANDBOX_BIND_IP ?? '127.0.0.1';
+const MEMORY_BYTES = parseInt(process.env.VPS_SANDBOX_MEMORY_BYTES ?? String(1024 * 1024 * 1024), 10);
+const NANO_CPUS = parseInt(process.env.VPS_SANDBOX_NANO_CPUS ?? String(1_000_000_000), 10);
+const PIDS_LIMIT = parseInt(process.env.VPS_SANDBOX_PIDS_LIMIT ?? '256', 10);
+const DISK_BYTES = parseInt(process.env.VPS_SANDBOX_DISK_BYTES ?? String(768 * 1024 * 1024), 10);
+const TMP_BYTES = parseInt(process.env.VPS_SANDBOX_TMP_BYTES ?? String(128 * 1024 * 1024), 10);
+const EXEC_TIMEOUT_SECONDS = parseInt(process.env.VPS_EXEC_TIMEOUT_SECONDS ?? '300', 10);
+const SANDBOX_NETWORK = process.env.VPS_SANDBOX_NETWORK ?? 'vps-sandbox-network';
+const SANDBOX_SUBNET = process.env.VPS_SANDBOX_SUBNET ?? '172.30.0.0/24';
+const SANDBOX_USER = process.env.VPS_SANDBOX_USER ?? '1000:1000';
+const [SANDBOX_UID, SANDBOX_GID] = SANDBOX_USER.split(':').map(Number);
+const SANDBOX_RUNTIME = process.env.VPS_SANDBOX_RUNTIME ?? '';
+const SECURITY_VERSION = '2';
+
+function validateDockerConfig(): void {
+  if (!Number.isSafeInteger(PORT_MIN) || !Number.isSafeInteger(PORT_MAX) || PORT_MIN < 1024 || PORT_MAX > 65535 || PORT_MIN > PORT_MAX) {
+    throw new Error('VPS sandbox port range is invalid');
+  }
+  if (!Number.isSafeInteger(MEMORY_BYTES) || MEMORY_BYTES < 128 * 1024 * 1024) {
+    throw new Error('VPS_SANDBOX_MEMORY_BYTES must be at least 128 MiB');
+  }
+  if (!Number.isSafeInteger(NANO_CPUS) || NANO_CPUS <= 0 || !Number.isSafeInteger(PIDS_LIMIT) || PIDS_LIMIT < 16) {
+    throw new Error('VPS sandbox CPU/PID limits are invalid');
+  }
+  if (!Number.isSafeInteger(DISK_BYTES) || DISK_BYTES < 256 * 1024 * 1024 || !Number.isSafeInteger(TMP_BYTES) || TMP_BYTES < 32 * 1024 * 1024) {
+    throw new Error('VPS sandbox workspace/tmp limits are invalid');
+  }
+  if (!Number.isSafeInteger(EXEC_TIMEOUT_SECONDS) || EXEC_TIMEOUT_SECONDS < 10 || EXEC_TIMEOUT_SECONDS > 3600) {
+    throw new Error('VPS_EXEC_TIMEOUT_SECONDS must be between 10 and 3600');
+  }
+  if (!/^\d+:\d+$/.test(SANDBOX_USER)) throw new Error('VPS_SANDBOX_USER must use numeric uid:gid form');
+  if (SANDBOX_RUNTIME && !/^[a-zA-Z0-9_.-]+$/.test(SANDBOX_RUNTIME)) throw new Error('VPS_SANDBOX_RUNTIME is invalid');
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/.test(SANDBOX_NETWORK) || !/^\d{1,3}(?:\.\d{1,3}){3}\/\d{1,2}$/.test(SANDBOX_SUBNET)) {
+    throw new Error('VPS sandbox network configuration is invalid');
+  }
+}
+
+async function ensureSandboxNetwork(): Promise<void> {
+  validateDockerConfig();
+  if (SANDBOX_RUNTIME) {
+    const dockerInfo = await docker.info() as { Runtimes?: Record<string, unknown> };
+    if (!dockerInfo.Runtimes?.[SANDBOX_RUNTIME]) {
+      throw new Error(`Configured sandbox runtime ${SANDBOX_RUNTIME} is not installed in Docker`);
+    }
+  }
+  const networks = await docker.listNetworks({ filters: { name: [SANDBOX_NETWORK] } });
+  if (networks.some((network) => network.Name === SANDBOX_NETWORK)) return;
+  try {
+    await docker.createNetwork({
+      Name: SANDBOX_NETWORK,
+      Driver: 'bridge',
+      CheckDuplicate: true,
+      EnableIPv6: false,
+      IPAM: { Config: [{ Subnet: SANDBOX_SUBNET }] },
+      Options: { 'com.docker.network.bridge.enable_icc': 'false' },
+      Labels: { [AGENT_LABEL]: 'true' },
+    });
+  } catch (error) {
+    const afterRace = await docker.listNetworks({ filters: { name: [SANDBOX_NETWORK] } });
+    if (!afterRace.some((network) => network.Name === SANDBOX_NETWORK)) throw error;
+  }
+}
+
+async function ensureSandboxImage(): Promise<void> {
+  try {
+    await docker.getImage(IMAGE).inspect();
+    return;
+  } catch {
+    // Pull below. docker.createContainer does not pull missing images itself.
+  }
+
+  const stream = await docker.pull(IMAGE);
+  await new Promise<void>((resolve, reject) => {
+    docker.modem.followProgress(stream, (progressError) => {
+      if (progressError) reject(progressError);
+      else resolve();
+    });
+  });
+}
 
 function getExpiresAt(timeoutMinutes?: number): string {
   const minutes = timeoutMinutes ?? DEFAULT_TIMEOUT_MINUTES;
@@ -45,8 +125,7 @@ async function getContainerBySandboxId(sandboxId: string): Promise<Docker.Contai
   return docker.getContainer(containers[0].Id);
 }
 
-function buildUrl(subdomain: string | undefined, customDomain: string | undefined, baseDomain: string): string {
-  if (customDomain) return `https://${customDomain}`;
+function buildUrl(subdomain: string | undefined, _customDomain: string | undefined, baseDomain: string): string {
   if (subdomain) return `https://${subdomain}.${baseDomain}`;
   return '';
 }
@@ -59,26 +138,56 @@ function extractHostPort(info: Docker.ContainerInspectInfo): number {
   throw new Error('Could not determine mapped host port');
 }
 
-async function runDockerCli(args: string[]): Promise<void> {
+async function runDockerCli(args: string[], timeoutMs = (EXEC_TIMEOUT_SECONDS + 10) * 1000): Promise<void> {
   return new Promise((resolve, reject) => {
     const proc = spawn('docker', args, { stdio: 'ignore' });
-    proc.on('error', reject);
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      proc.kill('SIGKILL');
+      reject(new Error(`docker ${args[0] || 'command'} timed out`));
+    }, timeoutMs);
+    proc.on('error', (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(error);
+    });
     proc.on('close', (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       if (code === 0) resolve();
       else reject(new Error(`docker ${args.join(' ')} exited with code ${code}`));
     });
   });
 }
 
-async function runDockerCliWithOutput(args: string[]): Promise<VpsExecResult> {
+async function runDockerCliWithOutput(args: string[], timeoutMs = (EXEC_TIMEOUT_SECONDS + 10) * 1000): Promise<VpsExecResult> {
   return new Promise((resolve, reject) => {
     const proc = spawn('docker', args);
     let stdout = '';
     let stderr = '';
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      proc.kill('SIGKILL');
+      reject(new Error(`docker ${args[0] || 'command'} timed out`));
+    }, timeoutMs);
     proc.stdout.on('data', (data: Buffer) => { stdout += data.toString('utf8'); });
     proc.stderr.on('data', (data: Buffer) => { stderr += data.toString('utf8'); });
-    proc.on('error', reject);
+    proc.on('error', (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(error);
+    });
     proc.on('close', (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       resolve({ stdout, stderr, exitCode: code ?? 0 });
     });
   });
@@ -88,7 +197,20 @@ export async function createOrResumeSandbox(
   store: AgentStore,
   config: VpsSandboxConfig
 ): Promise<VpsSandboxInfo> {
-  const existing = await getContainerBySandboxId(config.sandboxId);
+  await ensureSandboxNetwork();
+  await ensureSandboxImage();
+  assertSafeId(config.sandboxId, 'sandbox ID');
+  assertSafeId(config.sandboxName, 'sandbox name');
+  let existing = await getContainerBySandboxId(config.sandboxId);
+  if (existing) {
+    const existingInfo = await existing.inspect();
+    if (existingInfo.Config.Labels?.sandboxSecurityVersion !== SECURITY_VERSION) {
+      await existing.remove({ force: true });
+      existing = undefined;
+      removeSandboxRoutes(store, config.sandboxId);
+      store.deleteSandbox(config.sandboxId);
+    }
+  }
   if (existing) {
     const info = await existing.inspect();
     if (!info.State.Running) {
@@ -121,15 +243,32 @@ export async function createOrResumeSandbox(
       [AGENT_LABEL]: 'true',
       sandboxId: config.sandboxId,
       sandboxName: config.sandboxName,
+      sandboxSecurityVersion: SECURITY_VERSION,
       ...(config.subdomain ? { subdomain: config.subdomain } : {})
     },
     ExposedPorts: { '3000/tcp': {} },
     HostConfig: {
-      PortBindings: { '3000/tcp': [{ HostIp: '0.0.0.0', HostPort: String(hostPort) }] },
-      NetworkMode: 'bridge',
-      RestartPolicy: { Name: 'no' }
+      PortBindings: { '3000/tcp': [{ HostIp: BIND_IP, HostPort: String(hostPort) }] },
+      NetworkMode: SANDBOX_NETWORK,
+      RestartPolicy: { Name: 'no' },
+      Memory: MEMORY_BYTES,
+      NanoCpus: NANO_CPUS,
+      PidsLimit: PIDS_LIMIT,
+      CapDrop: ['ALL'],
+      SecurityOpt: ['no-new-privileges:true'],
+      ReadonlyRootfs: true,
+      Tmpfs: {
+        [WORKING_DIR]: `rw,nosuid,nodev,exec,size=${DISK_BYTES},uid=${SANDBOX_UID},gid=${SANDBOX_GID},mode=0750`,
+        '/tmp': `rw,nosuid,nodev,exec,size=${TMP_BYTES},uid=${SANDBOX_UID},gid=${SANDBOX_GID},mode=1777`,
+      },
+      Sysctls: {
+        'net.ipv6.conf.all.disable_ipv6': '1',
+        'net.ipv6.conf.default.disable_ipv6': '1',
+      },
+      ...(SANDBOX_RUNTIME ? { Runtime: SANDBOX_RUNTIME } : {})
     },
-    Env: ['NODE_ENV=development'],
+    Env: ['NODE_ENV=development', 'HOME=/tmp/home', 'NPM_CONFIG_CACHE=/tmp/npm-cache'],
+    User: SANDBOX_USER,
     Cmd: ['tail', '-f', '/dev/null'],
     WorkingDir: WORKING_DIR
   });
@@ -168,7 +307,22 @@ async function setupViteTemplate(container: Docker.Container, cwd: string): Prom
 }
 
 export async function getSandboxInfo(store: AgentStore, sandboxId: string): Promise<VpsSandboxInfo | undefined> {
-  return store.getSandbox(sandboxId);
+  const stored = store.getSandbox(sandboxId);
+  if (!stored) return undefined;
+  const container = await getContainerBySandboxId(sandboxId);
+  if (!container) {
+    removeSandboxRoutes(store, sandboxId);
+    store.deleteSandbox(sandboxId);
+    return undefined;
+  }
+  const info = await container.inspect();
+  if (!info.State.Running || info.Config.Labels?.sandboxSecurityVersion !== SECURITY_VERSION) {
+    await container.remove({ force: true }).catch(() => undefined);
+    removeSandboxRoutes(store, sandboxId);
+    store.deleteSandbox(sandboxId);
+    return undefined;
+  }
+  return stored;
 }
 
 export async function removeSandbox(store: AgentStore, sandboxId: string): Promise<void> {
@@ -193,6 +347,7 @@ export interface ExecOptions {
   cwd?: string;
   env?: Record<string, string>;
   detach?: boolean;
+  timeoutSeconds?: number;
 }
 
 export async function execInContainer(
@@ -210,7 +365,10 @@ export async function execInContainer(
     }
   }
   if (opts.detach) args.push('-d');
-  args.push(containerId, ...command);
+  const boundedCommand = opts.detach
+    ? command
+    : ['timeout', '--signal=KILL', `${opts.timeoutSeconds ?? EXEC_TIMEOUT_SECONDS}s`, ...command];
+  args.push(containerId, ...boundedCommand);
 
   if (opts.detach) {
     await runDockerCli(args);
@@ -229,9 +387,7 @@ export async function writeFilesToContainer(
 
   let written = 0;
   for (const file of files) {
-    const fullContainerPath = path.posix.isAbsolute(file.path)
-      ? file.path
-      : path.posix.join(cwd, file.path.replace(/^\/+/, ''));
+    const fullContainerPath = resolvePosixContainedPath(cwd, file.path);
     const decoded = file.encoding === 'base64'
       ? Buffer.from(file.content, 'base64')
       : Buffer.from(file.content, 'utf8');
@@ -240,10 +396,11 @@ export async function writeFilesToContainer(
     const parentDir = path.posix.dirname(fullContainerPath);
     await execInContainer(container, ['mkdir', '-p', parentDir], { cwd: '/' });
 
-    const tmpFile = path.join('/tmp', `vps-${Date.now()}-${written}`);
-    await fs.writeFile(tmpFile, decoded);
+    const tmpFile = path.join('/tmp', `vps-${crypto.randomUUID()}-${written}`);
+    await fs.writeFile(tmpFile, decoded, { mode: 0o600 });
+    await fs.chown(tmpFile, SANDBOX_UID, SANDBOX_GID);
     try {
-      await runDockerCli(['cp', tmpFile, `${containerId}:${fullContainerPath}`]);
+      await runDockerCli(['cp', '-a', tmpFile, `${containerId}:${fullContainerPath}`], 60_000);
       written++;
     } finally {
       await fs.unlink(tmpFile).catch(() => {});
@@ -257,19 +414,12 @@ export async function readFileFromContainer(
   cwd: string,
   filePath: string
 ): Promise<{ content: string; encoding: 'utf8' | 'base64' }> {
-  const target = path.posix.isAbsolute(filePath)
-    ? filePath
-    : path.posix.join(cwd, filePath.replace(/^\/+/, ''));
-  const result = await runDockerCliWithOutput(['exec', (await container.inspect()).Id, 'cat', target]);
+  const target = resolvePosixContainedPath(cwd, filePath);
+  const result = await runDockerCliWithOutput(['exec', (await container.inspect()).Id, 'base64', '-w', '0', target]);
   if (result.exitCode !== 0) {
     throw new Error(result.stderr || 'Failed to read file');
   }
-  const content = Buffer.from(result.stdout, 'binary');
-  const utf8 = content.toString('utf8');
-  if (utf8.includes('�')) {
-    return { content: content.toString('base64'), encoding: 'base64' };
-  }
-  return { content: utf8, encoding: 'utf8' };
+  return { content: result.stdout.trim(), encoding: 'base64' };
 }
 
 export async function listFilesInContainer(
@@ -277,9 +427,7 @@ export async function listFilesInContainer(
   cwd: string,
   dirPath: string
 ): Promise<string[]> {
-  const target = path.posix.isAbsolute(dirPath)
-    ? dirPath
-    : path.posix.join(cwd, dirPath.replace(/^\/+/, ''));
+  const target = resolvePosixContainedPath(cwd, dirPath);
   const result = await runDockerCliWithOutput([
     'exec',
     (await container.inspect()).Id,
@@ -317,33 +465,52 @@ export async function extendSandboxTimeout(
 ): Promise<boolean> {
   const sandbox = store.getSandbox(sandboxId);
   if (!sandbox) return false;
-  const current = sandbox.expiresAt ? new Date(sandbox.expiresAt).getTime() : Date.now();
-  sandbox.expiresAt = new Date(current + durationMs).toISOString();
+  sandbox.expiresAt = new Date(Date.now() + durationMs).toISOString();
   store.setSandbox(sandbox);
   return true;
 }
 
 export async function reconcileExistingContainers(store: AgentStore): Promise<void> {
+  await ensureSandboxNetwork();
   const containers = await docker.listContainers({
     all: true,
     filters: { label: [`${AGENT_LABEL}=true`] }
   });
+  const liveIds = new Set<string>();
   for (const c of containers) {
     const sandboxId = c.Labels['sandboxId'];
+    if (!sandboxId) continue;
+    if (c.State !== 'running' || c.Labels.sandboxSecurityVersion !== SECURITY_VERSION) {
+      const stale = docker.getContainer(c.Id);
+      await stale.remove({ force: true }).catch(() => undefined);
+      removeSandboxRoutes(store, sandboxId);
+      store.sandboxes.delete(sandboxId);
+      continue;
+    }
+    liveIds.add(sandboxId);
     const sandboxName = c.Labels['sandboxName'] ?? sandboxId;
     const port = c.Ports?.find((p: { PrivatePort?: number; PublicPort?: number }) => p.PrivatePort === 3000)?.PublicPort ?? 0;
-    const status: VpsSandboxInfo['status'] = c.State === 'running' ? 'running' : 'paused';
+    const status: VpsSandboxInfo['status'] = 'running';
+    const persisted = store.getSandbox(sandboxId);
     store.setSandbox({
       sandboxId,
       sandboxName,
-      url: '',
+      url: persisted?.url ?? '',
       containerId: c.Id,
       host: HOST,
       port,
       status,
-      createdAt: new Date(c.Created * 1000).toISOString()
+      createdAt: persisted?.createdAt ?? new Date(c.Created * 1000).toISOString(),
+      expiresAt: persisted?.expiresAt
     });
   }
+  for (const sandboxId of Array.from(store.sandboxes.keys())) {
+    if (!liveIds.has(sandboxId)) {
+      store.sandboxes.delete(sandboxId);
+      removeSandboxRoutes(store, sandboxId);
+    }
+  }
+  await store.save();
 }
 
 export async function getContainerForSandbox(sandboxId: string): Promise<Docker.Container | undefined> {
