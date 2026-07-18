@@ -60,3 +60,5 @@ e2b-template-*
 repomix-output.txt
 bun.lockb
 .env*.local
+
+/open-lovable-review.zip
